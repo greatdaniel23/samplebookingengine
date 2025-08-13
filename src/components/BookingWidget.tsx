@@ -21,9 +21,7 @@ export const BookingWidget = ({ rooms }: BookingWidgetProps) => {
   const [step, setStep] = useState(1);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState(1);
-  const [selectedRoomId, setSelectedRoomId] = useState<string | undefined>(
-    rooms?.[0]?.id
-  );
+  const [selectedRoomId, setSelectedRoomId] = useState<string | undefined>();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [bookingId, setBookingId] = useState<string | null>(null);
@@ -46,6 +44,8 @@ export const BookingWidget = ({ rooms }: BookingWidgetProps) => {
         showError("Please select a room type.");
         return;
       }
+      setStep(2);
+    } else if (step === 2) {
       if (!dateRange?.from || !dateRange?.to) {
         showError("Please select a check-in and check-out date.");
         return;
@@ -54,8 +54,8 @@ export const BookingWidget = ({ rooms }: BookingWidgetProps) => {
         showError("Please enter a valid number of guests.");
         return;
       }
-      setStep(2);
-    } else if (step === 2) {
+      setStep(3);
+    } else if (step === 3) {
       if (!name || !email) {
         showError("Please enter your name and email.");
         return;
@@ -67,7 +67,7 @@ export const BookingWidget = ({ rooms }: BookingWidgetProps) => {
       // Mock booking creation
       const newBookingId = Math.floor(1000 + Math.random() * 9000).toString();
       setBookingId(newBookingId);
-      setStep(3);
+      setStep(4);
       showSuccess("Booking confirmed!");
     }
   };
@@ -76,7 +76,7 @@ export const BookingWidget = ({ rooms }: BookingWidgetProps) => {
     setStep(1);
     setDateRange(undefined);
     setGuests(1);
-    setSelectedRoomId(rooms?.[0]?.id);
+    setSelectedRoomId(undefined);
     setName("");
     setEmail("");
     setBookingId(null);
@@ -92,6 +92,19 @@ export const BookingWidget = ({ rooms }: BookingWidgetProps) => {
               selectedRoomId={selectedRoomId}
               onSelectRoom={setSelectedRoomId}
             />
+            <Button
+              onClick={handleNextStep}
+              className="w-full"
+              size="lg"
+              disabled={!selectedRoomId}
+            >
+              Next
+            </Button>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="grid gap-6">
             <div className="grid gap-4">
               <Calendar
                 mode="range"
@@ -124,7 +137,7 @@ export const BookingWidget = ({ rooms }: BookingWidgetProps) => {
               onClick={handleNextStep}
               className="w-full"
               size="lg"
-              disabled={!dateRange?.from || !dateRange?.to || !selectedRoomId}
+              disabled={!dateRange?.from || !dateRange?.to}
             >
               Request to Book
             </Button>
@@ -151,7 +164,7 @@ export const BookingWidget = ({ rooms }: BookingWidgetProps) => {
             )}
           </div>
         );
-      case 2:
+      case 3:
         return (
           <div className="grid gap-4">
             <div className="space-y-4">
@@ -180,7 +193,7 @@ export const BookingWidget = ({ rooms }: BookingWidgetProps) => {
             </Button>
           </div>
         );
-      case 3:
+      case 4:
         const roomName = rooms.find((r) => r.id === selectedRoomId)?.name;
         return (
           <div className="text-center grid gap-6">
@@ -260,6 +273,8 @@ export const BookingWidget = ({ rooms }: BookingWidgetProps) => {
   const getTitle = () => {
     switch (step) {
       case 1:
+        return "Choose your room";
+      case 2:
         if (selectedRoom) {
           return (
             <>
@@ -271,10 +286,10 @@ export const BookingWidget = ({ rooms }: BookingWidgetProps) => {
             </>
           );
         }
-        return "Select your room";
-      case 2:
-        return "Review and Confirm";
+        return "Select dates";
       case 3:
+        return "Review and Confirm";
+      case 4:
         return "Confirmation";
       default:
         return "";
