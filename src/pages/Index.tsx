@@ -1,5 +1,6 @@
 import { BookingWidget } from "@/components/BookingWidget";
 import { PhotoGallery } from "@/components/PhotoGallery";
+import { Amenities } from "@/components/Amenities";
 import { Star } from "lucide-react";
 
 const villaData = {
@@ -21,6 +22,14 @@ const villaData = {
     "https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  ],
+  amenities: [
+    { name: "High-speed Wi-Fi", icon: "Wifi" },
+    { name: "Private Hot Tub", icon: "Bath" },
+    { name: "Indoor Fireplace", icon: "Flame" },
+    { name: "Fully-equipped Kitchen", icon: "CookingPot" },
+    { name: "Free parking on premises", icon: "Car" },
+    { name: "Air conditioning", icon: "AirVent" },
   ],
 };
 
@@ -51,6 +60,8 @@ const Index = () => {
           <p className="text-gray-700 leading-relaxed">
             {villaData.description}
           </p>
+          <div className="border-t my-8" />
+          <Amenities amenities={villaData.amenities} />
         </div>
         <aside className="lg:col-span-1">
           <div className="sticky top-8">
