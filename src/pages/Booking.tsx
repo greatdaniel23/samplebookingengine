@@ -120,48 +120,50 @@ const BookingPage = () => {
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Villa
       </Button>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2">
           <Card>
-            <CardHeader>
-              <CardTitle>Complete your booking</CardTitle>
-              <CardDescription>Select your dates and number of guests to finalize your reservation.</CardDescription>
+            <CardHeader className="p-0">
+              <img src={room.image} alt={room.name} className="w-full h-[400px] object-cover rounded-t-lg" />
             </CardHeader>
-            <CardContent className="grid gap-8">
-              <Calendar
-                mode="range"
-                selected={dateRange}
-                onSelect={setDateRange}
-                className="rounded-md border justify-center"
-                numberOfMonths={2}
-                disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
-              />
-              <div>
-                <Label htmlFor="guests" className="text-base">Guests</Label>
-                <Input
-                  id="guests"
-                  type="number"
-                  min="1"
-                  value={guests}
-                  onChange={(e) => setGuests(Number(e.target.value))}
-                  className="mt-2 max-w-xs"
-                />
-              </div>
+            <CardContent className="p-6">
+              <h1 className="text-3xl font-bold mb-2">{room.name}</h1>
+              <p className="text-lg text-muted-foreground">{room.description}</p>
             </CardContent>
           </Card>
         </div>
+
         <div className="lg:col-span-1">
           <Card className="sticky top-8">
-            <CardHeader className="flex-row gap-4 items-start">
-              <img src={room.image} alt={room.name} className="w-24 h-24 object-cover rounded-lg" />
-              <div>
-                <CardTitle>{room.name}</CardTitle>
-                <CardDescription className="line-clamp-2">{room.description}</CardDescription>
-              </div>
+            <CardHeader>
+              <CardTitle className="text-2xl">Book your stay</CardTitle>
+              <CardDescription>Select your dates to see the price.</CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="grid gap-4">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  className="rounded-md border"
+                  numberOfMonths={1}
+                  disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                />
+                <div>
+                  <Label htmlFor="guests" className="text-base">Guests</Label>
+                  <Input
+                    id="guests"
+                    type="number"
+                    min="1"
+                    value={guests}
+                    onChange={(e) => setGuests(Number(e.target.value))}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+
               {numberOfNights > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-4 mt-6">
                   <h3 className="text-lg font-semibold">Price Details</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -173,16 +175,18 @@ const BookingPage = () => {
                       <span>${serviceFee.toFixed(2)}</span>
                     </div>
                   </div>
-                  <div className="flex justify-between font-bold text-lg border-t pt-4">
+                  <div className="flex justify-between font-bold text-lg border-t pt-4 mt-4">
                     <span>Total</span>
                     <span>${totalPrice.toFixed(2)}</span>
                   </div>
-                  <Button onClick={handleConfirmBooking} className="w-full" size="lg">
+                  <Button onClick={handleConfirmBooking} className="w-full mt-4" size="lg">
                     Confirm and Book
                   </Button>
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-8">Select dates to see price</p>
+                <div className="text-center text-muted-foreground pt-8">
+                  <p>Select dates to see price</p>
+                </div>
               )}
             </CardContent>
           </Card>
