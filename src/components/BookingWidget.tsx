@@ -10,6 +10,7 @@ import { differenceInDays, format } from "date-fns";
 import { showError, showSuccess } from "@/utils/toast";
 import { Label } from "./ui/label";
 import { ArrowLeft } from "lucide-react";
+import { Badge } from "./ui/badge";
 
 interface BookingWidgetProps {
   pricePerNight: number;
@@ -21,6 +22,7 @@ export const BookingWidget = ({ pricePerNight }: BookingWidgetProps) => {
   const [guests, setGuests] = useState(1);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [bookingId, setBookingId] = useState<string | null>(null);
 
   const numberOfNights =
     dateRange?.from && dateRange?.to
@@ -54,6 +56,8 @@ export const BookingWidget = ({ pricePerNight }: BookingWidgetProps) => {
       setStep(3);
     } else if (step === 3) {
       // Mock payment processing
+      const newBookingId = Math.floor(1000 + Math.random() * 9000).toString();
+      setBookingId(newBookingId);
       setStep(4);
       showSuccess("Booking confirmed!");
     }
@@ -65,6 +69,7 @@ export const BookingWidget = ({ pricePerNight }: BookingWidgetProps) => {
     setGuests(1);
     setName("");
     setEmail("");
+    setBookingId(null);
   }
 
   const renderStepContent = () => {
@@ -162,14 +167,42 @@ export const BookingWidget = ({ pricePerNight }: BookingWidgetProps) => {
         );
       case 4:
         return (
-          <div className="text-center grid gap-4">
-            <h3 className="text-2xl font-bold text-green-600">Booking Confirmed!</h3>
-            <p>Thank you, {name}! Your booking for the villa is complete.</p>
-            <div className="text-left bg-gray-50 p-4 rounded-lg border">
-              <p><strong>Dates:</strong> {dateRange?.from && format(dateRange.from, "PPP")} - {dateRange?.to && format(dateRange.to, "PPP")}</p>
-              <p><strong>Guests:</strong> {guests}</p>
-              <p className="font-bold mt-2"><strong>Total Paid:</strong> ${totalPrice.toFixed(2)}</p>
+          <div className="text-center grid gap-6">
+            <div className="space-y-2">
+              <h3 className="text-2xl font-bold text-green-600">Booking Confirmed!</h3>
+              <p className="text-muted-foreground">Thank you, {name}! Your booking is complete.</p>
             </div>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Booking Details</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm">
+                <div className="grid gap-3">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Booking</span>
+                    <span className="font-medium">{bookingId}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Check-in</span>
+                    <span className="font-medium">{dateRange?.from ? format(dateRange.from, "MMMM d, yyyy") : ''}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Check-out</span>
+                    <span className="font-medium">{dateRange?.to ? format(dateRange.to, "MMMM d, yyyy") : ''}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Total</span>
+                    <span className="font-medium">${totalPrice.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Status</span>
+                    <Badge variant="default" className="bg-green-100 text-green-800">Confirmed</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Button onClick={handleReset} className="w-full" size="lg" variant="outline">
               Book Another Stay
             </Button>
