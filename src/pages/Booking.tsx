@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -13,56 +14,44 @@ import { showError, showSuccess } from "@/utils/toast";
 import { ArrowLeft, Ruler, BedDouble, Users, CheckCircle2 } from "lucide-react";
 import NotFound from "./NotFound";
 import { Room } from "@/types";
+import { supabase } from "@/lib/supabase";
+import BookingSkeleton from "@/components/BookingSkeleton";
 
-// In a real app, this data would come from a global state or an API call
-const villaData: { rooms: Room[] } = {
-  rooms: [
-    {
-      id: "standard",
-      name: "Standard Room",
-      price: 450,
-      image: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=2670&auto=format&fit=crop",
-      description: "A cozy room with all the essentials for a comfortable stay, perfect for solo travelers or couples.",
-      size: "350 sq ft",
-      beds: "1 Queen Bed",
-      occupancy: 2,
-      features: ["Ensuite Bathroom", "Flat-screen TV", "Mini-fridge"],
-    },
-    {
-      id: "deluxe",
-      name: "Deluxe Suite",
-      price: 650,
-      image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2670&auto=format&fit=crop",
-      description: "A spacious suite with a private balcony and stunning mountain views. Ideal for a luxurious escape.",
-      size: "550 sq ft",
-      beds: "1 King Bed",
-      occupancy: 2,
-      features: ["Private Balcony", "Mountain View", "Soaking Tub", "Work Desk"],
-    },
-    {
-      id: "penthouse",
-      name: "The Penthouse",
-      price: 950,
-      image: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=2670&auto=format&fit=crop",
-      description: "The ultimate luxury experience with panoramic views, a private jacuzzi, and exclusive amenities.",
-      size: "1200 sq ft",
-      beds: "1 King Bed, 1 Sofa Bed",
-      occupancy: 4,
-      features: ["Panoramic Views", "Private Jacuzzi", "Kitchenette", "Living Area"],
-    },
-  ],
+const fetchRoomData = async (roomId: string): Promise<Room> => {
+  const { data, error } = await supabase
+    .from("rooms")
+    .select("*")
+    .eq("id", roomId)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching room ${roomId}:`, error);
+    throw new Error(error.message);
+  }
+  if (!data) throw new Error("Room not found");
+
+  return data;
 };
 
 const BookingPage = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
-  const room = villaData.rooms.find((r) => r.id === roomId);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState(1);
   const [isConfirmed, setIsConfirmed] = useState(false);
 
-  if (!room) {
+  const { data: room, isLoading, isError } = useQuery({
+    queryKey: ["room", roomId],
+    queryFn: () => fetchRoomData(roomId!),
+    enabled: !!roomId,
+  });
+
+  if (isLoading) {
+    return <BookingSkeleton />;
+  }
+
+  if (isError || !room) {
     return <NotFound />;
   }
 
