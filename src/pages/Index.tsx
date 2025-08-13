@@ -1,47 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { Amenities } from "@/components/Amenities";
 import { Star } from "lucide-react";
 import { RoomCard } from "@/components/RoomCard";
-import { Villa } from "@/types";
-import { supabase } from "@/lib/supabase";
-import IndexSkeleton from "@/components/IndexSkeleton";
-
-const fetchVillaData = async (): Promise<Villa> => {
-  // We assume there is only one villa for this project
-  const { data, error } = await supabase
-    .from("villas")
-    .select("*, rooms(*)")
-    .limit(1)
-    .single();
-
-  if (error) {
-    console.error("Error fetching villa data:", error);
-    throw new Error(error.message);
-  }
-  if (!data) throw new Error("Villa not found");
-
-  return data as unknown as Villa;
-};
+import { villaData } from "@/data/dummy";
 
 const Index = () => {
-  const { data: villaData, isLoading, isError } = useQuery({
-    queryKey: ["villaData"],
-    queryFn: fetchVillaData,
-  });
-
-  if (isLoading) {
-    return <IndexSkeleton />;
-  }
-
-  if (isError || !villaData) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-red-500">Failed to load villa data. Please try again later.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
