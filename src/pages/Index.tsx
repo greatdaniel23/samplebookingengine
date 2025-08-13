@@ -8,13 +8,30 @@ const villaData = {
   location: "Aspen, Colorado",
   description:
     "Escape to this beautiful villa nestled in the mountains. With breathtaking views and luxurious amenities, it's the perfect destination for a family getaway or a romantic retreat. Enjoy the private hot tub, cozy fireplace, and fully-equipped kitchen.",
-  pricePerNight: 450,
   rating: 4.9,
   reviews: 120,
   rooms: [
-    { id: "standard", name: "Standard Room" },
-    { id: "deluxe", name: "Deluxe Suite" },
-    { id: "penthouse", name: "Penthouse" },
+    {
+      id: "standard",
+      name: "Standard Room",
+      price: 450,
+      image: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=2670&auto=format&fit=crop",
+      description: "A cozy room with all the essentials for a comfortable stay.",
+    },
+    {
+      id: "deluxe",
+      name: "Deluxe Suite",
+      price: 650,
+      image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2670&auto=format&fit=crop",
+      description: "A spacious suite with a private balcony and stunning views.",
+    },
+    {
+      id: "penthouse",
+      name: "The Penthouse",
+      price: 950,
+      image: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=2670&auto=format&fit=crop",
+      description: "The ultimate luxury experience with panoramic mountain views.",
+    },
   ],
   images: [
     "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
@@ -65,7 +82,7 @@ const Index = () => {
         </div>
         <aside className="lg:col-span-1">
           <div className="sticky top-8">
-            <BookingWidget pricePerNight={villaData.pricePerNight} rooms={villaData.rooms} />
+            <BookingWidget rooms={villaData.rooms} />
           </div>
         </aside>
       </main>

@@ -11,34 +11,25 @@ import { showError, showSuccess } from "@/utils/toast";
 import { Label } from "./ui/label";
 import { ArrowLeft } from "lucide-react";
 import { Badge } from "./ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-interface Room {
-  id: string;
-  name: string;
-}
+import { RoomSelector, Room } from "./RoomSelector";
 
 interface BookingWidgetProps {
-  pricePerNight: number;
   rooms: Room[];
 }
 
-export const BookingWidget = ({ pricePerNight, rooms }: BookingWidgetProps) => {
+export const BookingWidget = ({ rooms }: BookingWidgetProps) => {
   const [step, setStep] = useState(1);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState(1);
-  const [selectedRoom, setSelectedRoom] = useState<string | undefined>(
+  const [selectedRoomId, setSelectedRoomId] = useState<string | undefined>(
     rooms?.[0]?.id
   );
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [bookingId, setBookingId] = useState<string | null>(null);
+
+  const selectedRoom = rooms.find((r) => r.id === selectedRoomId);
+  const pricePerNight = selectedRoom?.price || 0;
 
   const numberOfNights =
     dateRange?.from && dateRange?.to
@@ -51,6 +42,10 @@ export const BookingWidget = ({ pricePerNight, rooms }: BookingWidgetProps) => {
 
   const handleNextStep = () => {
     if (step === 1) {
+      if (!selectedRoomId) {
+        showError("Please select a room type.");
+        return;
+      }
       if (!dateRange?.from || !dateRange?.to) {
         showError("Please select a check-in and check-out date.");
         return;
@@ -81,7 +76,7 @@ export const BookingWidget = ({ pricePerNight, rooms }: BookingWidgetProps) => {
     setStep(1);
     setDateRange(undefined);
     setGuests(1);
-    setSelectedRoom(rooms?.[0]?.id);
+    setSelectedRoomId(rooms?.[0]?.id);
     setName("");
     setEmail("");
     setBookingId(null);
@@ -91,18 +86,23 @@ export const BookingWidget = ({ pricePerNight, rooms }: BookingWidgetProps) => {
     switch (step) {
       case 1:
         return (
-          <div className="grid gap-4">
-            <Calendar
-              mode="range"
-              selected={dateRange}
-              onSelect={setDateRange}
-              className="rounded-md border"
-              numberOfMonths={1}
-              disabled={(date) =>
-                date < new Date(new Date().setDate(new Date().getDate() - 1))
-              }
+          <div className="grid gap-6">
+            <RoomSelector
+              rooms={rooms}
+              selectedRoomId={selectedRoomId}
+              onSelectRoom={setSelectedRoomId}
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4">
+              <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={setDateRange}
+                className="rounded-md border"
+                numberOfMonths={1}
+                disabled={(date) =>
+                  date < new Date(new Date().setDate(new Date().getDate() - 1))
+                }
+              />
               <div>
                 <Label
                   htmlFor="guests"
@@ -119,37 +119,17 @@ export const BookingWidget = ({ pricePerNight, rooms }: BookingWidgetProps) => {
                   placeholder="Number of guests"
                 />
               </div>
-              <div>
-                <Label
-                  htmlFor="room"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Room Type
-                </Label>
-                <Select onValueChange={setSelectedRoom} defaultValue={selectedRoom}>
-                  <SelectTrigger id="room">
-                    <SelectValue placeholder="Select a room" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {rooms.map((room) => (
-                      <SelectItem key={room.id} value={room.id}>
-                        {room.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
             <Button
               onClick={handleNextStep}
               className="w-full"
               size="lg"
-              disabled={!dateRange?.from || !dateRange?.to}
+              disabled={!dateRange?.from || !dateRange?.to || !selectedRoomId}
             >
               Request to Book
             </Button>
-            {numberOfNights > 0 && (
-              <div className="space-y-2 text-sm mt-4">
+            {numberOfNights > 0 && pricePerNight > 0 && (
+              <div className="space-y-2 text-sm mt-2">
                 <p className="text-center text-gray-500 mb-2">
                   You won't be charged yet
                 </p>
@@ -201,7 +181,7 @@ export const BookingWidget = ({ pricePerNight, rooms }: BookingWidgetProps) => {
           </div>
         );
       case 3:
-        const roomName = rooms.find((r) => r.id === selectedRoom)?.name;
+        const roomName = rooms.find((r) => r.id === selectedRoomId)?.name;
         return (
           <div className="text-center grid gap-6">
             <div className="space-y-2">
@@ -280,15 +260,18 @@ export const BookingWidget = ({ pricePerNight, rooms }: BookingWidgetProps) => {
   const getTitle = () => {
     switch (step) {
       case 1:
-        return (
-          <>
-            <span className="text-2xl font-bold">${pricePerNight}</span>
-            <span className="text-base font-normal text-gray-600">
-              {" "}
-              / night
-            </span>
-          </>
-        );
+        if (selectedRoom) {
+          return (
+            <>
+              <span className="text-2xl font-bold">${selectedRoom.price}</span>
+              <span className="text-base font-normal text-gray-600">
+                {" "}
+                / night
+              </span>
+            </>
+          );
+        }
+        return "Select your room";
       case 2:
         return "Review and Confirm";
       case 3:
