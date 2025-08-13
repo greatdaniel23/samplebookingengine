@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -40,11 +40,41 @@ const BookingPage = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState(1);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState<{ id: number | null }>({ id: null });
 
   const { data: room, isLoading, isError } = useQuery({
     queryKey: ["room", roomId],
     queryFn: () => fetchRoomData(roomId!),
     enabled: !!roomId,
+  });
+
+  const { mutate: confirmBooking, isPending: isBooking } = useMutation({
+    mutationFn: async () => {
+      if (!dateRange?.from || !dateRange?.to || !room) {
+        throw new Error("Missing booking information.");
+      }
+      const { data, error } = await supabase.from("bookings").insert({
+        room_id: room.id,
+        start_date: format(dateRange.from, "yyyy-MM-dd"),
+        end_date: format(dateRange.to, "yyyy-MM-dd"),
+        guests: guests,
+        total_price: totalPrice,
+      }).select().single();
+
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+      return data;
+    },
+    onSuccess: (data) => {
+      showSuccess("Booking confirmed!");
+      setBookingDetails({ id: data.id });
+      setIsConfirmed(true);
+      window.scrollTo(0, 0);
+    },
+    onError: (error) => {
+      showError(`Booking failed: ${error.message}`);
+    },
   });
 
   if (isLoading) {
@@ -77,9 +107,7 @@ const BookingPage = () => {
       showError(`This room can only accommodate up to ${room.occupancy} guests.`);
       return;
     }
-    setIsConfirmed(true);
-    showSuccess("Booking confirmed!");
-    window.scrollTo(0, 0);
+    confirmBooking();
   };
 
   if (isConfirmed) {
@@ -91,7 +119,7 @@ const BookingPage = () => {
           <Card>
             <CardHeader>
               <CardTitle>Your Reservation</CardTitle>
-              <CardDescription>Booking ID: BK-{Math.floor(1000 + Math.random() * 9000)}</CardDescription>
+              <CardDescription>Booking ID: BK-{bookingDetails.id}</CardDescription>
             </CardHeader>
             <CardContent className="text-left space-y-4">
               <div className="flex justify-between">
@@ -215,8 +243,8 @@ const BookingPage = () => {
                     <span>Total</span>
                     <span>${totalPrice.toFixed(2)}</span>
                   </div>
-                  <Button onClick={handleConfirmBooking} className="w-full mt-4" size="lg">
-                    Confirm and Book
+                  <Button onClick={handleConfirmBooking} className="w-full mt-4" size="lg" disabled={isBooking}>
+                    {isBooking ? "Booking..." : "Confirm and Book"}
                   </Button>
                 </div>
               ) : (
