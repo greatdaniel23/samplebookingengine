@@ -53,12 +53,10 @@ export const BookingWidget = ({ pricePerNight }: BookingWidgetProps) => {
         showError("Please enter a valid email address.");
         return;
       }
-      setStep(3);
-    } else if (step === 3) {
-      // Mock payment processing
+      // Mock booking creation
       const newBookingId = Math.floor(1000 + Math.random() * 9000).toString();
       setBookingId(newBookingId);
-      setStep(4);
+      setStep(3);
       showSuccess("Booking confirmed!");
     }
   };
@@ -136,36 +134,11 @@ export const BookingWidget = ({ pricePerNight }: BookingWidgetProps) => {
               </div>
             </div>
             <Button onClick={handleNextStep} className="w-full" size="lg">
-              Confirm and Continue
+              Confirm and Book
             </Button>
           </div>
         );
       case 3:
-        return (
-          <div className="grid gap-4">
-            <p className="text-sm text-gray-500">Enter your payment information to complete the booking.</p>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="card">Card Number</Label>
-                <Input id="card" placeholder="0000 0000 0000 0000" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="expiry">Expiry</Label>
-                  <Input id="expiry" placeholder="MM/YY" />
-                </div>
-                <div>
-                  <Label htmlFor="cvc">CVC</Label>
-                  <Input id="cvc" placeholder="123" />
-                </div>
-              </div>
-            </div>
-            <Button onClick={handleNextStep} className="w-full" size="lg">
-              Confirm Booking
-            </Button>
-          </div>
-        );
-      case 4:
         return (
           <div className="text-center grid gap-6">
             <div className="space-y-2">
@@ -225,8 +198,6 @@ export const BookingWidget = ({ pricePerNight }: BookingWidgetProps) => {
       case 2:
         return "Review and Confirm";
       case 3:
-        return "Complete Payment";
-      case 4:
         return "Confirmation";
       default:
         return "";
