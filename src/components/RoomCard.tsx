@@ -3,13 +3,19 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Room } from "@/types";
+import { useNavigate } from "react-router-dom";
 
 interface RoomCardProps {
   room: Room;
-  onBook: (room: Room) => void;
 }
 
-export const RoomCard = ({ room, onBook }: RoomCardProps) => {
+export const RoomCard = ({ room }: RoomCardProps) => {
+  const navigate = useNavigate();
+
+  const handleBook = () => {
+    navigate(`/book/${room.id}`);
+  };
+
   return (
     <Card className="overflow-hidden flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="p-0">
@@ -24,7 +30,7 @@ export const RoomCard = ({ room, onBook }: RoomCardProps) => {
           <p className="text-xl font-bold">${room.price}</p>
           <p className="text-xs text-muted-foreground">/ night</p>
         </div>
-        <Button onClick={() => onBook(room)} size="lg">Book Now</Button>
+        <Button onClick={handleBook} size="lg">Book Now</Button>
       </CardFooter>
     </Card>
   );

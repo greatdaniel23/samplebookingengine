@@ -1,10 +1,7 @@
-import { useState } from "react";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { Amenities } from "@/components/Amenities";
 import { Star } from "lucide-react";
 import { RoomCard } from "@/components/RoomCard";
-import { BookingModal } from "@/components/BookingModal";
-import { Room } from "@/types";
 
 const villaData = {
   name: "Serene Mountain Villa",
@@ -54,16 +51,6 @@ const villaData = {
 };
 
 const Index = () => {
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-
-  const handleBookClick = (room: Room) => {
-    setSelectedRoom(room);
-  };
-
-  const handleCloseModal = () => {
-    setSelectedRoom(null);
-  };
-
   return (
     <div className="bg-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -90,7 +77,7 @@ const Index = () => {
           <p className="text-center text-muted-foreground mb-10">Choose from our selection of luxurious rooms and suites.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {villaData.rooms.map((room) => (
-              <RoomCard key={room.id} room={room} onBook={handleBookClick} />
+              <RoomCard key={room.id} room={room} />
             ))}
           </div>
         </div>
@@ -110,12 +97,6 @@ const Index = () => {
               </div>
           </div>
         </div>
-
-        <BookingModal
-          isOpen={!!selectedRoom}
-          onClose={handleCloseModal}
-          room={selectedRoom}
-        />
       </div>
     </div>
   );
