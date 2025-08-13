@@ -10,11 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { DateRange } from "react-day-picker";
 import { differenceInDays, format } from "date-fns";
 import { showError, showSuccess } from "@/utils/toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Ruler, BedDouble, Users, CheckCircle2 } from "lucide-react";
 import NotFound from "./NotFound";
+import { Room } from "@/types";
 
 // In a real app, this data would come from a global state or an API call
-const villaData = {
+const villaData: { rooms: Room[] } = {
   rooms: [
     {
       id: "standard",
@@ -22,6 +23,10 @@ const villaData = {
       price: 450,
       image: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=2670&auto=format&fit=crop",
       description: "A cozy room with all the essentials for a comfortable stay, perfect for solo travelers or couples.",
+      size: "350 sq ft",
+      beds: "1 Queen Bed",
+      occupancy: 2,
+      features: ["Ensuite Bathroom", "Flat-screen TV", "Mini-fridge"],
     },
     {
       id: "deluxe",
@@ -29,6 +34,10 @@ const villaData = {
       price: 650,
       image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2670&auto=format&fit=crop",
       description: "A spacious suite with a private balcony and stunning mountain views. Ideal for a luxurious escape.",
+      size: "550 sq ft",
+      beds: "1 King Bed",
+      occupancy: 2,
+      features: ["Private Balcony", "Mountain View", "Soaking Tub", "Work Desk"],
     },
     {
       id: "penthouse",
@@ -36,6 +45,10 @@ const villaData = {
       price: 950,
       image: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=2670&auto=format&fit=crop",
       description: "The ultimate luxury experience with panoramic views, a private jacuzzi, and exclusive amenities.",
+      size: "1200 sq ft",
+      beds: "1 King Bed, 1 Sofa Bed",
+      occupancy: 4,
+      features: ["Panoramic Views", "Private Jacuzzi", "Kitchenette", "Living Area"],
     },
   ],
 };
@@ -69,6 +82,10 @@ const BookingPage = () => {
     }
     if (guests <= 0) {
       showError("Please enter at least one guest.");
+      return;
+    }
+    if (guests > room.occupancy) {
+      showError(`This room can only accommodate up to ${room.occupancy} guests.`);
       return;
     }
     setIsConfirmed(true);
@@ -128,7 +145,36 @@ const BookingPage = () => {
             </CardHeader>
             <CardContent className="p-6">
               <h1 className="text-3xl font-bold mb-2">{room.name}</h1>
-              <p className="text-lg text-muted-foreground">{room.description}</p>
+              <p className="text-lg text-muted-foreground mb-6">{room.description}</p>
+              
+              <div className="border-t pt-6">
+                <h2 className="text-2xl font-semibold mb-4">Room Details</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-muted-foreground">
+                  <div className="flex items-center space-x-3">
+                    <Ruler className="w-5 h-5 text-primary" />
+                    <span>{room.size}</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <BedDouble className="w-5 h-5 text-primary" />
+                    <span>{room.beds}</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Users className="w-5 h-5 text-primary" />
+                    <span>Up to {room.occupancy} guests</span>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <h3 className="text-xl font-semibold mb-3">Key Features</h3>
+                  <ul className="space-y-2">
+                    {room.features.map((feature) => (
+                      <li key={feature} className="flex items-center space-x-3">
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -155,6 +201,7 @@ const BookingPage = () => {
                     id="guests"
                     type="number"
                     min="1"
+                    max={room.occupancy}
                     value={guests}
                     onChange={(e) => setGuests(Number(e.target.value))}
                     className="mt-2"

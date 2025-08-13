@@ -4,4 +4,8 @@ export interface Room {
   price: number;
   image: string;
   description: string;
+  size: string;
+  beds: string;
+  occupancy: number;
+  features: string[];
 }

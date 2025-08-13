@@ -2,8 +2,18 @@ import { PhotoGallery } from "@/components/PhotoGallery";
 import { Amenities } from "@/components/Amenities";
 import { Star } from "lucide-react";
 import { RoomCard } from "@/components/RoomCard";
+import { Room } from "@/types";
 
-const villaData = {
+const villaData: {
+  name: string;
+  location: string;
+  description: string;
+  rating: number;
+  reviews: number;
+  rooms: Room[];
+  images: string[];
+  amenities: { name: string; icon: any }[];
+} = {
   name: "Serene Mountain Villa",
   location: "Aspen, Colorado",
   description:
@@ -17,6 +27,10 @@ const villaData = {
       price: 450,
       image: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=2670&auto=format&fit=crop",
       description: "A cozy room with all the essentials for a comfortable stay, perfect for solo travelers or couples.",
+      size: "350 sq ft",
+      beds: "1 Queen Bed",
+      occupancy: 2,
+      features: ["Ensuite Bathroom", "Flat-screen TV", "Mini-fridge"],
     },
     {
       id: "deluxe",
@@ -24,6 +38,10 @@ const villaData = {
       price: 650,
       image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2670&auto=format&fit=crop",
       description: "A spacious suite with a private balcony and stunning mountain views. Ideal for a luxurious escape.",
+      size: "550 sq ft",
+      beds: "1 King Bed",
+      occupancy: 2,
+      features: ["Private Balcony", "Mountain View", "Soaking Tub", "Work Desk"],
     },
     {
       id: "penthouse",
@@ -31,6 +49,10 @@ const villaData = {
       price: 950,
       image: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=2670&auto=format&fit=crop",
       description: "The ultimate luxury experience with panoramic views, a private jacuzzi, and exclusive amenities.",
+      size: "1200 sq ft",
+      beds: "1 King Bed, 1 Sofa Bed",
+      occupancy: 4,
+      features: ["Panoramic Views", "Private Jacuzzi", "Kitchenette", "Living Area"],
     },
   ],
   images: [
