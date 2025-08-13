@@ -10,6 +10,11 @@ const villaData = {
   pricePerNight: 450,
   rating: 4.9,
   reviews: 120,
+  rooms: [
+    { id: "standard", name: "Standard Room" },
+    { id: "deluxe", name: "Deluxe Suite" },
+    { id: "penthouse", name: "Penthouse" },
+  ],
   images: [
     "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     "https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=2671&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
@@ -49,7 +54,7 @@ const Index = () => {
         </div>
         <aside className="lg:col-span-1">
           <div className="sticky top-8">
-            <BookingWidget pricePerNight={villaData.pricePerNight} />
+            <BookingWidget pricePerNight={villaData.pricePerNight} rooms={villaData.rooms} />
           </div>
         </aside>
       </main>
