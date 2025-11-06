@@ -13,18 +13,45 @@ import { showError, showSuccess } from "@/utils/toast";
 import { ArrowLeft, Ruler, BedDouble, Users, CheckCircle2 } from "lucide-react";
 import NotFound from "./NotFound";
 import { villaData } from "@/data/dummy";
+import { useBookings } from "@/context/BookingContext";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Booking, GuestInfo } from "@/types";
 
 const BookingPage = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
 
   const room = villaData.rooms.find((r) => r.id === roomId);
+  const { addBooking, getBookingsForRoom } = useBookings();
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState(1);
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [bookingDetails, setBookingDetails] = useState<{ id: number | null }>({ id: null });
+  const [bookingDetails, setBookingDetails] = useState<{ id: number | null; reference?: string }>({ id: null });
   const [isBooking, setIsBooking] = useState(false);
+
+  // Build disabled dates from existing bookings for this room
+  const existingBookings = getBookingsForRoom(roomId || "");
+  const isDateBooked = (date: Date) => {
+    return existingBookings.some((b) => {
+      const from = new Date(b.from);
+      const to = new Date(b.to);
+      // Treat booking as occupying nights from 'from' up to but excluding 'to' departure day
+      return date >= from && date < to;
+    });
+  };
+
+  // User Info Form Schema
+  const schema = z.object({
+    firstName: z.string().min(2, "Min 2 chars"),
+    lastName: z.string().min(2, "Min 2 chars"),
+    email: z.string().email("Invalid email"),
+    phone: z.string().optional(),
+  });
+  const form = useForm<GuestInfo>({ resolver: zodResolver(schema), defaultValues: { firstName: "", lastName: "", email: "" } });
 
   if (!room) {
     return <NotFound />;
@@ -39,7 +66,7 @@ const BookingPage = () => {
   const serviceFee = basePrice * 0.1;
   const totalPrice = basePrice + serviceFee;
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = (data?: GuestInfo) => {
     if (!dateRange?.from || !dateRange?.to) {
       showError("Please select your check-in and check-out dates.");
       return;
@@ -52,16 +79,35 @@ const BookingPage = () => {
       showError(`This room can only accommodate up to ${room.occupancy} guests.`);
       return;
     }
+    if (!data) {
+      // trigger form submit manually if data missing
+      form.handleSubmit((values) => handleConfirmBooking(values))();
+      return;
+    }
     
     setIsBooking(true);
     // Simulate a network request
     setTimeout(() => {
       const bookingId = Math.floor(Math.random() * 10000);
-      setBookingDetails({ id: bookingId });
+      const reference = `BK-${bookingId}`;
+      setBookingDetails({ id: bookingId, reference });
       setIsConfirmed(true);
       setIsBooking(false);
       showSuccess("Booking confirmed!");
       window.scrollTo(0, 0);
+
+      const booking: Booking = {
+        id: bookingId,
+        reference,
+        roomId: room.id,
+        from: dateRange.from.toISOString(),
+        to: dateRange.to.toISOString(),
+        guests,
+        user: data,
+        total: totalPrice,
+        createdAt: new Date().toISOString(),
+      };
+      addBooking(booking);
     }, 1500);
   };
 
@@ -74,12 +120,20 @@ const BookingPage = () => {
           <Card>
             <CardHeader>
               <CardTitle>Your Reservation</CardTitle>
-              <CardDescription>Booking ID: BK-{bookingDetails.id}</CardDescription>
+              <CardDescription>Booking ID: {bookingDetails.reference}</CardDescription>
             </CardHeader>
             <CardContent className="text-left space-y-4">
               <div className="flex justify-between">
                 <span className="font-medium">Room:</span>
                 <span>{room.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Guest:</span>
+                <span>{form.getValues("firstName")} {form.getValues("lastName")}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Email:</span>
+                <span>{form.getValues("email")}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Check-in:</span>
@@ -155,7 +209,7 @@ const BookingPage = () => {
           <Card className="sticky top-8">
             <CardHeader>
               <CardTitle className="text-2xl">Book your stay</CardTitle>
-              <CardDescription>Select your dates to see the price.</CardDescription>
+              <CardDescription>Enter your details & select dates.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4">
@@ -165,7 +219,11 @@ const BookingPage = () => {
                   onSelect={setDateRange}
                   className="rounded-md border"
                   numberOfMonths={1}
-                  disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                  disabled={(date) => {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    return date < yesterday || isDateBooked(date);
+                  }}
                 />
                 <div>
                   <Label htmlFor="guests" className="text-base">Guests</Label>
@@ -179,6 +237,46 @@ const BookingPage = () => {
                     className="mt-2"
                   />
                 </div>
+                <Form {...form}>
+                  <div className="space-y-4">
+                    <FormField name="firstName" control={form.control} render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField name="lastName" control={form.control} render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField name="email" control={form.control} render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="john@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField name="phone" control={form.control} render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone (optional)</FormLabel>
+                        <FormControl>
+                          <Input type="tel" placeholder="+1 555 123 4567" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                </Form>
               </div>
 
               {numberOfNights > 0 ? (
@@ -198,7 +296,7 @@ const BookingPage = () => {
                     <span>Total</span>
                     <span>${totalPrice.toFixed(2)}</span>
                   </div>
-                  <Button onClick={handleConfirmBooking} className="w-full mt-4" size="lg" disabled={isBooking}>
+                  <Button onClick={() => handleConfirmBooking(form.getValues())} className="w-full mt-4" size="lg" disabled={isBooking}>
                     {isBooking ? "Booking..." : "Confirm and Book"}
                   </Button>
                 </div>
