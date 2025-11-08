@@ -1,7 +1,40 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useVillaInfo } from '@/hooks/useVillaInfo';
 
 const Footer = () => {
+  const { villaInfo } = useVillaInfo();
+
+  // Create address display with fallback
+  const getAddress = () => {
+    if (!villaInfo) return "123 Luxury Avenue";
+    return villaInfo.address || "123 Luxury Avenue";
+  };
+
+  const getLocation = () => {
+    if (!villaInfo) return "Aspen, Colorado";
+    
+    // Use city, state, country if available, otherwise use location field
+    if (villaInfo.city && villaInfo.state && villaInfo.country) {
+      return `${villaInfo.city}, ${villaInfo.state}, ${villaInfo.country}`;
+    } else if (villaInfo.city && villaInfo.country) {
+      return `${villaInfo.city}, ${villaInfo.country}`;
+    } else if (villaInfo.location) {
+      return villaInfo.location;
+    }
+    return "Aspen, Colorado";
+  };
+
+  const getPhone = () => {
+    if (!villaInfo) return "+1 (555) 123-4567";
+    return villaInfo.phone || "+1 (555) 123-4567";
+  };
+
+  const getEmail = () => {
+    if (!villaInfo) return "info@sereneretreat.com";
+    return villaInfo.email || "info@sereneretreat.com";
+  };
+
   return (
     <footer className="bg-hotel-navy text-white py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -10,10 +43,10 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
             <div className="space-y-2 text-hotel-cream">
-              <p>123 Luxury Avenue</p>
-              <p>Aspen, Colorado</p>
-              <p>Phone: +1 (555) 123-4567</p>
-              <p>Email: info@sereneretreat.com</p>
+              <p>{getAddress()}</p>
+              <p>{getLocation()}</p>
+              <p>Phone: {getPhone()}</p>
+              <p>Email: {getEmail()}</p>
             </div>
           </div>
 

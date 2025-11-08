@@ -220,6 +220,370 @@ const Admin = () => {
                 </div>
               </div>
 
+              {/* Contact Information */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone Number
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.phone}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.email}</p>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Website
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="url"
+                        value={formData.website}
+                        onChange={(e) => handleInputChange('website', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.website}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Address Information */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Address Information</h3>
+                <div className="grid grid-cols-1 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Street Address
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={formData.address}
+                        onChange={(e) => handleInputChange('address', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.address}</p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        City
+                      </label>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={formData.city}
+                          onChange={(e) => handleInputChange('city', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                        />
+                      ) : (
+                        <p className="text-gray-900 py-2">{formData.city}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        State/Province
+                      </label>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={formData.state}
+                          onChange={(e) => handleInputChange('state', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                        />
+                      ) : (
+                        <p className="text-gray-900 py-2">{formData.state}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        ZIP/Postal Code
+                      </label>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={formData.zipCode}
+                          onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                        />
+                      ) : (
+                        <p className="text-gray-900 py-2">{formData.zipCode}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Country
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={formData.country}
+                        onChange={(e) => handleInputChange('country', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.country}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Villa Details */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Villa Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Max Guests
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        min="1"
+                        value={formData.maxGuests}
+                        onChange={(e) => handleInputChange('maxGuests', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.maxGuests}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Bedrooms
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        min="1"
+                        value={formData.bedrooms}
+                        onChange={(e) => handleInputChange('bedrooms', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.bedrooms}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Bathrooms
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        min="1"
+                        value={formData.bathrooms}
+                        onChange={(e) => handleInputChange('bathrooms', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.bathrooms}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Price per Night
+                    </label>
+                    {isEditing ? (
+                      <div className="flex">
+                        <select
+                          value={formData.currency}
+                          onChange={(e) => handleInputChange('currency', e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                        >
+                          <option value="USD">USD</option>
+                          <option value="EUR">EUR</option>
+                          <option value="GBP">GBP</option>
+                          <option value="IDR">IDR</option>
+                        </select>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.pricePerNight}
+                          onChange={(e) => handleInputChange('pricePerNight', parseFloat(e.target.value))}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.currency} {formData.pricePerNight}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Check-in Time
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="time"
+                        value={formData.checkInTime}
+                        onChange={(e) => handleInputChange('checkInTime', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.checkInTime}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Check-out Time
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="time"
+                        value={formData.checkOutTime}
+                        onChange={(e) => handleInputChange('checkOutTime', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.checkOutTime}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Policies */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Policies & Rules</h3>
+                <div className="grid grid-cols-1 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Cancellation Policy
+                    </label>
+                    {isEditing ? (
+                      <textarea
+                        value={formData.cancellationPolicy}
+                        onChange={(e) => handleInputChange('cancellationPolicy', e.target.value)}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.cancellationPolicy}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      House Rules
+                    </label>
+                    {isEditing ? (
+                      <textarea
+                        value={formData.houseRules}
+                        onChange={(e) => handleInputChange('houseRules', e.target.value)}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.houseRules}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Media */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Social Media</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Facebook URL
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="url"
+                        value={formData.socialMedia?.facebook || ''}
+                        onChange={(e) => handleInputChange('socialMedia', { 
+                          ...formData.socialMedia, 
+                          facebook: e.target.value 
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.socialMedia?.facebook || 'Not set'}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Instagram URL
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="url"
+                        value={formData.socialMedia?.instagram || ''}
+                        onChange={(e) => handleInputChange('socialMedia', { 
+                          ...formData.socialMedia, 
+                          instagram: e.target.value 
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.socialMedia?.instagram || 'Not set'}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Twitter URL
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="url"
+                        value={formData.socialMedia?.twitter || ''}
+                        onChange={(e) => handleInputChange('socialMedia', { 
+                          ...formData.socialMedia, 
+                          twitter: e.target.value 
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
+                      />
+                    ) : (
+                      <p className="text-gray-900 py-2">{formData.socialMedia?.twitter || 'Not set'}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Images */}
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Photo Gallery</h3>

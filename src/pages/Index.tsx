@@ -7,13 +7,33 @@ import { usePackages } from "@/hooks/usePackages";
 import { useVillaInfo } from "@/hooks/useVillaInfo";
 import IndexSkeleton from "@/components/IndexSkeleton";
 import Footer from "@/components/Footer";
+import type { Villa } from "@/types";
 
 const Index = () => {
   const { packages, loading: packagesLoading, error: packagesError } = usePackages();
-  const { villaInfo, loading: villaLoading, error: villaError } = useVillaInfo();
+  const { villaInfo, loading: villaLoading, error: villaError, refetch } = useVillaInfo();
+
+  // Normalize villa data to ensure compatibility between VillaInfo and Villa types
+  const normalizeVillaData = (data: any): Villa => {
+    if (!data) return villaData;
+    
+    return {
+      id: data.id || villaData.id,
+      name: data.name || villaData.name,
+      location: data.location || villaData.location,
+      description: data.description || villaData.description,
+      rating: data.rating || villaData.rating,
+      reviews: data.reviews || villaData.reviews,
+      images: data.images || villaData.images,
+      amenities: data.amenities || villaData.amenities,
+      rooms: data.rooms || villaData.rooms, // VillaInfo doesn't have rooms, so use static data rooms
+    };
+  };
 
   // Use dynamic villa info if available, fallback to static data
-  const currentVillaData = villaInfo || villaData;
+  const currentVillaData = normalizeVillaData(villaInfo);
+
+  // Use dynamic villa info with proper fallback handling
 
   if (packagesLoading || villaLoading) {
     return <IndexSkeleton />;
@@ -43,6 +63,7 @@ const Index = () => {
             <span>·</span>
             <a href="#" className="underline hover:text-hotel-gold transition-colors">{currentVillaData.location}</a>
           </div>
+
         </header>
 
         <div className="my-8">
