@@ -4,6 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Room } from "@/types";
 import { useNavigate } from "react-router-dom";
+import { getRoomImages, getImageProps } from "@/utils/images";
 
 interface RoomCardProps {
   room: Room;
@@ -11,6 +12,13 @@ interface RoomCardProps {
 
 export const RoomCard = ({ room }: RoomCardProps) => {
   const navigate = useNavigate();
+  
+  // Get room images - use room.id for image folder structure
+  const roomImages = getRoomImages(room.id);
+  
+  // Fallback to API image_url if exists, otherwise use our structured images
+  const imageUrl = room.image_url || roomImages.main;
+  const imageProps = getImageProps(imageUrl, room.name);
 
   const handleBook = () => {
     navigate(`/book/${room.id}`);
@@ -19,7 +27,15 @@ export const RoomCard = ({ room }: RoomCardProps) => {
   return (
     <Card className="overflow-hidden flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="p-0">
-        <img src={room.image_url} alt={room.name} className="w-full h-56 object-cover" />
+        <img 
+          {...imageProps}
+          className="w-full h-56 object-cover"
+          onError={(e) => {
+            // Fallback to placeholder if image fails to load
+            const target = e.target as HTMLImageElement;
+            target.src = '/images/ui/placeholder.jpg';
+          }}
+        />
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <CardTitle className="text-xl mb-2">{room.name}</CardTitle>

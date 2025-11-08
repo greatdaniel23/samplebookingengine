@@ -47,11 +47,31 @@ CREATE TABLE IF NOT EXISTS admin_users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Villa Information table
+CREATE TABLE IF NOT EXISTS villa_info (
+    id INT PRIMARY KEY DEFAULT 1,
+    name VARCHAR(255) NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    description TEXT,
+    rating DECIMAL(2,1) DEFAULT 4.9,
+    reviews INT DEFAULT 0,
+    images JSON,
+    amenities JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 -- Insert sample rooms
 INSERT INTO rooms (id, name, type, price, capacity, description, size, beds, features, amenities, images) VALUES
-('villa-deluxe', 'Villa Deluxe', 'Deluxe Villa', 150.00, 4, 'Luxurious villa with stunning ocean views', '45 sqm', '1 King Bed', '["Ocean View", "Private Balcony", "Air Conditioning", "Mini Bar"]', '["WiFi", "TV", "Safe", "Minibar"]', '["https://example.com/villa1.jpg"]'),
-('ocean-suite', 'Ocean Suite', 'Suite', 200.00, 2, 'Elegant suite overlooking the ocean', '55 sqm', '1 King Bed', '["Ocean View", "Living Area", "Kitchenette", "Jacuzzi"]', '["WiFi", "TV", "Safe", "Kitchen"]', '["https://example.com/suite1.jpg"]'),
-('garden-room', 'Garden Room', 'Standard', 100.00, 3, 'Comfortable room with garden view', '35 sqm', '1 Queen Bed + 1 Single', '["Garden View", "Air Conditioning", "Work Desk"]', '["WiFi", "TV", "Safe"]', '["https://example.com/room1.jpg"]');
+('deluxe-suite', 'Deluxe Suite', 'Suite', 250.00, 4, 'Spacious luxury suite with panoramic city views, separate living area, and premium amenities. Perfect for special occasions and extended stays.', '65 sqm', '1 King Bed + Sofa Bed', '["City View", "Living Area", "Premium Bathroom", "Work Desk", "Mini Bar"]', '["WiFi", "TV", "Air Conditioning", "Minibar", "Balcony"]', '[]'),
+
+('standard-room', 'Standard Room', 'Standard', 120.00, 2, 'Comfortable and well-appointed room with modern amenities. Great value for business and leisure travelers.', '30 sqm', '1 Queen Bed', '["Garden View", "Work Desk", "Premium Bedding", "Ensuite Bathroom"]', '["WiFi", "TV", "Air Conditioning"]', '[]'),
+
+('family-room', 'Family Room', 'Family', 180.00, 6, 'Spacious family accommodation with separate sleeping areas. Ideal for families with children, featuring kid-friendly amenities.', '50 sqm', '1 King Bed + 2 Twin Beds', '["Family Friendly", "Separate Kids Area", "Large Bathroom", "Play Area", "Mini Fridge"]', '["WiFi", "TV", "Air Conditioning", "Minibar"]', '[]'),
+
+('master-suite', 'Master Suite', 'Presidential', 450.00, 4, 'Ultimate luxury accommodation with butler service, private terrace, and exclusive amenities. The pinnacle of hospitality excellence.', '95 sqm', '1 King Bed + Living Room', '["Ocean View", "Private Terrace", "Butler Service", "Jacuzzi", "Dining Area", "Premium Bar"]', '["WiFi", "TV", "Air Conditioning", "Spa", "Minibar", "Balcony"]', '[]'),
+
+('economy-room', 'Economy Room', 'Budget', 85.00, 2, 'Clean, comfortable, and affordable accommodation with essential amenities. Perfect for budget-conscious travelers.', '25 sqm', '1 Double Bed', '["Compact Design", "Essential Amenities", "Efficient Layout"]', '["WiFi", "TV"]', '[]');
 
 -- Insert admin user (password: admin123)
 INSERT INTO admin_users (username, password_hash, email, role) VALUES
