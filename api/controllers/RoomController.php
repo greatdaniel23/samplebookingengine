@@ -11,7 +11,6 @@ class RoomController {
 
     public function __construct() {
         $this->room = new Room();
-        enableCORS();
     }
 
     public function getAll() {

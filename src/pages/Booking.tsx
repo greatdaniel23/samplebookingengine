@@ -27,6 +27,11 @@ const BookingPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { addBooking, getBookingsForRoom } = useBookings();
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState<{ id: number | null; reference?: string }>({ id: null });
+  const [isBooking, setIsBooking] = useState(false);
+  const [finalBookingData, setFinalBookingData] = useState<any>(null);
+  const [apiReachable, setApiReachable] = useState<boolean | null>(null); // null = unchecked
 
   useEffect(() => {
     const fetchRoom = async () => {
@@ -45,35 +50,6 @@ const BookingPage = () => {
     };
     fetchRoom();
   }, [roomId]);
-
-  const [isConfirmed, setIsConfirmed] = useState(false);
-  const [bookingDetails, setBookingDetails] = useState<{ id: number | null; reference?: string }>({ id: null });
-  const [isBooking, setIsBooking] = useState(false);
-  const [finalBookingData, setFinalBookingData] = useState<any>(null);
-  const [apiReachable, setApiReachable] = useState<boolean | null>(null); // null = unchecked
-
-  // Build disabled dates from existing bookings for this room
-  const existingBookings = getBookingsForRoom(roomId || "");
-  const isDateBooked = (date: Date) => {
-    return existingBookings.some((b) => {
-      const from = new Date(b.from);
-      const to = new Date(b.to);
-      // Treat booking as occupying nights from 'from' up to but excluding 'to' departure day
-      return date >= from && date < to;
-    });
-  };
-
-  if (loading) {
-    return <BookingSkeleton />;
-  }
-
-  if (error) {
-    return <div className="text-center py-10 text-red-500">{error}</div>;
-  }
-
-  if (!room) {
-    return <NotFound />;
-  }
 
   // Attempt sync of any offline bookings on mount
   useEffect(() => {
@@ -110,6 +86,29 @@ const BookingPage = () => {
       }
     })();
   }, []);
+
+  // Build disabled dates from existing bookings for this room
+  const existingBookings = getBookingsForRoom(roomId || "");
+  const isDateBooked = (date: Date) => {
+    return existingBookings.some((b) => {
+      const from = new Date(b.from);
+      const to = new Date(b.to);
+      // Treat booking as occupying nights from 'from' up to but excluding 'to' departure day
+      return date >= from && date < to;
+    });
+  };
+
+  if (loading) {
+    return <BookingSkeleton />;
+  }
+
+  if (error) {
+    return <div className="text-center py-10 text-red-500">{error}</div>;
+  }
+
+  if (!room) {
+    return <NotFound />;
+  }
 
   const handleBookingComplete = async (bookingData: {
     dateRange: DateRange;
@@ -319,7 +318,7 @@ const BookingPage = () => {
         <div className="lg:col-span-1">
           <Card>
             <CardHeader className="p-0">
-              <img src={room.image} alt={room.name} className="w-full h-[400px] object-cover rounded-t-lg" />
+              <img src={room.image_url} alt={room.name} className="w-full h-[400px] object-cover rounded-t-lg" />
             </CardHeader>
             <CardContent className="p-6">
               <h1 className="text-3xl font-bold mb-2">{room.name}</h1>
@@ -344,7 +343,7 @@ const BookingPage = () => {
                 <div className="mt-6">
                   <h3 className="text-xl font-semibold mb-3">Key Features</h3>
                   <ul className="space-y-2">
-                    {room.features.map((feature) => (
+                    {JSON.parse(room.features || '[]').map((feature: string) => (
                       <li key={feature} className="flex items-center space-x-3">
                         <CheckCircle2 className="w-5 h-5 text-green-600" />
                         <span>{feature}</span>

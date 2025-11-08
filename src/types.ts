@@ -1,13 +1,21 @@
 export interface Room {
   id: string;
   name: string;
-  price: number;
-  image: string;
+  price: string; // API returns price as string
+  image_url: string; // API uses image_url, not image
   description: string;
   size: string;
   beds: string;
   occupancy: number;
-  features: string[];
+  features: string; // API returns features as JSON string
+  // Additional fields from API
+  available?: number;
+  type?: string | null;
+  capacity?: number;
+  amenities?: string | null;
+  images?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Amenity {

@@ -11,8 +11,15 @@ export const useRooms = () => {
     const fetchRooms = async () => {
       try {
         const data = await ApiService.getRooms();
-        setRooms(data);
+        console.log('Fetched rooms data:', data); // Debug log
+        if (Array.isArray(data)) {
+          setRooms(data);
+        } else {
+          console.error('Rooms data is not an array:', data);
+          setError('Invalid data format received');
+        }
       } catch (err) {
+        console.error('Error in fetchRooms:', err);
         setError('Failed to fetch rooms');
       } finally {
         setLoading(false);

@@ -30,9 +30,9 @@ const env: AppPaths['env'] = import.meta.env.PROD ? 'production' : 'development'
 const PUBLIC_BASE = import.meta.env.VITE_PUBLIC_BASE || '/';
 
 // For local development under XAMPP the Apache document root might expose the project
-// at http://localhost/fontend-bookingengine-100/frontend-booking-engine/
+// at http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/
 // Adjust API_BASE if the PHP API lives in that same folder under /api.
-const DEFAULT_LOCAL_API = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine/api';
+const DEFAULT_LOCAL_API = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api';
 const API_BASE = import.meta.env.VITE_API_BASE || DEFAULT_LOCAL_API;
 
 // Optional admin panel route root (could be protected by auth in future)

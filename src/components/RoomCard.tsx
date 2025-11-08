@@ -19,7 +19,7 @@ export const RoomCard = ({ room }: RoomCardProps) => {
   return (
     <Card className="overflow-hidden flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="p-0">
-        <img src={room.image} alt={room.name} className="w-full h-56 object-cover" />
+        <img src={room.image_url} alt={room.name} className="w-full h-56 object-cover" />
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <CardTitle className="text-xl mb-2">{room.name}</CardTitle>
