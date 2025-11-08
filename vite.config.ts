@@ -9,7 +9,7 @@ export default defineConfig(() => ({
     port: 8080,
     proxy: {
       '/api': {
-        target: 'http://localhost:8001',
+        target: 'http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine',
         changeOrigin: true,
         secure: false,
         configure: (proxy, options) => {

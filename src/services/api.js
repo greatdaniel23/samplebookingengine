@@ -3,7 +3,7 @@
  * Replaces localStorage with REST API calls
  */
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api';
 const ADMIN_API_BASE_URL = 'http://localhost:8080/admin/api';
 
 class ApiService {
@@ -12,7 +12,8 @@ class ApiService {
     try {
       const response = await fetch(`${API_BASE_URL}/rooms`);
       if (!response.ok) throw new Error('Failed to fetch rooms');
-      return await response.json();
+      const result = await response.json();
+      return result.success ? result.data : [];
     } catch (error) {
       console.error('Error fetching rooms:', error);
       throw error;
@@ -23,7 +24,8 @@ class ApiService {
     try {
       const response = await fetch(`${API_BASE_URL}/rooms/${roomId}`);
       if (!response.ok) throw new Error('Failed to fetch room');
-      return await response.json();
+      const result = await response.json();
+      return result.success ? result.data : null;
     } catch (error) {
       console.error('Error fetching room:', error);
       throw error;
@@ -39,7 +41,8 @@ class ApiService {
       
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch bookings');
-      return await response.json();
+      const result = await response.json();
+      return result.success ? result.data : [];
     } catch (error) {
       console.error('Error fetching bookings:', error);
       throw error;
@@ -71,7 +74,8 @@ class ApiService {
         throw new Error(errorData.error || 'Failed to create booking');
       }
 
-      return await response.json();
+      const result = await response.json();
+      return result.success ? result.data : result;
     } catch (error) {
       console.error('Error creating booking:', error);
       throw error;
@@ -84,7 +88,8 @@ class ApiService {
         `${API_BASE_URL}/bookings/availability/${roomId}?check_in=${checkIn}&check_out=${checkOut}`
       );
       if (!response.ok) throw new Error('Failed to check availability');
-      return await response.json();
+      const result = await response.json();
+      return result.success ? result.data : result;
     } catch (error) {
       console.error('Error checking availability:', error);
       throw error;

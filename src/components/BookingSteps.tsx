@@ -151,7 +151,7 @@ export function BookingSteps({ room, disabledDates, onBookingComplete, isBooking
   const [errors, setErrors] = useState<Partial<Record<keyof GuestFormData, string>>>({});
 
   const nights = useMemo(() => (dateRange?.from && dateRange?.to ? differenceInDays(dateRange.to, dateRange.from) : 0), [dateRange]);
-  const basePrice = useMemo(() => nights * room.price, [nights, room.price]);
+  const basePrice = useMemo(() => nights * parseFloat(room.price), [nights, room.price]);
   const serviceFee = useMemo(() => basePrice * 0.1, [basePrice]);
   const totalPrice = basePrice + serviceFee;
 

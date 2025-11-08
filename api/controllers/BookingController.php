@@ -11,7 +11,6 @@ class BookingController {
 
     public function __construct() {
         $this->booking = new Booking();
-        enableCORS();
     }
 
     public function create() {

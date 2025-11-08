@@ -18,7 +18,7 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
 
 // Remove base path (adjust this based on your setup)
-$base_path = '/fontend-bookingengine-100/frontend-booking-engine/api';
+$base_path = '/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api';
 $path = str_replace($base_path, '', $path);
 
 // Remove leading slash
