@@ -5,7 +5,7 @@
 
 class Database {
     private $host = 'localhost';
-    private $db_name = 'booking_engine';
+    private $db_name = 'hotel_booking';
     private $username = 'root';
     private $password = '';
     private $conn;
