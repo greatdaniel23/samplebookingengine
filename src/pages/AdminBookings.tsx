@@ -1,5 +1,5 @@
 import { useBookings } from "@/context/BookingContext";
-import { villaData } from "@/data/dummy";
+import { useRooms } from "@/hooks/useRooms";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,13 +10,15 @@ import { Link } from "react-router-dom";
 
 const AdminBookings = () => {
   const { bookings, clearAllBookings } = useBookings();
+  const { rooms, loading: roomsLoading, error: roomsError } = useRooms();
   const [query, setQuery] = useState("");
 
   const roomsMap = useMemo(() => {
+    if (roomsLoading || roomsError) return {};
     const map: Record<string, string> = {};
-    villaData.rooms.forEach((r) => (map[r.id] = r.name));
+    rooms.forEach((r) => (map[r.id] = r.name));
     return map;
-  }, []);
+  }, [rooms, roomsLoading, roomsError]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return bookings;
@@ -46,7 +48,11 @@ const AdminBookings = () => {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>All Bookings ({filtered.length})</CardTitle>
+          <CardTitle>
+            All Bookings ({filtered.length})
+            {roomsLoading && <span className="text-sm font-normal text-muted-foreground ml-2">(Loading rooms...)</span>}
+            {roomsError && <span className="text-sm font-normal text-red-500 ml-2"> (Error loading rooms)</span>}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {filtered.length === 0 ? (

@@ -3,8 +3,20 @@ import { Amenities } from "@/components/Amenities";
 import { Star } from "lucide-react";
 import { RoomCard } from "@/components/RoomCard";
 import { villaData } from "@/data/dummy";
+import { useRooms } from "@/hooks/useRooms";
+import IndexSkeleton from "@/components/IndexSkeleton";
 
 const Index = () => {
+  const { rooms, loading, error } = useRooms();
+
+  if (loading) {
+    return <IndexSkeleton />;
+  }
+
+  if (error) {
+    return <div className="text-center py-10">Error: {error}</div>;
+  }
+
   return (
     <div className="bg-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -30,7 +42,7 @@ const Index = () => {
           <h2 className="text-3xl font-bold text-center mb-2">Select Your Room</h2>
           <p className="text-center text-muted-foreground mb-10">Choose from our selection of luxurious rooms and suites.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {villaData.rooms.map((room) => (
+            {rooms.map((room) => (
               <RoomCard key={room.id} room={room} />
             ))}
           </div>
