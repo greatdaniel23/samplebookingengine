@@ -27,6 +27,24 @@ try {
         reviews INT DEFAULT 0,
         images JSON,
         amenities JSON,
+        phone VARCHAR(50) DEFAULT '',
+        email VARCHAR(255) DEFAULT '',
+        website VARCHAR(255) DEFAULT '',
+        address TEXT DEFAULT '',
+        city VARCHAR(100) DEFAULT '',
+        state VARCHAR(100) DEFAULT '',
+        zip_code VARCHAR(20) DEFAULT '',
+        country VARCHAR(100) DEFAULT 'Indonesia',
+        check_in_time VARCHAR(20) DEFAULT '14:00',
+        check_out_time VARCHAR(20) DEFAULT '12:00',
+        max_guests INT DEFAULT 8,
+        bedrooms INT DEFAULT 4,
+        bathrooms INT DEFAULT 3,
+        price_per_night DECIMAL(10,2) DEFAULT 0.00,
+        currency VARCHAR(10) DEFAULT 'USD',
+        cancellation_policy TEXT DEFAULT '',
+        house_rules TEXT DEFAULT '',
+        social_media JSON,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )";
@@ -48,6 +66,33 @@ try {
                 // Parse JSON fields
                 $row['images'] = json_decode($row['images'], true) ?: [];
                 $row['amenities'] = json_decode($row['amenities'], true) ?: [];
+                $row['socialMedia'] = isset($row['social_media']) ? json_decode($row['social_media'], true) ?: [] : [];
+                
+                // Map database field names to interface field names with default values
+                $row['zipCode'] = $row['zip_code'] ?? '';
+                $row['checkInTime'] = $row['check_in_time'] ?? '15:00';
+                $row['checkOutTime'] = $row['check_out_time'] ?? '11:00';
+                $row['maxGuests'] = $row['max_guests'] ?? 8;
+                $row['pricePerNight'] = $row['price_per_night'] ?? 0;
+                $row['cancellationPolicy'] = $row['cancellation_policy'] ?? '';
+                $row['houseRules'] = $row['house_rules'] ?? '';
+                
+                // Set default values for new fields if they don't exist
+                $row['phone'] = $row['phone'] ?? '';
+                $row['email'] = $row['email'] ?? '';
+                $row['website'] = $row['website'] ?? '';
+                $row['address'] = $row['address'] ?? '';
+                $row['city'] = $row['city'] ?? '';
+                $row['state'] = $row['state'] ?? '';
+                $row['country'] = $row['country'] ?? '';
+                $row['bedrooms'] = $row['bedrooms'] ?? 4;
+                $row['bathrooms'] = $row['bathrooms'] ?? 3;
+                $row['currency'] = $row['currency'] ?? 'USD';
+                
+                // Remove database field names
+                unset($row['zip_code'], $row['check_in_time'], $row['check_out_time'], 
+                      $row['max_guests'], $row['price_per_night'], $row['cancellation_policy'], 
+                      $row['house_rules'], $row['social_media']);
                 
                 echo json_encode([
                     'success' => true,
@@ -60,6 +105,28 @@ try {
                     'name' => 'Serene Mountain Retreat',
                     'location' => 'Aspen, Colorado',
                     'description' => 'Escape to this stunning mountain retreat where modern luxury meets rustic charm. Nestled in the heart of the Rockies, this villa offers breathtaking views, unparalleled comfort, and direct access to world-class ski slopes and hiking trails. Perfect for family vacations, romantic getaways, or corporate retreats.',
+                    'phone' => '+1 (555) 123-4567',
+                    'email' => 'info@serenemountainretreat.com',
+                    'website' => 'www.serenemountainretreat.com',
+                    'address' => '123 Mountain View Drive',
+                    'city' => 'Aspen',
+                    'state' => 'Colorado',
+                    'zipCode' => '81611',
+                    'country' => 'United States',
+                    'checkInTime' => '15:00',
+                    'checkOutTime' => '11:00',
+                    'maxGuests' => 8,
+                    'bedrooms' => 4,
+                    'bathrooms' => 3,
+                    'pricePerNight' => 550.00,
+                    'currency' => 'USD',
+                    'cancellationPolicy' => 'Free cancellation up to 48 hours before check-in. 50% refund for cancellations within 48 hours.',
+                    'houseRules' => 'No smoking • No pets • No parties or events • Check-in after 3:00 PM • Quiet hours 10:00 PM - 8:00 AM',
+                    'socialMedia' => [
+                        'facebook' => 'https://facebook.com/serenemountainretreat',
+                        'instagram' => 'https://instagram.com/serenemountainretreat',
+                        'twitter' => 'https://twitter.com/serenemountain'
+                    ],
                     'rating' => 4.9,
                     'reviews' => 128,
                     'images' => [
@@ -156,6 +223,24 @@ try {
                         reviews = :reviews,
                         images = :images,
                         amenities = :amenities,
+                        phone = :phone,
+                        email = :email,
+                        website = :website,
+                        address = :address,
+                        city = :city,
+                        state = :state,
+                        zip_code = :zip_code,
+                        country = :country,
+                        check_in_time = :check_in_time,
+                        check_out_time = :check_out_time,
+                        max_guests = :max_guests,
+                        bedrooms = :bedrooms,
+                        bathrooms = :bathrooms,
+                        price_per_night = :price_per_night,
+                        currency = :currency,
+                        cancellation_policy = :cancellation_policy,
+                        house_rules = :house_rules,
+                        social_media = :social_media,
                         updated_at = NOW()
                       WHERE id = 1";
 
@@ -168,7 +253,25 @@ try {
                 'rating' => floatval($input['rating']),
                 'reviews' => intval($input['reviews']),
                 'images' => json_encode($input['images']),
-                'amenities' => json_encode($input['amenities'])
+                'amenities' => json_encode($input['amenities']),
+                'phone' => htmlspecialchars(strip_tags($input['phone'] ?? '')),
+                'email' => htmlspecialchars(strip_tags($input['email'] ?? '')),
+                'website' => htmlspecialchars(strip_tags($input['website'] ?? '')),
+                'address' => htmlspecialchars(strip_tags($input['address'] ?? '')),
+                'city' => htmlspecialchars(strip_tags($input['city'] ?? '')),
+                'state' => htmlspecialchars(strip_tags($input['state'] ?? '')),
+                'zip_code' => htmlspecialchars(strip_tags($input['zipCode'] ?? '')),
+                'country' => htmlspecialchars(strip_tags($input['country'] ?? '')),
+                'check_in_time' => htmlspecialchars(strip_tags($input['checkInTime'] ?? '')),
+                'check_out_time' => htmlspecialchars(strip_tags($input['checkOutTime'] ?? '')),
+                'max_guests' => intval($input['maxGuests'] ?? 0),
+                'bedrooms' => intval($input['bedrooms'] ?? 0),
+                'bathrooms' => intval($input['bathrooms'] ?? 0),
+                'price_per_night' => floatval($input['pricePerNight'] ?? 0),
+                'currency' => htmlspecialchars(strip_tags($input['currency'] ?? 'USD')),
+                'cancellation_policy' => htmlspecialchars(strip_tags($input['cancellationPolicy'] ?? '')),
+                'house_rules' => htmlspecialchars(strip_tags($input['houseRules'] ?? '')),
+                'social_media' => json_encode($input['socialMedia'] ?? [])
             ]);
             
             if ($result) {

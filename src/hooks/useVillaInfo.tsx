@@ -12,6 +12,33 @@ export interface VillaInfo {
     name: string;
     icon: string;
   }[];
+  // Contact Information
+  phone: string;
+  email: string;
+  website: string;
+  // Address Information
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  // Additional Information
+  checkInTime: string;
+  checkOutTime: string;
+  maxGuests: number;
+  bedrooms: number;
+  bathrooms: number;
+  pricePerNight: number;
+  currency: string;
+  // Policies
+  cancellationPolicy: string;
+  houseRules: string;
+  // Social Media
+  socialMedia: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+  };
 }
 
 export const useVillaInfo = () => {
@@ -22,7 +49,7 @@ export const useVillaInfo = () => {
   const fetchVillaInfo = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/villa.php');
+      const response = await fetch('http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/villa.php');
       
       // Check if response is ok
       if (!response.ok) {
@@ -55,7 +82,7 @@ export const useVillaInfo = () => {
 
   const updateVillaInfo = async (data: Partial<VillaInfo>) => {
     try {
-      const response = await fetch('/api/villa.php', {
+      const response = await fetch('http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/villa.php', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
