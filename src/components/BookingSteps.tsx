@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Calendar } from '@/components/ui/calendar';
 import { DateRange } from 'react-day-picker';
 import { differenceInDays, format } from 'date-fns';
@@ -40,59 +50,20 @@ export function BookingSteps({ room, disabledDates, onBookingComplete, isBooking
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [guestCount, setGuestCount] = useState(1);
 
-  // FIXED: Use simple state instead of React Hook Form to prevent input issues
-  const [formData, setFormData] = useState<GuestFormData>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    specialRequests: ''
+  const form = useForm<GuestFormData>({
+    resolver: zodResolver(guestSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      specialRequests: ''
+    }
   });
 
-  const [formErrors, setFormErrors] = useState<Partial<Record<keyof GuestFormData, string>>>({});
-
-  // Validate form data
-  const validateForm = () => {
-    const errors: Partial<Record<keyof GuestFormData, string>> = {};
-    
-    if (!formData.firstName || formData.firstName.trim().length < 2) {
-      errors.firstName = 'First name must be at least 2 characters';
-    }
-    if (!formData.lastName || formData.lastName.trim().length < 2) {
-      errors.lastName = 'Last name must be at least 2 characters';
-    }
-    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Please enter a valid email address';
-    }
-    if (!formData.phone || formData.phone.trim().length < 10) {
-      errors.phone = 'Please enter a valid phone number';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleInputChange = (field: keyof GuestFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (formErrors[field]) {
-      setFormErrors(prev => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  const isFormComplete = () => {
-    return formData.firstName.trim().length >= 2 &&
-           formData.lastName.trim().length >= 2 &&
-           formData.email.trim().length > 0 &&
-           formData.phone.trim().length >= 10;
-  };
-
-  const onGuestInfoSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validateForm()) {
-      console.log('Form submitted:', formData);
-      setCurrentStep(3);
-    }
+  const onGuestInfoSubmit = (data: GuestFormData) => {
+    console.log('Form submitted:', data);
+    setCurrentStep(3);
   };
 
   // No auto-advance - user must click button to proceed
@@ -184,130 +155,110 @@ export function BookingSteps({ room, disabledDates, onBookingComplete, isBooking
 
   // Step 2: COMPLETELY FIXED Guest Information Component with controlled inputs
   const GuestInfoStep = () => (
-    <form onSubmit={onGuestInfoSubmit} className="space-y-6">
-      <div className="text-center mb-6">
-        <h3 className="text-lg font-medium text-gray-900">Enter Your Details</h3>
-        <p className="text-sm text-gray-500">Please fill out all required information</p>
-      </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onGuestInfoSubmit)} className="space-y-6">
+        <div className="text-center mb-6">
+          <h3 className="text-lg font-medium text-gray-900">Enter Your Details</h3>
+          <p className="text-sm text-gray-500">Please fill out all required information</p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="firstName">First Name *</Label>
-          <Input
-            id="firstName"
-            type="text"
-            value={formData.firstName}
-            onChange={(e) => handleInputChange('firstName', e.target.value)}
-            className={formErrors.firstName ? 'border-red-500' : ''}
-            placeholder="Enter your first name"
-            autoComplete="given-name"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="firstName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>First Name *</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter your first name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {formErrors.firstName && (
-            <p className="text-red-500 text-sm mt-1">{formErrors.firstName}</p>
-          )}
-        </div>
-
-        <div>
-          <Label htmlFor="lastName">Last Name *</Label>
-          <Input
-            id="lastName"
-            type="text"
-            value={formData.lastName}
-            onChange={(e) => handleInputChange('lastName', e.target.value)}
-            className={formErrors.lastName ? 'border-red-500' : ''}
-            placeholder="Enter your last name"
-            autoComplete="family-name"
+          <FormField
+            control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Last Name *</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter your last name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {formErrors.lastName && (
-            <p className="text-red-500 text-sm mt-1">{formErrors.lastName}</p>
+        </div>
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email Address *</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter your email address" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
+        />
+
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number *</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter your phone number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="specialRequests"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Special Requests (Optional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Any special accommodations, dietary requirements, accessibility needs, or other requests..."
+                  className="min-h-[100px] resize-y"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex flex-col sm:flex-row gap-3 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setCurrentStep(1)}
+            className="flex-1"
+          >
+            ← Back to Dates
+          </Button>
+
+          <Button type="submit" className="flex-1">
+            Continue to Review →
+          </Button>
         </div>
-      </div>
-
-      <div>
-        <Label htmlFor="email">Email Address *</Label>
-        <Input
-          id="email"
-          type="email"
-          value={formData.email}
-          onChange={(e) => handleInputChange('email', e.target.value)}
-          className={formErrors.email ? 'border-red-500' : ''}
-          placeholder="Enter your email address"
-          autoComplete="email"
-        />
-        {formErrors.email && (
-          <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>
-        )}
-      </div>
-
-      <div>
-        <Label htmlFor="phone">Phone Number *</Label>
-        <Input
-          id="phone"
-          type="tel"
-          value={formData.phone}
-          onChange={(e) => handleInputChange('phone', e.target.value)}
-          className={formErrors.phone ? 'border-red-500' : ''}
-          placeholder="Enter your phone number"
-          autoComplete="tel"
-        />
-        {formErrors.phone && (
-          <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>
-        )}
-      </div>
-
-      <div>
-        <Label htmlFor="specialRequests">Special Requests (Optional)</Label>
-        <Textarea
-          id="specialRequests"
-          value={formData.specialRequests || ''}
-          onChange={(e) => handleInputChange('specialRequests', e.target.value)}
-          placeholder="Any special accommodations, dietary requirements, accessibility needs, or other requests..."
-          className="min-h-[100px] resize-y"
-          rows={4}
-        />
-        <p className="text-sm text-gray-500 mt-1">
-          Please describe any special needs or preferences for your stay
-        </p>
-      </div>
-
-      {/* Progress indicator */}
-      {isFormComplete() && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <Check className="w-5 h-5 text-green-600" />
-            <p className="text-green-700 font-medium">
-              All information complete! Ready to proceed.
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row gap-3 pt-4">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={() => setCurrentStep(1)}
-          className="flex-1"
-        >
-          ← Back to Dates
-        </Button>
-        
-        <Button 
-          type="submit"
-          disabled={!isFormComplete()}
-          className="flex-1"
-        >
-          Continue to Review →
-        </Button>
-      </div>
-    </form>
+      </form>
+    </Form>
   );
 
   // Step 3: Review & Final Price Component
   const ReviewStep = () => {
-    const guestInfo = formData;
-    
+    const guestInfo = form.watch();
+
     return (
       <div className="space-y-6">
         <div className="text-center mb-6">
