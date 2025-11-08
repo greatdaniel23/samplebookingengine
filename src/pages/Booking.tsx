@@ -29,6 +29,7 @@ const BookingPage = () => {
   const [bookingDetails, setBookingDetails] = useState<{ id: number | null; reference?: string }>({ id: null });
   const [isBooking, setIsBooking] = useState(false);
   const [finalBookingData, setFinalBookingData] = useState<any>(null);
+  const [apiReachable, setApiReachable] = useState<boolean | null>(null); // null = unchecked
 
   // Build disabled dates from existing bookings for this room
   const existingBookings = getBookingsForRoom(roomId || "");
@@ -47,6 +48,23 @@ const BookingPage = () => {
 
   // Attempt sync of any offline bookings on mount
   useEffect(() => {
+    // Connectivity probe
+    (async () => {
+      console.log('🌐 [Booking] Connectivity Probe:');
+      console.log('   Frontend Origin:', window.location.origin);
+      console.log('   API Base:', paths.apiBase);
+      console.log('   Bookings Endpoint:', paths.api.bookings);
+      try {
+        const ping = await fetch(paths.api.bookings, { method: 'GET' });
+        setApiReachable(ping.ok);
+        console.log('✅ [Booking] API reachability:', ping.ok);
+      } catch (e) {
+        setApiReachable(false);
+        console.warn('❌ [Booking] API unreachable:', e);
+      }
+    })();
+
+    // Attempt to sync any offline bookings after initial connectivity check
     (async () => {
       const offlineTotal = getOfflineCount();
       if (offlineTotal === 0) return;
@@ -94,8 +112,14 @@ const BookingPage = () => {
       };
 
       // Try to save to database via API
-      console.log('Attempting to save to database via API...');
-      const response = await fetch('/api/bookings', {
+      console.log('🚀 [Booking] === STARTING API CALL ===');
+      console.log('🌐 [Booking] Frontend origin:', window.location.origin);
+      console.log('🎯 [Booking] Target API URL:', paths.api.bookings);
+      console.log('📦 [Booking] POST data:', JSON.stringify(apiBookingData, null, 2));
+      console.log('🔧 [Booking] buildApiUrl test:', paths.buildApiUrl('bookings'));
+      
+      console.log('📤 [Booking] Making fetch request...');
+      const response = await fetch(paths.api.bookings, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,41 +127,89 @@ const BookingPage = () => {
         body: JSON.stringify(apiBookingData)
       });
       
-      if (response.ok) {
-        const apiResponse = await response.json();
-        
-        if (apiResponse && apiResponse.success) {
-          // Use API booking ID if successful
-          const dbBookingId = apiResponse.data.booking.id;
-          const dbReference = apiResponse.data.booking.reference || reference;
-          
-          setBookingDetails({ id: dbBookingId, reference: dbReference });
-          setIsConfirmed(true);
-          setIsBooking(false);
-          showSuccess("Booking confirmed and saved to database!");
-          window.scrollTo(0, 0);
+      console.log('📥 [Booking] Response received!');
+      console.log('📊 [Booking] Response status:', response.status, response.statusText);
+      console.log('✅ [Booking] Response ok:', response.ok);
+      console.log('📋 [Booking] Response headers:', [...response.headers.entries()]);
+      
+      const contentType = response.headers.get('Content-Type');
+      console.log('📄 [Booking] Content-Type:', contentType);
 
-          // Add to local context with database ID
-          const localBooking: Booking = {
-            id: dbBookingId,
-            reference: dbReference,
-            roomId: room.id,
-            from: bookingData.dateRange.from!.toISOString(),
-            to: bookingData.dateRange.to!.toISOString(),
-            guests: bookingData.guests,
-            user: bookingData.guestInfo,
-            total: bookingData.totalPrice,
-            createdAt: new Date().toISOString(),
-          };
-          addBooking(localBooking);
-        } else {
-          throw new Error('API response was unsuccessful');
-        }
-      } else {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      let rawBody: any = null;
+      try {
+        rawBody = await response.text();
+        console.log('📝 [Booking] Raw response body:', rawBody);
+      } catch (e) {
+        console.error('❌ [Booking] Failed reading raw body:', e);
+        throw new Error('Failed to read response body');
       }
-    } catch (error) {
-      console.error('Database save failed, saving offline for later sync:', error);
+
+      let parsed: any = null;
+      try {
+        parsed = rawBody ? JSON.parse(rawBody) : null;
+        console.log('🔍 [Booking] Parsed JSON:', JSON.stringify(parsed, null, 2));
+      } catch (e) {
+        console.error('❌ [Booking] JSON parse failed:', e);
+        console.log('📝 [Booking] Raw body that failed to parse:', rawBody);
+        throw new Error('Invalid JSON response from API');
+      }
+
+      if (!response.ok) {
+        console.error('❌ [Booking] HTTP error status:', response.status, response.statusText);
+        throw new Error(`HTTP ${response.status}: ${rawBody}`);
+      }
+
+      // Flexible success detection (avoid false offline fallbacks)
+      console.log('🔍 [Booking] === RESPONSE ANALYSIS (Flexible) ===');
+      const bookingNode = parsed?.data?.booking || parsed?.booking || parsed?.data;
+      const dbBookingIdFlexible = bookingNode?.id || bookingNode?.bookingId || parsed?.id || parsed?.bookingId;
+      const dbReferenceFlexible = bookingNode?.reference || parsed?.reference;
+      const topLevelSuccess = parsed?.success === true;
+      const nestedSuccess = parsed?.data?.success === true || bookingNode?.success === true;
+      const hasId = !!dbBookingIdFlexible;
+      const structureSummary = { topLevelSuccess, nestedSuccess, hasId, derivedId: dbBookingIdFlexible, derivedReference: dbReferenceFlexible };
+      console.log('🔍 [Booking] Success shape summary:', structureSummary);
+
+      const successSatisfied = (topLevelSuccess || nestedSuccess) && hasId;
+      if (!successSatisfied) {
+        console.warn('⚠️ [Booking] Treating as failure due to missing success/id indicators. Parsed:', parsed);
+        throw new Error('Unrecognized success structure');
+      }
+
+      const dbBookingId = Number(dbBookingIdFlexible);
+      const dbReference = dbReferenceFlexible || `BK-${dbBookingId}`;
+      
+      console.log('🎉 [Booking] SUCCESS - Booking saved to database!');
+      console.log('📝 [Booking] Booking ID:', dbBookingId);
+      console.log('📝 [Booking] Booking Reference:', dbReference);
+
+      setBookingDetails({ id: dbBookingId, reference: dbReference });
+      setIsConfirmed(true);
+      setIsBooking(false);
+      showSuccess('Booking confirmed and saved to database!');
+      window.scrollTo(0, 0);
+
+      const localBooking: Booking = {
+        id: dbBookingId,
+        reference: dbReference,
+        roomId: room.id,
+        from: bookingData.dateRange.from!.toISOString(),
+        to: bookingData.dateRange.to!.toISOString(),
+        guests: bookingData.guests,
+        user: bookingData.guestInfo,
+        total: bookingData.totalPrice,
+        createdAt: new Date().toISOString(),
+      };
+      addBooking(localBooking);
+    } catch (error: any) {
+      console.error('❌ [Booking] Database save failed, initiating offline fallback:', error);
+      const reason = error?.message || 'Unknown error';
+      console.log('🛟 [Booking] Offline fallback reason:', reason);
+      console.log('🛟 [Booking] API reachable state:', apiReachable);
+      if (apiReachable === false) {
+        showError('API unreachable. Booking saved offline.');
+      }
+      // Build local booking copy
       const localBooking: Booking = {
         id: bookingId,
         reference,
@@ -155,7 +227,7 @@ const BookingPage = () => {
       setBookingDetails({ id: bookingId, reference });
       setIsConfirmed(true);
       setIsBooking(false);
-      showSuccess(`Booking stored offline. It will sync automatically when connection is restored.`);
+      showSuccess(`Booking stored offline. It will sync automatically when connection is restored. (${reason})`);
       window.scrollTo(0, 0);
     }
   };

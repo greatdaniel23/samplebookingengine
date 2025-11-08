@@ -45,16 +45,16 @@ if (typeof window !== 'undefined') {
 }
 
 // Helper to safely build API URLs
-const buildApiUrl = (path: string) => `${API_BASE.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+const buildApiUrl = (path: string) => `${API_BASE.replace(/\/$/, '')}${path.startsWith('/') ? path : '/' + path}`;
 
 export const paths: AppPaths = {
   env,
   host,
   apiBase: API_BASE,
   api: {
-    bookings: buildApiUrl('/bookings'),
-    bookingById: (id) => buildApiUrl(`/bookings/${id}`),
-    rooms: buildApiUrl('/rooms') // Placeholder; implement in backend
+    bookings: buildApiUrl('bookings'),
+    bookingById: (id) => buildApiUrl(`bookings/${id}`),
+    rooms: buildApiUrl('rooms') // Placeholder; implement in backend
   },
   frontendBase: PUBLIC_BASE,
   adminBase: ADMIN_BASE,
