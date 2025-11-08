@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { DateRange } from "react-day-picker";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { showSuccess, showError } from "@/utils/toast";
 import { ArrowLeft, Ruler, BedDouble, Users, CheckCircle2 } from "lucide-react";
 import NotFound from "./NotFound";
@@ -14,16 +14,20 @@ import { Booking } from "@/types";
 import { BookingSteps } from "@/components/BookingSteps";
 import { paths } from '@/config/paths';
 import { saveOfflineBooking, trySyncOfflineBookings, getOfflineCount } from '@/lib/offlineBookings';
-import { Room } from "@/types";
+import { Room, Package } from "@/types";
 import BookingSkeleton from "@/components/BookingSkeleton";
+import { packageService } from "@/services/packageService";
 // @ts-ignore
 import ApiService from "@/services/api.js";
 
 const BookingPage = () => {
   const { roomId } = useParams<{ roomId: string }>();
+  const [searchParams] = useSearchParams();
+  const packageId = searchParams.get('package');
   const navigate = useNavigate();
 
   const [room, setRoom] = useState<Room | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { addBooking, getBookingsForRoom } = useBookings();
@@ -34,22 +38,38 @@ const BookingPage = () => {
   const [apiReachable, setApiReachable] = useState<boolean | null>(null); // null = unchecked
 
   useEffect(() => {
-    const fetchRoom = async () => {
-      if (!roomId) return;
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const roomData = await ApiService.getRoom(roomId);
-        setRoom(roomData);
         setError(null);
+        
+        // If roomId is provided, fetch room data
+        if (roomId) {
+          const roomData = await ApiService.getRoom(roomId);
+          setRoom(roomData);
+        }
+        
+        // If packageId is provided, fetch package data
+        if (packageId) {
+          const packageResponse = await packageService.getPackageById(packageId);
+          setSelectedPackage(packageResponse.data);
+        }
+        
+        // If neither roomId nor packageId, show error
+        if (!roomId && !packageId) {
+          setError("No room or package specified for booking.");
+        }
+        
       } catch (err) {
-        setError("Failed to fetch room details.");
+        setError(roomId ? "Failed to fetch room details." : "Failed to fetch package details.");
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    fetchRoom();
-  }, [roomId]);
+    
+    fetchData();
+  }, [roomId, packageId]);
 
   // Attempt sync of any offline bookings on mount
   useEffect(() => {
@@ -106,7 +126,7 @@ const BookingPage = () => {
     return <div className="text-center py-10 text-red-500">{error}</div>;
   }
 
-  if (!room) {
+  if (!room && !selectedPackage) {
     return <NotFound />;
   }
 
@@ -215,7 +235,36 @@ const BookingPage = () => {
       setIsConfirmed(true);
       setIsBooking(false);
       showSuccess('Booking confirmed and saved to database!');
-      window.scrollTo(0, 0);
+      
+      // Redirect to summary page with booking details
+      const summaryParams = new URLSearchParams({
+        ref: dbReference,
+        checkIn: bookingData.dateRange.from!.toISOString().split('T')[0],
+        checkOut: bookingData.dateRange.to!.toISOString().split('T')[0],
+        guests: bookingData.guests.toString(),
+        nights: differenceInDays(bookingData.dateRange.to!, bookingData.dateRange.from!).toString(),
+        firstName: bookingData.guestInfo.firstName,
+        lastName: bookingData.guestInfo.lastName,
+        email: bookingData.guestInfo.email,
+        phone: bookingData.guestInfo.phone,
+        basePrice: (differenceInDays(bookingData.dateRange.to!, bookingData.dateRange.from!) * parseFloat(selectedPackage?.base_price || room?.price || '0')).toString(),
+        serviceFee: (bookingData.totalPrice * 0.1).toString(),
+        totalPrice: bookingData.totalPrice.toString()
+      });
+
+      if (selectedPackage) {
+        summaryParams.append('package', selectedPackage.id);
+      }
+      if (room) {
+        summaryParams.append('room', room.id);
+      }
+      if (bookingData.guestInfo.specialRequests) {
+        summaryParams.append('requests', bookingData.guestInfo.specialRequests);
+      }
+
+      setTimeout(() => {
+        navigate(`/summary?${summaryParams.toString()}`);
+      }, 2000);
 
       const localBooking: Booking = {
         id: dbBookingId,
@@ -256,7 +305,36 @@ const BookingPage = () => {
       setIsConfirmed(true);
       setIsBooking(false);
       showSuccess(`Booking stored offline. It will sync automatically when connection is restored. (${reason})`);
-      window.scrollTo(0, 0);
+      
+      // Redirect to summary page with booking details
+      const summaryParams = new URLSearchParams({
+        ref: reference,
+        checkIn: bookingData.dateRange.from!.toISOString().split('T')[0],
+        checkOut: bookingData.dateRange.to!.toISOString().split('T')[0],
+        guests: bookingData.guests.toString(),
+        nights: differenceInDays(bookingData.dateRange.to!, bookingData.dateRange.from!).toString(),
+        firstName: bookingData.guestInfo.firstName,
+        lastName: bookingData.guestInfo.lastName,
+        email: bookingData.guestInfo.email,
+        phone: bookingData.guestInfo.phone,
+        basePrice: (differenceInDays(bookingData.dateRange.to!, bookingData.dateRange.from!) * parseFloat(selectedPackage?.base_price || room?.price || '0')).toString(),
+        serviceFee: (bookingData.totalPrice * 0.1).toString(),
+        totalPrice: bookingData.totalPrice.toString()
+      });
+
+      if (selectedPackage) {
+        summaryParams.append('package', selectedPackage.id);
+      }
+      if (room) {
+        summaryParams.append('room', room.id);
+      }
+      if (bookingData.guestInfo.specialRequests) {
+        summaryParams.append('requests', bookingData.guestInfo.specialRequests);
+      }
+
+      setTimeout(() => {
+        navigate(`/summary?${summaryParams.toString()}`);
+      }, 2000);
     }
   };
 
@@ -307,50 +385,105 @@ const BookingPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Villa
-      </Button>
+    <div className="bg-gradient-to-br from-white to-hotel-cream min-h-screen">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 text-hotel-bronze hover:text-hotel-gold">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Villa
+        </Button>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        {/* Room Details Section */}
+        {/* Details Section - Room or Package */}
         <div className="lg:col-span-1">
           <Card>
             <CardHeader className="p-0">
-              <img src={room.image_url} alt={room.name} className="w-full h-[400px] object-cover rounded-t-lg" />
+              <img 
+                src={selectedPackage ? selectedPackage.image_url : room?.image_url} 
+                alt={selectedPackage ? selectedPackage.name : room?.name} 
+                className="w-full h-[400px] object-cover rounded-t-lg" 
+              />
             </CardHeader>
             <CardContent className="p-6">
-              <h1 className="text-3xl font-bold mb-2">{room.name}</h1>
-              <p className="text-lg text-muted-foreground mb-6">{room.description}</p>
+              <h1 className="text-3xl font-bold mb-2">
+                {selectedPackage ? selectedPackage.name : room?.name}
+              </h1>
+              <p className="text-lg text-muted-foreground mb-6">
+                {selectedPackage ? selectedPackage.description : room?.description}
+              </p>
               
               <div className="border-t pt-6">
-                <h2 className="text-2xl font-semibold mb-4">Room Details</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-muted-foreground">
-                  <div className="flex items-center space-x-3">
-                    <Ruler className="w-5 h-5 text-primary" />
-                    <span>{room.size}</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <BedDouble className="w-5 h-5 text-primary" />
-                    <span>{room.beds}</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Users className="w-5 h-5 text-primary" />
-                    <span>Up to {room.occupancy} guests</span>
-                  </div>
-                </div>
-                <div className="mt-6">
-                  <h3 className="text-xl font-semibold mb-3">Key Features</h3>
-                  <ul className="space-y-2">
-                    {JSON.parse(room.features || '[]').map((feature: string) => (
-                      <li key={feature} className="flex items-center space-x-3">
-                        <CheckCircle2 className="w-5 h-5 text-green-600" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {selectedPackage ? (
+                  // Package Details
+                  <>
+                    <h2 className="text-2xl font-semibold mb-4">Package Details</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-muted-foreground mb-6">
+                      <div className="flex items-center space-x-3">
+                        <Users className="w-5 h-5 text-primary" />
+                        <span>Up to {selectedPackage.max_guests} guests</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <BedDouble className="w-5 h-5 text-primary" />
+                        <span>{selectedPackage.min_nights}-{selectedPackage.max_nights} nights</span>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-6">
+                      <h3 className="text-xl font-semibold mb-3">Package Includes</h3>
+                      <ul className="space-y-2">
+                        {selectedPackage.includes.map((item, index) => (
+                          <li key={index} className="flex items-center space-x-3">
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {selectedPackage.room_options.length > 0 && (
+                      <div>
+                        <h3 className="text-xl font-semibold mb-3">Available Rooms</h3>
+                        <div className="space-y-2">
+                          {selectedPackage.room_options.map((roomOption, index) => (
+                            <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                              <span className="font-medium">{roomOption.name}</span>
+                              <span className="text-green-600">${roomOption.price_override}/night</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  // Room Details
+                  <>
+                    <h2 className="text-2xl font-semibold mb-4">Room Details</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-muted-foreground">
+                      <div className="flex items-center space-x-3">
+                        <Ruler className="w-5 h-5 text-primary" />
+                        <span>{room?.size}</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <BedDouble className="w-5 h-5 text-primary" />
+                        <span>{room?.beds}</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Users className="w-5 h-5 text-primary" />
+                        <span>Up to {room?.occupancy} guests</span>
+                      </div>
+                    </div>
+                    <div className="mt-6">
+                      <h3 className="text-xl font-semibold mb-3">Key Features</h3>
+                      <ul className="space-y-2">
+                        {JSON.parse(room?.features || '[]').map((feature: string) => (
+                          <li key={feature} className="flex items-center space-x-3">
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -360,12 +493,14 @@ const BookingPage = () => {
         <div className="lg:col-span-1">
           <BookingSteps
             room={room}
+            package={selectedPackage}
             disabledDates={isDateBooked}
             onBookingComplete={handleBookingComplete}
             isBooking={isBooking}
           />
         </div>
       </div>
+    </div>
     </div>
   );
 };

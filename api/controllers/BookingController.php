@@ -88,5 +88,108 @@ class BookingController {
             'check_out' => $check_out
         ], 'Availability checked successfully');
     }
+
+    public function update($id) {
+        try {
+            $input = json_decode(file_get_contents('php://input'), true);
+
+            if (!$input) {
+                errorResponse('Invalid JSON input', 400);
+                return;
+            }
+
+            // Check if booking exists
+            $existingBooking = $this->booking->getById($id);
+            if (!$existingBooking) {
+                errorResponse('Booking not found', 404);
+                return;
+            }
+
+            // Prepare updated booking data
+            $bookingData = [
+                'room_id' => $input['room_id'] ?? $existingBooking['room_id'],
+                'first_name' => sanitizeInput($input['first_name'] ?? $existingBooking['first_name']),
+                'last_name' => sanitizeInput($input['last_name'] ?? $existingBooking['last_name']),
+                'email' => sanitizeInput($input['email'] ?? $existingBooking['email']),
+                'phone' => sanitizeInput($input['phone'] ?? $existingBooking['phone']),
+                'check_in' => $input['check_in'] ?? $existingBooking['check_in'],
+                'check_out' => $input['check_out'] ?? $existingBooking['check_out'],
+                'guests' => isset($input['guests']) ? intval($input['guests']) : $existingBooking['guests'],
+                'total_price' => isset($input['total_price']) ? floatval($input['total_price']) : $existingBooking['total_price'],
+                'status' => $input['status'] ?? $existingBooking['status'],
+                'special_requests' => $input['special_requests'] ?? $existingBooking['special_requests']
+            ];
+
+            // Check availability if dates changed
+            if ($bookingData['room_id'] !== $existingBooking['room_id'] ||
+                $bookingData['check_in'] !== $existingBooking['check_in'] ||
+                $bookingData['check_out'] !== $existingBooking['check_out']) {
+                
+                if (!$this->booking->checkAvailabilityExcept($bookingData['room_id'], $bookingData['check_in'], $bookingData['check_out'], $id)) {
+                    errorResponse('Room is not available for the selected dates', 409);
+                    return;
+                }
+            }
+
+            $result = $this->booking->update($id, $bookingData);
+            
+            if ($result) {
+                successResponse($bookingData, 'Booking updated successfully');
+            } else {
+                errorResponse('Failed to update booking', 500);
+            }
+        } catch (Exception $e) {
+            errorResponse('Error updating booking: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function delete($id) {
+        try {
+            // Check if booking exists
+            $existingBooking = $this->booking->getById($id);
+            if (!$existingBooking) {
+                errorResponse('Booking not found', 404);
+                return;
+            }
+
+            $result = $this->booking->delete($id);
+            
+            if ($result) {
+                successResponse(null, 'Booking deleted successfully');
+            } else {
+                errorResponse('Failed to delete booking', 500);
+            }
+        } catch (Exception $e) {
+            errorResponse('Error deleting booking: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function updateStatus($id) {
+        try {
+            $input = json_decode(file_get_contents('php://input'), true);
+
+            if (!$input || !isset($input['status'])) {
+                errorResponse('Status is required', 400);
+                return;
+            }
+
+            // Check if booking exists
+            $existingBooking = $this->booking->getById($id);
+            if (!$existingBooking) {
+                errorResponse('Booking not found', 404);
+                return;
+            }
+
+            $result = $this->booking->updateStatus($id, $input['status']);
+            
+            if ($result) {
+                successResponse(['status' => $input['status']], 'Booking status updated successfully');
+            } else {
+                errorResponse('Failed to update booking status', 500);
+            }
+        } catch (Exception $e) {
+            errorResponse('Error updating booking status: ' . $e->getMessage(), 500);
+        }
+    }
 }
 ?>

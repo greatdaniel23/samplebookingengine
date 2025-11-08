@@ -4,35 +4,40 @@
 
 @layer base {
   :root {
+    /* Luxury Hotel Theme - Warm Sophistication */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 30 10% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 30 10% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 30 10% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary: Rich Gold/Bronze */
+    --primary: 35 60% 45%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary: Warm Cream */
+    --secondary: 45 25% 94%;
+    --secondary-foreground: 30 10% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted: Soft Beige */
+    --muted: 40 15% 92%;
+    --muted-foreground: 25 8% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent: Deep Amber */
+    --accent: 32 85% 55%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 35 15% 88%;
+    --input: 35 15% 88%;
+    --ring: 35 60% 45%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -98,4 +103,89 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom Hotel Theme Variables */
+:root {
+  /* Brand Colors */
+  --hotel-gold: 35 60% 45%;
+  --hotel-gold-light: 35 60% 85%;
+  --hotel-gold-dark: 35 60% 25%;
+  
+  --hotel-cream: 45 25% 94%;
+  --hotel-cream-dark: 40 20% 85%;
+  
+  --hotel-bronze: 25 40% 35%;
+  --hotel-bronze-light: 25 40% 60%;
+  
+  --hotel-sage: 95 20% 45%;
+  --hotel-sage-light: 95 20% 85%;
+  
+  --hotel-navy: 210 30% 25%;
+  --hotel-navy-light: 210 30% 85%;
+  
+  /* Status Colors */
+  --success: 120 60% 45%;
+  --success-light: 120 60% 95%;
+  
+  --warning: 45 90% 55%;
+  --warning-light: 45 90% 95%;
+  
+  --error: 0 70% 55%;
+  --error-light: 0 70% 95%;
+  
+  --info: 200 70% 55%;
+  --info-light: 200 70% 95%;
+}
+
+/* Utility Classes */
+.bg-hotel-gold { background-color: hsl(var(--hotel-gold)); }
+.bg-hotel-gold-light { background-color: hsl(var(--hotel-gold-light)); }
+.bg-hotel-cream { background-color: hsl(var(--hotel-cream)); }
+.bg-hotel-bronze { background-color: hsl(var(--hotel-bronze)); }
+.bg-hotel-sage { background-color: hsl(var(--hotel-sage)); }
+.bg-hotel-navy { background-color: hsl(var(--hotel-navy)); }
+
+.text-hotel-gold { color: hsl(var(--hotel-gold)); }
+.text-hotel-gold-dark { color: hsl(var(--hotel-gold-dark)); }
+.text-hotel-bronze { color: hsl(var(--hotel-bronze)); }
+.text-hotel-sage { color: hsl(var(--hotel-sage)); }
+.text-hotel-navy { color: hsl(var(--hotel-navy)); }
+
+.border-hotel-gold { border-color: hsl(var(--hotel-gold)); }
+.border-hotel-cream { border-color: hsl(var(--hotel-cream)); }
+
+/* Component Specific Styles */
+.btn-hotel-primary {
+  background-color: hsl(var(--hotel-gold));
+  color: white;
+  border: 1px solid hsl(var(--hotel-gold-dark));
+}
+
+.btn-hotel-primary:hover {
+  background-color: hsl(var(--hotel-gold-dark));
+  border-color: hsl(var(--hotel-gold-dark));
+}
+
+.btn-hotel-secondary {
+  background-color: hsl(var(--hotel-cream));
+  color: hsl(var(--hotel-bronze));
+  border: 1px solid hsl(var(--hotel-gold));
+}
+
+.btn-hotel-secondary:hover {
+  background-color: hsl(var(--hotel-gold-light));
+}
+
+.card-hotel {
+  background: linear-gradient(135deg, hsl(var(--hotel-cream)) 0%, white 100%);
+  border: 1px solid hsl(var(--hotel-gold-light));
+}
+
+.gradient-hotel-primary {
+  background: linear-gradient(135deg, hsl(var(--hotel-gold-light)) 0%, hsl(var(--hotel-cream)) 100%);
+}
+
+.gradient-hotel-success {
+  background: linear-gradient(135deg, hsl(var(--success-light)) 0%, hsl(var(--hotel-sage-light)) 100%);
 }

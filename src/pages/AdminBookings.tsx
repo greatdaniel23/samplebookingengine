@@ -34,7 +34,14 @@ const AdminBookings = () => {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Admin – Bookings</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold">Admin – Bookings</h1>
+          <Link to="/admin/management">
+            <Button variant="outline" className="btn-hotel-primary">
+              Management Panel
+            </Button>
+          </Link>
+        </div>
         <div className="flex gap-2">
           <Input
             placeholder="Search ref / room / email"

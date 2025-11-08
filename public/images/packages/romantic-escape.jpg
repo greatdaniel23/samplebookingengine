@@ -1,0 +1,8 @@
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#fef2f2"/>
+  <rect x="150" y="100" width="100" height="100" rx="8" fill="#f87171"/>
+  <circle cx="175" cy="125" r="15" fill="#dc2626"/>
+  <path d="M160 150L175 135L190 150H160Z" fill="#dc2626"/>
+  <text x="200" y="155" font-family="Arial, sans-serif" font-size="14" fill="#991b1b">Romantic Package</text>
+  <text x="200" y="180" font-family="Arial, sans-serif" font-size="12" fill="#dc2626">Love & Romance</text>
+</svg>

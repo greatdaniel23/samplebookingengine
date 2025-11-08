@@ -9,19 +9,24 @@ import { DateRange } from 'react-day-picker';
 import { differenceInDays, format } from 'date-fns';
 import { showError } from '@/utils/toast';
 import { Check, Users, Calendar as CalendarIcon, CreditCard } from 'lucide-react';
-import { Room } from '@/types';
+import { Room, Package } from '@/types';
 
 interface GuestFormData { firstName: string; lastName: string; email: string; phone: string; specialRequests?: string }
 
-interface BookingStepsProps { room: Room; disabledDates?: (date: Date) => boolean; onBookingComplete: (b:{dateRange:DateRange;guests:number;guestInfo:GuestFormData;totalPrice:number})=>void; isBooking?: boolean }
+interface BookingStepsProps { room?: Room; package?: Package; disabledDates?: (date: Date) => boolean; onBookingComplete: (b:{dateRange:DateRange;guests:number;guestInfo:GuestFormData;totalPrice:number})=>void; isBooking?: boolean }
 
 // Child component props
-interface DateStepProps { dateRange: DateRange|undefined; setDateRange: (r:DateRange|undefined)=>void; guestCount:number; setGuestCount:(n:number)=>void; room:Room; nights:number; disabledDates?: (d:Date)=>boolean; onNext:()=>void }
+interface DateStepProps { dateRange: DateRange|undefined; setDateRange: (r:DateRange|undefined)=>void; guestCount:number; setGuestCount:(n:number)=>void; room?:Room; package?:Package; nights:number; disabledDates?: (d:Date)=>boolean; onNext:()=>void }
 interface GuestStepProps { data:GuestFormData; errors:Partial<Record<keyof GuestFormData,string>>; handleField:(f:keyof GuestFormData)=>(e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>)=>void; submitGuest:(e:React.FormEvent)=>void; canProceedGuest:boolean; setStep:(n:number)=>void }
-interface ReviewStepProps { room:Room; guestCount:number; dateRange:DateRange|undefined; nights:number; basePrice:number; serviceFee:number; totalPrice:number; data:GuestFormData; isBooking:boolean; onConfirm:()=>void; onEdit:()=>void }
+interface ReviewStepProps { room?:Room; package?:Package; guestCount:number; dateRange:DateRange|undefined; nights:number; basePrice:number; serviceFee:number; totalPrice:number; data:GuestFormData; isBooking:boolean; onConfirm:()=>void; onEdit:()=>void }
 
 // Date selection step component
-const DateStep: React.FC<DateStepProps> = ({ dateRange, setDateRange, guestCount, setGuestCount, room, nights, disabledDates, onNext }) => (
+const DateStep: React.FC<DateStepProps> = ({ dateRange, setDateRange, guestCount, setGuestCount, room, package: pkg, nights, disabledDates, onNext }) => {
+  const maxGuests = room?.occupancy || pkg?.max_guests || 2;
+  const maxNights = pkg?.max_nights;
+  const minNights = pkg?.min_nights || 1;
+  
+  return (
   <div className="space-y-6">
     <div>
       <Label className="text-lg font-medium mb-4 block">Select Your Dates</Label>
@@ -41,8 +46,8 @@ const DateStep: React.FC<DateStepProps> = ({ dateRange, setDateRange, guestCount
     <div>
       <Label htmlFor="guests" className="text-lg font-medium">Number of Guests</Label>
       <div className="flex items-center space-x-3 mt-2">
-        <Input id="guests" type="number" min={1} max={room.occupancy} value={guestCount} onChange={(e) => setGuestCount(Number(e.target.value))} className="w-24" />
-        <span className="text-sm text-gray-500">(Maximum {room.occupancy} guests)</span>
+        <Input id="guests" type="number" min={1} max={maxGuests} value={guestCount} onChange={(e) => setGuestCount(Number(e.target.value))} className="w-24" />
+        <span className="text-sm text-gray-500">(Maximum {maxGuests} guests)</span>
       </div>
     </div>
     {dateRange?.from && dateRange?.to && (
@@ -57,12 +62,13 @@ const DateStep: React.FC<DateStepProps> = ({ dateRange, setDateRange, guestCount
     <Button
       onClick={onNext}
       disabled={!dateRange?.from || !dateRange?.to || nights === 0}
-      className="w-full" size="lg"
+      className="w-full btn-hotel-primary" size="lg"
     >
       Continue to Guest Information
     </Button>
   </div>
-);
+  );
+};
 
 // Guest info step component
 const GuestStep: React.FC<GuestStepProps> = ({ data, errors, handleField, submitGuest, canProceedGuest, setStep }) => (
@@ -107,12 +113,15 @@ const GuestStep: React.FC<GuestStepProps> = ({ data, errors, handleField, submit
 );
 
 // Review step component
-const ReviewStep: React.FC<ReviewStepProps> = ({ room, guestCount, dateRange, nights, basePrice, serviceFee, totalPrice, data, isBooking, onConfirm, onEdit }) => (
+const ReviewStep: React.FC<ReviewStepProps> = ({ room, package: pkg, guestCount, dateRange, nights, basePrice, serviceFee, totalPrice, data, isBooking, onConfirm, onEdit }) => (
   <div className="space-y-6">
     <div className="border rounded-lg p-4 bg-gray-50">
       <h4 className="font-semibold mb-3 flex items-center"><CalendarIcon className="w-4 h-4 mr-2" />Booking Summary</h4>
       <div className="space-y-2 text-sm">
-        <div className="flex justify-between"><span>Room:</span><span className="font-medium">{room.name}</span></div>
+        <div className="flex justify-between">
+          <span>{pkg ? 'Package:' : 'Room:'}</span>
+          <span className="font-medium">{pkg ? pkg.name : room?.name}</span>
+        </div>
         <div className="flex justify-between"><span>Dates:</span><span>{dateRange?.from && format(dateRange.from, 'MMM d')} - {dateRange?.to && format(dateRange.to, 'MMM d, yyyy')}</span></div>
         <div className="flex justify-between"><span>Guests:</span><span>{guestCount}</span></div>
         <div className="flex justify-between"><span>Nights:</span><span>{nights}</span></div>
@@ -130,7 +139,12 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ room, guestCount, dateRange, ni
     <div className="border rounded-lg p-4 bg-green-50 border-green-200">
       <h4 className="font-semibold mb-3 flex items-center"><CreditCard className="w-4 h-4 mr-2" />Price</h4>
       <div className="space-y-2 text-sm">
-        <div className="flex justify-between"><span>${room.price} × {nights}</span><span>${basePrice.toFixed(2)}</span></div>
+        <div className="flex justify-between">
+          <span>
+            {pkg ? `Package: ${pkg.name}` : `${room?.name} × ${nights} nights`}
+          </span>
+          <span>${basePrice.toFixed(2)}</span>
+        </div>
         <div className="flex justify-between text-gray-600"><span>Service fee 10%</span><span>${serviceFee.toFixed(2)}</span></div>
         <hr />
         <div className="flex justify-between font-bold text-green-800"><span>Total</span><span>${totalPrice.toFixed(2)}</span></div>
@@ -143,7 +157,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ room, guestCount, dateRange, ni
   </div>
 );
 
-export function BookingSteps({ room, disabledDates, onBookingComplete, isBooking = false }: BookingStepsProps) {
+export function BookingSteps({ room, package: pkg, disabledDates, onBookingComplete, isBooking = false }: BookingStepsProps) {
   const [step, setStep] = useState(1);
   const [dateRange, setDateRange] = useState<DateRange>();
   const [guestCount, setGuestCount] = useState(1);
@@ -151,7 +165,12 @@ export function BookingSteps({ room, disabledDates, onBookingComplete, isBooking
   const [errors, setErrors] = useState<Partial<Record<keyof GuestFormData, string>>>({});
 
   const nights = useMemo(() => (dateRange?.from && dateRange?.to ? differenceInDays(dateRange.to, dateRange.from) : 0), [dateRange]);
-  const basePrice = useMemo(() => nights * parseFloat(room.price), [nights, room.price]);
+  const basePrice = useMemo(() => {
+    if (pkg) {
+      return nights * parseFloat(pkg.base_price);
+    }
+    return nights * parseFloat(room?.price || '0');
+  }, [nights, room?.price, pkg]);
   const serviceFee = useMemo(() => basePrice * 0.1, [basePrice]);
   const totalPrice = basePrice + serviceFee;
 
@@ -191,20 +210,20 @@ export function BookingSteps({ room, disabledDates, onBookingComplete, isBooking
           { num: 3, label: 'Review & Pay', icon: CreditCard }
         ].map((s, i) => (
           <React.Fragment key={s.num}>
-            <div className={`flex items-center ${s.num <= step ? 'text-blue-600' : 'text-gray-400'}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${s.num <= step ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-gray-300'}`}>
+            <div className={`flex items-center ${s.num <= step ? 'text-hotel-gold' : 'text-hotel-bronze'}`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${s.num <= step ? 'bg-hotel-gold text-white border-hotel-gold' : 'bg-white border-hotel-cream'}`}>
                 {s.num < step ? <Check className="w-5 h-5" /> : <s.icon className="w-5 h-5" />}
               </div>
               <div className="ml-3 hidden sm:block">
                 <span className="text-sm font-medium block">{s.label}</span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-hotel-bronze">
                   {s.num === 1 && 'Choose dates & guests'}
                   {s.num === 2 && 'Enter your information'}
                   {s.num === 3 && 'Confirm booking'}
                 </span>
               </div>
             </div>
-            {i < 2 && <div className={`flex-1 h-0.5 mx-4 ${s.num < step ? 'bg-blue-600' : 'bg-gray-300'}`} />}
+            {i < 2 && <div className={`flex-1 h-0.5 mx-4 ${s.num < step ? 'bg-hotel-gold' : 'bg-hotel-cream'}`} />}
           </React.Fragment>
         ))}
       </div>
@@ -218,9 +237,13 @@ export function BookingSteps({ room, disabledDates, onBookingComplete, isBooking
         </CardHeader>
         <CardContent>
           {step === 1 && (
-            <DateStep dateRange={dateRange} setDateRange={setDateRange} guestCount={guestCount} setGuestCount={setGuestCount} room={room} nights={nights} disabledDates={disabledDates} onNext={() => {
+            <DateStep dateRange={dateRange} setDateRange={setDateRange} guestCount={guestCount} setGuestCount={setGuestCount} room={room} package={pkg} nights={nights} disabledDates={disabledDates} onNext={() => {
               if (!dateRange?.from || !dateRange?.to || nights === 0) return showError('Select valid dates');
-              if (guestCount > room.occupancy) return showError(`Max ${room.occupancy} guests`);
+              const maxGuests = room?.occupancy || pkg?.max_guests || 2;
+              if (guestCount > maxGuests) return showError(`Max ${maxGuests} guests`);
+              if (pkg && (nights < pkg.min_nights || nights > pkg.max_nights)) {
+                return showError(`Package requires ${pkg.min_nights}-${pkg.max_nights} nights`);
+              }
               setStep(2);
             }} />
           )}
@@ -228,7 +251,7 @@ export function BookingSteps({ room, disabledDates, onBookingComplete, isBooking
             <GuestStep data={data} errors={errors} handleField={handleField} submitGuest={submitGuest} canProceedGuest={canProceedGuest} setStep={setStep} />
           )}
           {step === 3 && (
-            <ReviewStep room={room} guestCount={guestCount} dateRange={dateRange} nights={nights} basePrice={basePrice} serviceFee={serviceFee} totalPrice={totalPrice} data={data} isBooking={isBooking} onConfirm={confirmBooking} onEdit={() => setStep(2)} />
+            <ReviewStep room={room} package={pkg} guestCount={guestCount} dateRange={dateRange} nights={nights} basePrice={basePrice} serviceFee={serviceFee} totalPrice={totalPrice} data={data} isBooking={isBooking} onConfirm={confirmBooking} onEdit={() => setStep(2)} />
           )}
         </CardContent>
       </Card>

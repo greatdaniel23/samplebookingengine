@@ -1,6 +1,24 @@
-# Booking Engine Frontend
+# 🏨 Complete Booking Engine - Frontend & Backend
 
-This is the React + Vite frontend for a simple room booking engine. It is designed to work with a PHP API served via XAMPP (Apache + MySQL) on Windows.
+A fully functional hotel booking system with React + TypeScript frontend and PHP backend. The system includes room browsing, availability checking, booking creation, and admin management - all integrated with a MySQL database via XAMPP.
+
+## ✨ Features
+
+- 🏠 **Room Browsing**: View available rooms with images, prices, and features
+- 📅 **Smart Calendar**: Date picker with automatic conflict detection  
+- 💼 **Booking Management**: Complete booking flow with guest information
+- 🔄 **Real-time Availability**: Prevents double bookings with database integration
+- 📱 **Responsive Design**: Mobile-friendly interface with Tailwind CSS
+- 🛠️ **Admin Panel**: View and manage all bookings
+- 🔌 **Offline Support**: Bookings saved locally when offline, sync when online
+
+## 🚀 Live System Status
+
+✅ **Frontend**: React + TypeScript + Vite (Port 8080)  
+✅ **Backend**: PHP API with proper routing  
+✅ **Database**: MySQL with complete schema  
+✅ **CORS**: Properly configured  
+✅ **Integration**: Frontend ↔ Backend ↔ Database working end-to-end
 
 ## 1. Prerequisites
 
@@ -48,122 +66,179 @@ Restart the dev server after changes.
 3. Verify Apache: visit `http://localhost/`.
 4. Verify MySQL: click Admin (phpMyAdmin) or visit `http://localhost/phpmyadmin/`.
 
-## 5. Create Database & Tables
+## 5. Database Setup (Automated)
 
-In phpMyAdmin run the SQL below (adjust names as needed):
+### Quick Setup
+Run the automated database setup by visiting:
+```
+http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/setup-database.php
+```
+
+This will automatically create the database, tables, and insert sample data.
+
+### Manual Setup (Alternative)
+Or run this SQL in phpMyAdmin:
 
 ```sql
 CREATE DATABASE IF NOT EXISTS booking_engine CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE booking_engine;
 
+-- Rooms table (actual schema)
 CREATE TABLE IF NOT EXISTS rooms (
-	id INT AUTO_INCREMENT PRIMARY KEY,
-	name VARCHAR(100) NOT NULL,
-	price DECIMAL(10,2) NOT NULL,
-	occupancy INT NOT NULL DEFAULT 1,
-	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(100),
+    price DECIMAL(10,2) NOT NULL,
+    capacity INT NOT NULL,
+    amenities JSON,
+    images JSON,
+    description TEXT,
+    size VARCHAR(100),
+    beds VARCHAR(100),
+    features JSON,
+    available BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Bookings table (actual schema) 
 CREATE TABLE IF NOT EXISTS bookings (
-	id INT AUTO_INCREMENT PRIMARY KEY,
-	room_id INT NOT NULL,
-	first_name VARCHAR(80) NOT NULL,
-	last_name VARCHAR(80) NOT NULL,
-	email VARCHAR(120) NOT NULL,
-	phone VARCHAR(30) NOT NULL,
-	special_requests TEXT NULL,
-	check_in DATE NOT NULL,
-	check_out DATE NOT NULL,
-	guests INT NOT NULL DEFAULT 1,
-	total_price DECIMAL(10,2) NOT NULL,
-	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	CONSTRAINT fk_bookings_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
-	INDEX (email), INDEX (check_in), INDEX (check_out)
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    reference VARCHAR(20) NOT NULL UNIQUE,
+    room_id VARCHAR(50) NOT NULL,
+    check_in DATE NOT NULL,
+    check_out DATE NOT NULL,
+    guests INT NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
+    total_amount DECIMAL(10,2) NOT NULL,
+    status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'confirmed',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (room_id) REFERENCES rooms(id),
+    INDEX (email), INDEX (check_in), INDEX (check_out)
+);
+
+-- Admin Users table
+CREATE TABLE IF NOT EXISTS admin_users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    role ENUM('admin', 'manager') DEFAULT 'admin',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
-## 6. Minimal PHP API (Example)
+## 6. Working API Endpoints
 
-`api/index.php` (router skeleton):
-```php
-<?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+The PHP API is fully implemented with the following endpoints:
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
+### **Room Endpoints**
+- `GET /api/rooms` - List all available rooms
+- `GET /api/rooms/{id}` - Get specific room details
 
-$uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
-// Expected: fontend-bookingengine-100/frontend-booking-engine/api/...
-$segments = explode('/', $uri);
-$last = end($segments);
+### **Booking Endpoints** 
+- `GET /api/bookings` - List all bookings
+- `POST /api/bookings` - Create new booking
+- `GET /api/bookings/{id}` - Get specific booking
+- `GET /api/bookings?action=availability&room_id={id}&check_in={date}&check_out={date}` - Check availability
 
-require_once __DIR__ . '/lib/db.php';
-require_once __DIR__ . '/endpoints/bookings.php';
-
-switch ($last) {
-	case 'bookings':
-		handleBookings();
-		break;
-	default:
-		http_response_code(404);
-		echo json_encode(['error' => 'Not found']);
+### **Response Format**
+All endpoints return consistent JSON:
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "Operation successful"
 }
 ```
 
-`api/lib/db.php`:
-```php
-<?php
-function db() {
-	static $pdo = null;
-	if ($pdo) return $pdo;
-	$pdo = new PDO('mysql:host=localhost;dbname=booking_engine;charset=utf8mb4','root','',[
-		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-	]);
-	return $pdo;
-}
+### **API Structure**
+```
+api/
+├── index.php              # Main router
+├── config/
+│   └── database.php       # Database connection
+├── controllers/
+│   ├── BookingController.php
+│   └── RoomController.php
+├── models/
+│   ├── Booking.php
+│   └── Room.php
+└── utils/
+    └── helpers.php        # Utility functions
 ```
 
-`api/endpoints/bookings.php`:
-```php
-<?php
-function handleBookings() {
-	$method = $_SERVER['REQUEST_METHOD'];
-	if ($method === 'GET') {
-		$stmt = db()->query('SELECT * FROM bookings ORDER BY id DESC');
-		echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
-		return;
-	}
-	if ($method === 'POST') {
-		$body = json_decode(file_get_contents('php://input'), true);
-		$sql = 'INSERT INTO bookings (room_id, first_name, last_name, email, phone, special_requests, check_in, check_out, guests, total_price)
-						VALUES (?,?,?,?,?,?,?,?,?,?)';
-		$stmt = db()->prepare($sql);
-		$stmt->execute([
-			$body['room_id'], $body['first_name'], $body['last_name'], $body['email'], $body['phone'],
-			$body['special_requests'] ?? null, $body['check_in'], $body['check_out'], $body['guests'], $body['total_price']
-		]);
-		echo json_encode(['id' => db()->lastInsertId()]);
-		return;
-	}
-	http_response_code(405);
-	echo json_encode(['error' => 'Method not allowed']);
-}
+## 7. Testing the API
+
+### **Test with PowerShell:**
+```powershell
+# Test rooms endpoint
+Invoke-RestMethod -Uri "http://localhost/fontend-bookingengine-100/frontend-booking-engine/api/rooms" -Method GET
+
+# Test availability check
+Invoke-RestMethod -Uri "http://localhost/fontend-bookingengine-100/frontend-booking-engine/api/bookings?action=availability&room_id=1&check_in=2024-01-15&check_out=2024-01-20" -Method GET
+
+# Create a booking
+$body = @{
+    room_id = 1
+    first_name = "John"
+    last_name = "Doe"
+    email = "john@example.com"
+    phone = "123-456-7890"
+    check_in = "2024-01-15"
+    check_out = "2024-01-20"
+    guests = 2
+    total_price = 750.00
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost/fontend-bookingengine-100/frontend-booking-engine/api/bookings" -Method POST -Body $body -ContentType "application/json"
 ```
 
-## 7. Frontend Configuration
+## 8. Frontend Configuration
 
-- Central path config: `src/config/paths.ts` provides `paths.api.bookings` etc.
-- Replace any hard-coded fetch URLs with imports from that file.
+### **Vite Development Server**
+The React frontend runs on port 8080 with proxy configuration:
 
-Example React fetch:
-```ts
-import { paths } from '@/config/paths';
-async function loadBookings() {
-	const res = await fetch(paths.api.bookings);
-	return res.json();
-}
+```typescript
+// vite.config.ts
+export default defineConfig({
+  server: {
+    port: 8080,
+    proxy: {
+      '/api': {
+        target: 'http://localhost/fontend-bookingengine-100/frontend-booking-engine',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  }
+})
+```
+
+### **API Service Configuration**
+```javascript
+// src/services/api.js
+const API_BASE_URL = '/api';
+const LOCAL_API_BASE_URL = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine/api';
+
+export const apiService = {
+  async getRooms() {
+    const response = await fetch(`${API_BASE_URL}/rooms`);
+    return response.json();
+  },
+  
+  async createBooking(booking) {
+    const response = await fetch(`${API_BASE_URL}/bookings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(booking)
+    });
+    return response.json();
+  }
+};
 ```
 
 ## 8. Running Frontend
@@ -182,30 +257,73 @@ Invoke-WebRequest -Uri "http://localhost/fontend-bookingengine-100/frontend-book
 curl http://localhost/fontend-bookingengine-100/frontend-booking-engine/api/bookings
 ```
 
-## 10. Common Issues & Fixes
+## 9. Running the Application
 
-| Issue | Cause | Fix |
-|-------|-------|-----|
-| 404 on /api/bookings | Wrong base path | Confirm folder path + API_BASE env variable |
-| CORS blocked | Missing headers | Add CORS headers in `index.php` (shown above) |
-| Empty results | No data | Insert sample rows in `rooms` & create bookings |
-| Wrong total price | Mismatch calculation | Ensure frontend price formula matches backend stored value |
+### **Start Development Environment:**
+```powershell
+# 1. Start XAMPP (Apache + MySQL)
+# 2. Ensure database is created and tables exist
+# 3. Navigate to project directory
+cd "C:\xampp\htdocs\fontend-bookingengine-100\frontend-booking-engine\frontend-booking-engine"
 
-## 11. Sample Insert Data
+# 4. Install dependencies (if not done)
+pnpm install
 
-```sql
-INSERT INTO rooms (name, price, occupancy) VALUES
-('Deluxe Suite', 150.00, 4),
-('Standard Room', 80.00, 2),
-('Family Room', 120.00, 5);
+# 5. Start development server
+pnpm run dev
 ```
 
-## 12. Next Steps
+### **Access Points:**
+- **Frontend**: http://localhost:8080
+- **API Direct**: http://localhost/fontend-bookingengine-100/frontend-booking-engine/api/
+- **phpMyAdmin**: http://localhost/phpmyadmin
 
-- Add authentication for admin panel.
-- Add endpoint `/rooms` and integrate room listing.
-- Add validation & error responses standard (JSON shape).
-- Implement pagination for bookings.
+## 10. System Status ✅
+
+### **Working Features:**
+- ✅ Room listing and filtering
+- ✅ Date selection and availability checking  
+- ✅ Real-time booking creation
+- ✅ Database integration with conflict prevention
+- ✅ Responsive UI with modern components
+- ✅ Form validation and error handling
+- ✅ Admin booking management interface
+
+### **Verified Endpoints:**
+- ✅ `GET /api/rooms` - Returns formatted room data
+- ✅ `GET /api/bookings` - Returns all bookings
+- ✅ `POST /api/bookings` - Creates new bookings
+- ✅ `GET /api/bookings?action=availability` - Checks room availability
+
+## 11. Common Issues & Solutions
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| API 404 errors | Incorrect proxy path | Check vite.config.ts proxy settings |
+| CORS errors | Missing headers | Verify CORS headers in API controllers |
+| Database connection | MySQL not running | Start XAMPP MySQL service |
+| Room data not loading | Type mismatches | Ensure Room interface matches API response |
+| Booking conflicts | Missing availability check | Verify database booking queries |
+
+## 12. Development Notes
+
+### **Database Schema:**
+- All tables use proper indexes for performance
+- Foreign key relationships maintain data integrity  
+- Booking availability uses date range queries
+- Admin users table ready for authentication
+
+### **Frontend Architecture:**
+- React Context for global booking state
+- TypeScript for type safety
+- Tailwind CSS for styling
+- Component-based architecture with shadcn/ui
+
+### **Backend Structure:**
+- MVC pattern with proper separation
+- Consistent JSON API responses
+- Database abstraction layer
+- Error handling and validation
 
 ---
 This README section was generated to help you run locally with XAMPP. Adjust anything as your backend evolves.

@@ -99,5 +99,70 @@ class Booking {
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result['booking_count'] == 0;
     }
+
+    public function update($id, $data) {
+        $query = "UPDATE " . $this->table . " 
+                  SET room_id = :room_id, first_name = :first_name, last_name = :last_name, 
+                      email = :email, phone = :phone, check_in = :check_in, check_out = :check_out,
+                      guests = :guests, total_price = :total_price, status = :status, 
+                      special_requests = :special_requests, updated_at = CURRENT_TIMESTAMP
+                  WHERE id = :id";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':room_id', $data['room_id']);
+        $stmt->bindParam(':first_name', $data['first_name']);
+        $stmt->bindParam(':last_name', $data['last_name']);
+        $stmt->bindParam(':email', $data['email']);
+        $stmt->bindParam(':phone', $data['phone']);
+        $stmt->bindParam(':check_in', $data['check_in']);
+        $stmt->bindParam(':check_out', $data['check_out']);
+        $stmt->bindParam(':guests', $data['guests']);
+        $stmt->bindParam(':total_price', $data['total_price']);
+        $stmt->bindParam(':status', $data['status']);
+        $stmt->bindParam(':special_requests', $data['special_requests']);
+        
+        return $stmt->execute();
+    }
+
+    public function delete($id) {
+        $query = "DELETE FROM " . $this->table . " WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id);
+        
+        return $stmt->execute();
+    }
+
+    public function updateStatus($id, $status) {
+        $query = "UPDATE " . $this->table . " SET status = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':status', $status);
+        
+        return $stmt->execute();
+    }
+
+    public function checkAvailabilityExcept($room_id, $check_in, $check_out, $except_booking_id) {
+        $query = "SELECT COUNT(*) as booking_count FROM " . $this->table . " 
+                  WHERE room_id = :room_id 
+                  AND id != :except_id
+                  AND status != 'cancelled'
+                  AND (
+                      (check_in <= :check_in AND check_out > :check_in) OR
+                      (check_in < :check_out AND check_out >= :check_out) OR
+                      (check_in >= :check_in AND check_out <= :check_out)
+                  )";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':room_id', $room_id);
+        $stmt->bindParam(':except_id', $except_booking_id);
+        $stmt->bindParam(':check_in', $check_in);
+        $stmt->bindParam(':check_out', $check_out);
+        $stmt->execute();
+
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['booking_count'] == 0;
+    }
 }
 ?>
