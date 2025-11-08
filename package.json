@@ -8,7 +8,10 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:full": "vite build && npm run setup:api",
+    "setup:api": "echo API files are already in place",
+    "setup:db": "echo Please run database/schema.sql in phpMyAdmin"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

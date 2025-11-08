@@ -3,22 +3,18 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { DateRange } from "react-day-picker";
-import { differenceInDays, format } from "date-fns";
-import { showError, showSuccess } from "@/utils/toast";
+import { format } from "date-fns";
+import { showSuccess, showError } from "@/utils/toast";
 import { ArrowLeft, Ruler, BedDouble, Users, CheckCircle2 } from "lucide-react";
 import NotFound from "./NotFound";
 import { villaData } from "@/data/dummy";
 import { useBookings } from "@/context/BookingContext";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Booking, GuestInfo } from "@/types";
+import { BookingSteps } from "@/components/BookingSteps";
+// @ts-ignore
+import ApiService from "@/services/api.js";
 
 const BookingPage = () => {
   const { roomId } = useParams<{ roomId: string }>();
@@ -27,11 +23,10 @@ const BookingPage = () => {
   const room = villaData.rooms.find((r) => r.id === roomId);
   const { addBooking, getBookingsForRoom } = useBookings();
 
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  const [guests, setGuests] = useState(1);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [bookingDetails, setBookingDetails] = useState<{ id: number | null; reference?: string }>({ id: null });
   const [isBooking, setIsBooking] = useState(false);
+  const [finalBookingData, setFinalBookingData] = useState<any>(null);
 
   // Build disabled dates from existing bookings for this room
   const existingBookings = getBookingsForRoom(roomId || "");
@@ -44,74 +39,109 @@ const BookingPage = () => {
     });
   };
 
-  // User Info Form Schema
-  const schema = z.object({
-    firstName: z.string().min(2, "Min 2 chars"),
-    lastName: z.string().min(2, "Min 2 chars"),
-    email: z.string().email("Invalid email"),
-    phone: z.string().optional(),
-  });
-  const form = useForm<GuestInfo>({ resolver: zodResolver(schema), defaultValues: { firstName: "", lastName: "", email: "" } });
-
   if (!room) {
     return <NotFound />;
   }
 
-  const pricePerNight = room.price;
-  const numberOfNights =
-    dateRange?.from && dateRange?.to
-      ? differenceInDays(dateRange.to, dateRange.from)
-      : 0;
-  const basePrice = numberOfNights * pricePerNight;
-  const serviceFee = basePrice * 0.1;
-  const totalPrice = basePrice + serviceFee;
-
-  const handleConfirmBooking = (data?: GuestInfo) => {
-    if (!dateRange?.from || !dateRange?.to) {
-      showError("Please select your check-in and check-out dates.");
-      return;
-    }
-    if (guests <= 0) {
-      showError("Please enter at least one guest.");
-      return;
-    }
-    if (guests > room.occupancy) {
-      showError(`This room can only accommodate up to ${room.occupancy} guests.`);
-      return;
-    }
-    if (!data) {
-      // trigger form submit manually if data missing
-      form.handleSubmit((values) => handleConfirmBooking(values))();
-      return;
-    }
-    
+  const handleBookingComplete = async (bookingData: {
+    dateRange: DateRange;
+    guests: number;
+    guestInfo: any;
+    totalPrice: number;
+  }) => {
     setIsBooking(true);
-    // Simulate a network request
-    setTimeout(() => {
-      const bookingId = Math.floor(Math.random() * 10000);
-      const reference = `BK-${bookingId}`;
+    setFinalBookingData(bookingData);
+    
+    // Generate booking details first
+    const bookingId = Math.floor(Math.random() * 10000);
+    const reference = `BK-${bookingId}`;
+
+    try {
+      // Prepare booking data for API
+      const apiBookingData = {
+        roomId: room.id,
+        from: bookingData.dateRange.from!.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        to: bookingData.dateRange.to!.toISOString().split('T')[0],
+        guests: bookingData.guests,
+        user: {
+          firstName: bookingData.guestInfo.firstName,
+          lastName: bookingData.guestInfo.lastName,
+          email: bookingData.guestInfo.email,
+          phone: bookingData.guestInfo.phone || ''
+        },
+        total: bookingData.totalPrice,
+      };
+
+      // Try to save to database via API
+      console.log('Attempting to save to database via API...');
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiBookingData)
+      });
+      
+      if (response.ok) {
+        const apiResponse = await response.json();
+        
+        if (apiResponse && apiResponse.success) {
+          // Use API booking ID if successful
+          const dbBookingId = apiResponse.data.booking.id;
+          const dbReference = apiResponse.data.booking.reference || reference;
+          
+          setBookingDetails({ id: dbBookingId, reference: dbReference });
+          setIsConfirmed(true);
+          setIsBooking(false);
+          showSuccess("Booking confirmed and saved to database!");
+          window.scrollTo(0, 0);
+
+          // Add to local context with database ID
+          const localBooking: Booking = {
+            id: dbBookingId,
+            reference: dbReference,
+            roomId: room.id,
+            from: bookingData.dateRange.from!.toISOString(),
+            to: bookingData.dateRange.to!.toISOString(),
+            guests: bookingData.guests,
+            user: bookingData.guestInfo,
+            total: bookingData.totalPrice,
+            createdAt: new Date().toISOString(),
+          };
+          addBooking(localBooking);
+        } else {
+          throw new Error('API response was unsuccessful');
+        }
+      } else {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Database save failed, falling back to localStorage:', error);
+      
+      // Fallback: Save to localStorage only
       setBookingDetails({ id: bookingId, reference });
       setIsConfirmed(true);
       setIsBooking(false);
-      showSuccess("Booking confirmed!");
+      showSuccess("Booking confirmed and saved locally! (Note: Database connection unavailable)");
       window.scrollTo(0, 0);
 
-      const booking: Booking = {
+      // Add to local context with generated ID
+      const localBooking: Booking = {
         id: bookingId,
         reference,
         roomId: room.id,
-        from: dateRange.from.toISOString(),
-        to: dateRange.to.toISOString(),
-        guests,
-        user: data,
-        total: totalPrice,
+        from: bookingData.dateRange.from!.toISOString(),
+        to: bookingData.dateRange.to!.toISOString(),
+        guests: bookingData.guests,
+        user: bookingData.guestInfo,
+        total: bookingData.totalPrice,
         createdAt: new Date().toISOString(),
       };
-      addBooking(booking);
-    }, 1500);
+      addBooking(localBooking);
+    }
   };
 
-  if (isConfirmed) {
+  if (isConfirmed && finalBookingData) {
     return (
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-2xl mx-auto text-center">
@@ -129,23 +159,23 @@ const BookingPage = () => {
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Guest:</span>
-                <span>{form.getValues("firstName")} {form.getValues("lastName")}</span>
+                <span>{finalBookingData.guestInfo.firstName} {finalBookingData.guestInfo.lastName}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Email:</span>
-                <span>{form.getValues("email")}</span>
+                <span>{finalBookingData.guestInfo.email}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Check-in:</span>
-                <span>{dateRange?.from ? format(dateRange.from, "MMMM d, yyyy") : ''}</span>
+                <span>{finalBookingData.dateRange.from ? format(finalBookingData.dateRange.from, "MMMM d, yyyy") : ''}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Check-out:</span>
-                <span>{dateRange?.to ? format(dateRange.to, "MMMM d, yyyy") : ''}</span>
+                <span>{finalBookingData.dateRange.to ? format(finalBookingData.dateRange.to, "MMMM d, yyyy") : ''}</span>
               </div>
               <div className="flex justify-between font-bold text-lg border-t pt-4">
                 <span>Total Paid:</span>
-                <span>${totalPrice.toFixed(2)}</span>
+                <span>${finalBookingData.totalPrice.toFixed(2)}</span>
               </div>
             </CardContent>
           </Card>
@@ -163,8 +193,10 @@ const BookingPage = () => {
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Villa
       </Button>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div className="lg:col-span-2">
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        {/* Room Details Section */}
+        <div className="lg:col-span-1">
           <Card>
             <CardHeader className="p-0">
               <img src={room.image} alt={room.name} className="w-full h-[400px] object-cover rounded-t-lg" />
@@ -205,108 +237,14 @@ const BookingPage = () => {
           </Card>
         </div>
 
+        {/* 3-Step Booking Section */}
         <div className="lg:col-span-1">
-          <Card className="sticky top-8">
-            <CardHeader>
-              <CardTitle className="text-2xl">Book your stay</CardTitle>
-              <CardDescription>Enter your details & select dates.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                <Calendar
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  className="rounded-md border"
-                  numberOfMonths={1}
-                  disabled={(date) => {
-                    const yesterday = new Date();
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    return date < yesterday || isDateBooked(date);
-                  }}
-                />
-                <div>
-                  <Label htmlFor="guests" className="text-base">Guests</Label>
-                  <Input
-                    id="guests"
-                    type="number"
-                    min="1"
-                    max={room.occupancy}
-                    value={guests}
-                    onChange={(e) => setGuests(Number(e.target.value))}
-                    className="mt-2"
-                  />
-                </div>
-                <Form {...form}>
-                  <div className="space-y-4">
-                    <FormField name="firstName" control={form.control} render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>First Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField name="lastName" control={form.control} render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Last Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField name="email" control={form.control} render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="john@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField name="phone" control={form.control} render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone (optional)</FormLabel>
-                        <FormControl>
-                          <Input type="tel" placeholder="+1 555 123 4567" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  </div>
-                </Form>
-              </div>
-
-              {numberOfNights > 0 ? (
-                <div className="space-y-4 mt-6">
-                  <h3 className="text-lg font-semibold">Price Details</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>${pricePerNight.toFixed(2)} x {numberOfNights} nights</span>
-                      <span>${basePrice.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Service fee</span>
-                      <span>${serviceFee.toFixed(2)}</span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between font-bold text-lg border-t pt-4 mt-4">
-                    <span>Total</span>
-                    <span>${totalPrice.toFixed(2)}</span>
-                  </div>
-                  <Button onClick={() => handleConfirmBooking(form.getValues())} className="w-full mt-4" size="lg" disabled={isBooking}>
-                    {isBooking ? "Booking..." : "Confirm and Book"}
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground pt-8">
-                  <p>Select dates to see price</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <BookingSteps
+            room={room}
+            disabledDates={isDateBooked}
+            onBookingComplete={handleBookingComplete}
+            isBooking={isBooking}
+          />
         </div>
       </div>
     </div>
