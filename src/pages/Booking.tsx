@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,6 +13,8 @@ import { villaData } from "@/data/dummy";
 import { useBookings } from "@/context/BookingContext";
 import { Booking, GuestInfo } from "@/types";
 import { BookingSteps } from "@/components/BookingSteps";
+import { paths } from '@/config/paths';
+import { saveOfflineBooking, trySyncOfflineBookings, getOfflineCount } from '@/lib/offlineBookings';
 // @ts-ignore
 import ApiService from "@/services/api.js";
 
@@ -42,6 +44,25 @@ const BookingPage = () => {
   if (!room) {
     return <NotFound />;
   }
+
+  // Attempt sync of any offline bookings on mount
+  useEffect(() => {
+    (async () => {
+      const offlineTotal = getOfflineCount();
+      if (offlineTotal === 0) return;
+      try {
+        const { synced, failed } = await trySyncOfflineBookings(paths.api.bookings);
+        if (synced.length > 0) {
+          showSuccess(`Synced ${synced.length} pending booking(s) to database.`);
+        }
+        if (failed.length > 0) {
+          showError(`Failed to sync ${failed.length} booking(s). Will retry later.`);
+        }
+      } catch (e) {
+        console.warn('Offline sync error:', e);
+      }
+    })();
+  }, []);
 
   const handleBookingComplete = async (bookingData: {
     dateRange: DateRange;
@@ -116,16 +137,7 @@ const BookingPage = () => {
         throw new Error(`API request failed: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
-      console.error('Database save failed, falling back to localStorage:', error);
-      
-      // Fallback: Save to localStorage only
-      setBookingDetails({ id: bookingId, reference });
-      setIsConfirmed(true);
-      setIsBooking(false);
-      showSuccess("Booking confirmed and saved locally! (Note: Database connection unavailable)");
-      window.scrollTo(0, 0);
-
-      // Add to local context with generated ID
+      console.error('Database save failed, saving offline for later sync:', error);
       const localBooking: Booking = {
         id: bookingId,
         reference,
@@ -137,7 +149,14 @@ const BookingPage = () => {
         total: bookingData.totalPrice,
         createdAt: new Date().toISOString(),
       };
+      // Persist for later sync
+      saveOfflineBooking({ ...localBooking, pendingSync: true });
       addBooking(localBooking);
+      setBookingDetails({ id: bookingId, reference });
+      setIsConfirmed(true);
+      setIsBooking(false);
+      showSuccess(`Booking stored offline. It will sync automatically when connection is restored.`);
+      window.scrollTo(0, 0);
     }
   };
 
