@@ -9,12 +9,13 @@ import { format } from "date-fns";
 import { showSuccess, showError } from "@/utils/toast";
 import { ArrowLeft, Ruler, BedDouble, Users, CheckCircle2 } from "lucide-react";
 import NotFound from "./NotFound";
-import { villaData } from "@/data/dummy";
 import { useBookings } from "@/context/BookingContext";
-import { Booking, GuestInfo } from "@/types";
+import { Booking } from "@/types";
 import { BookingSteps } from "@/components/BookingSteps";
 import { paths } from '@/config/paths';
 import { saveOfflineBooking, trySyncOfflineBookings, getOfflineCount } from '@/lib/offlineBookings';
+import { Room } from "@/types";
+import BookingSkeleton from "@/components/BookingSkeleton";
 // @ts-ignore
 import ApiService from "@/services/api.js";
 
@@ -22,8 +23,28 @@ const BookingPage = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
 
-  const room = villaData.rooms.find((r) => r.id === roomId);
+  const [room, setRoom] = useState<Room | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { addBooking, getBookingsForRoom } = useBookings();
+
+  useEffect(() => {
+    const fetchRoom = async () => {
+      if (!roomId) return;
+      try {
+        setLoading(true);
+        const roomData = await ApiService.getRoom(roomId);
+        setRoom(roomData);
+        setError(null);
+      } catch (err) {
+        setError("Failed to fetch room details.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRoom();
+  }, [roomId]);
 
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [bookingDetails, setBookingDetails] = useState<{ id: number | null; reference?: string }>({ id: null });
@@ -41,6 +62,14 @@ const BookingPage = () => {
       return date >= from && date < to;
     });
   };
+
+  if (loading) {
+    return <BookingSkeleton />;
+  }
+
+  if (error) {
+    return <div className="text-center py-10 text-red-500">{error}</div>;
+  }
 
   if (!room) {
     return <NotFound />;
