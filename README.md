@@ -1,107 +1,196 @@
-# 🏨 Complete Booking Engine - Frontend & Backend
+# 🏨 Complete Villa Booking Engine with Dynamic Content Management
 
-A fully functional hotel booking system with React + TypeScript frontend and PHP backend. The system includes room browsing, availability checking, booking creation, and admin management - all integrated with a MySQL database via XAMPP.
+A comprehensive villa booking system featuring a React + TypeScript frontend, PHP backend, and a powerful admin content management system. The platform allows complete villa information management through a secure admin panel with real-time updates to the public website.
 
-## ✨ Features
+## ✨ Key Features
 
-- 🏠 **Room Browsing**: View available rooms with images, prices, and features
-- 📅 **Smart Calendar**: Date picker with automatic conflict detection  
-- 💼 **Booking Management**: Complete booking flow with guest information
-- 🔄 **Real-time Availability**: Prevents double bookings with database integration
-- 📱 **Responsive Design**: Mobile-friendly interface with Tailwind CSS
-- 🛠️ **Admin Panel**: View and manage all bookings
-- 🔌 **Offline Support**: Bookings saved locally when offline, sync when online
+### 🏡 **Public Villa Website**
+- 🏠 **Dynamic Villa Information**: Name, description, location, rating, and reviews
+- 📸 **Photo Gallery Management**: Image carousel with admin-controlled content
+- 🎯 **Amenities Display**: Customizable amenities with icons and descriptions
+- 📦 **Package Booking System**: Select and book accommodation packages
+- � **Responsive Design**: Mobile-friendly interface with Tailwind CSS
+- 🌐 **Real-time Content**: All content dynamically loaded from database
 
-## 🚀 Live System Status
+### 🔐 **Secure Admin Panel** (`/admin/villa`)
+- 🏢 **Villa Information Management**: Name, description, location, rating
+- 📞 **Contact Information**: Phone, email, website management
+- 🏠 **Address Details**: Street address, city, state, country, ZIP code
+- 🛏️ **Villa Specifications**: Max guests, bedrooms, bathrooms
+- � **Pricing & Policies**: Price per night, currency, cancellation policy, house rules
+- ⏰ **Check-in/out Times**: Customizable arrival and departure times
+- 📱 **Social Media Integration**: Facebook, Instagram, Twitter links
+- 🖼️ **Image Gallery Editor**: Add, remove, and reorder villa photos
+- ✨ **Amenities Manager**: Add, edit, and remove villa amenities with custom icons
 
-✅ **Frontend**: React + TypeScript + Vite (Port 8080)  
-✅ **Backend**: PHP API with proper routing  
-✅ **Database**: MySQL with complete schema  
-✅ **CORS**: Properly configured  
-✅ **Integration**: Frontend ↔ Backend ↔ Database working end-to-end
+### 🔒 **Security & Authentication**
+- � **Hidden Admin Access**: Discrete "Staff Portal" link in footer
+- 🔐 **Login Protection**: Secure authentication system
+- �️ **Route Guards**: Protected admin routes with session management
+- 🚪 **Logout Functionality**: Secure session termination
 
-## 1. Prerequisites
+### 🔄 **Real-time Integration**
+- ⚡ **Live Updates**: Changes in admin panel instantly reflect on public site
+- � **Dynamic Footer**: Contact information updates automatically
+- 📍 **Location Management**: Header location updates based on admin settings
+- 💾 **Database Sync**: All changes saved to MySQL database
 
-| Tool | Purpose |
-|------|---------|
-| XAMPP (Apache + MySQL) | Serves PHP API + database |
-| Node.js / pnpm | Runs the frontend dev server |
-| PowerShell (Win) | Terminal environment |
+## 🚀 System Architecture
 
-## 2. Folder Layout (Frontend)
+✅ **Frontend**: React + TypeScript + Vite (Port 8081)  
+✅ **Backend**: PHP API with comprehensive villa management endpoints  
+✅ **Database**: MySQL with complete villa information schema  
+✅ **Admin System**: Secure content management with authentication  
+✅ **Integration**: Complete frontend ↔ backend ↔ database integration
+
+## 🛠️ Prerequisites
+
+| Tool | Purpose | Status |
+|------|---------|--------|
+| XAMPP (Apache + MySQL) | Serves PHP API + database | ✅ Required |
+| Node.js / pnpm | Runs the frontend dev server | ✅ Required |
+| Web Browser | Access the application | ✅ Any modern browser |
+
+## 📁 Project Structure
 
 ```
-frontend-booking-engine/
-	src/
-	public/
-	package.json
-	vite.config.ts
+htdocs/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/
+├── src/
+│   ├── components/          # React components
+│   │   ├── ui/             # Shadcn UI components
+│   │   ├── AdminGuard.tsx  # Route protection
+│   │   ├── Footer.tsx      # Dynamic footer with villa info
+│   │   └── ...
+│   ├── pages/
+│   │   ├── Index.tsx       # Main villa page (dynamic content)
+│   │   ├── Admin.tsx       # Villa management panel
+│   │   ├── AdminLogin.tsx  # Admin authentication
+│   │   └── ...
+│   ├── hooks/
+│   │   ├── useVillaInfo.tsx # Villa data management
+│   │   └── ...
+│   ├── api/                # Backend API endpoints
+│   │   ├── villa.php       # Villa CRUD operations
+│   │   ├── config/         # Database configuration
+│   │   ├── migrate-db.php  # Database migration script
+│   │   └── init-data.php   # Sample data initialization
+│   └── ...
+├── package.json
+├── vite.config.ts
+└── README.md
 ```
 
-PHP backend (example) lives parallel or inside an `api/` folder served by Apache:
-
-```
-htdocs/
-	fontend-bookingengine-100/
-		frontend-booking-engine/ (this project)
-		api/ (your PHP endpoints: index.php, bookings.php, etc.)
+### 1️⃣ **Start XAMPP Services**
+```bash
+# Open XAMPP Control Panel
+# Start Apache and MySQL services
+# Verify at: http://localhost/
 ```
 
-## 3. Environment Variables
+### 2️⃣ **Database Setup**
+```bash
+# Run database migration (adds all villa info columns)
+curl http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/migrate-db.php
 
-Create a `.env` (or `.env.local`) in the project root to override defaults:
-
-```
-VITE_API_BASE=http://localhost/fontend-bookingengine-100/frontend-booking-engine/api
-VITE_PUBLIC_BASE=/fontend-bookingengine-100/frontend-booking-engine/
-VITE_ADMIN_BASE=/admin
-```
-
-Restart the dev server after changes.
-
-## 4. Starting XAMPP Services
-
-1. Open XAMPP Control Panel.
-2. Start Apache and MySQL.
-3. Verify Apache: visit `http://localhost/`.
-4. Verify MySQL: click Admin (phpMyAdmin) or visit `http://localhost/phpmyadmin/`.
-
-## 5. Database Setup (Automated)
-
-### Quick Setup
-Run the automated database setup by visiting:
-```
-http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/setup-database.php
+# Initialize sample villa data
+curl http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/init-data.php
 ```
 
-This will automatically create the database, tables, and insert sample data.
+### 3️⃣ **Frontend Setup**
+```bash
+# Install dependencies
+pnpm install
 
-### Manual Setup (Alternative)
-Or run this SQL in phpMyAdmin:
+# Start development server
+pnpm run dev
+# Server will run on: http://127.0.0.1:8081/
+```
 
+### 4️⃣ **Verify Installation**
+- **Main Site**: http://127.0.0.1:8081/
+- **Admin Login**: http://127.0.0.1:8081/admin/login
+- **API Test**: http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/villa.php
+
+## 🎯 Usage Guide
+
+### 🌐 **Public Villa Website**
+1. **Visit**: http://127.0.0.1:8081/
+2. **Browse**: Dynamic villa information, photos, and amenities
+3. **Book**: Select packages and make reservations
+4. **Contact**: View dynamic contact information in footer
+
+### 🔐 **Admin Panel Access**
+1. **Method 1 - Direct**: http://127.0.0.1:8081/admin/login
+2. **Method 2 - Discrete**: Go to main page → Scroll to footer → Click "Staff Portal"
+
+**Default Admin Credentials:**
+```
+Username: admin
+Password: admin123
+```
+
+### 🏡 **Villa Content Management**
+After logging in, you can manage:
+
+- **🏢 Basic Information**: Villa name, description, location, rating
+- **📞 Contact Details**: Phone, email, website  
+- **🏠 Address Information**: Street, city, state, country, ZIP
+- **🛏️ Villa Specs**: Max guests, bedrooms, bathrooms, pricing
+- **⏰ Timing**: Check-in/out times, policies
+- **📱 Social Media**: Facebook, Instagram, Twitter links
+- **🖼️ Photo Gallery**: Add/remove/reorder images
+- **✨ Amenities**: Customize amenities with icons
+
+### 🔄 **Real-time Updates**
+- Save changes in admin panel
+- Visit main page to see updates instantly
+- Footer contact information updates automatically
+- All changes persist in MySQL database
+
+## 🗄️ Database Schema
+
+### Villa Information Table (`villa_info`)
 ```sql
-CREATE DATABASE IF NOT EXISTS booking_engine CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE booking_engine;
-
--- Rooms table (actual schema)
-CREATE TABLE IF NOT EXISTS rooms (
-    id VARCHAR(50) PRIMARY KEY,
+CREATE TABLE villa_info (
+    id INT PRIMARY KEY DEFAULT 1,
     name VARCHAR(255) NOT NULL,
-    type VARCHAR(100),
-    price DECIMAL(10,2) NOT NULL,
-    capacity INT NOT NULL,
-    amenities JSON,
-    images JSON,
+    location VARCHAR(255) NOT NULL,
     description TEXT,
-    size VARCHAR(100),
-    beds VARCHAR(100),
-    features JSON,
-    available BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    rating DECIMAL(2,1) DEFAULT 4.9,
+    reviews INT DEFAULT 0,
+    images JSON,
+    amenities JSON,
+    -- Contact Information
+    phone VARCHAR(50) DEFAULT '',
+    email VARCHAR(255) DEFAULT '',
+    website VARCHAR(255) DEFAULT '',
+    -- Address Information  
+    address TEXT DEFAULT '',
+    city VARCHAR(100) DEFAULT '',
+    state VARCHAR(100) DEFAULT '',
+    zip_code VARCHAR(20) DEFAULT '',
+    country VARCHAR(100) DEFAULT 'Indonesia',
+    -- Villa Details
+    check_in_time VARCHAR(20) DEFAULT '15:00',
+    check_out_time VARCHAR(20) DEFAULT '11:00', 
+    max_guests INT DEFAULT 8,
+    bedrooms INT DEFAULT 4,
+    bathrooms INT DEFAULT 3,
+    price_per_night DECIMAL(10,2) DEFAULT 0.00,
+    currency VARCHAR(10) DEFAULT 'USD',
+    -- Policies
+    cancellation_policy TEXT DEFAULT '',
+    house_rules TEXT DEFAULT '',
+    social_media JSON,
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+```
 
--- Bookings table (actual schema) 
-CREATE TABLE IF NOT EXISTS bookings (
+### Bookings Table
+```sql
+CREATE TABLE bookings (
     id INT PRIMARY KEY AUTO_INCREMENT,
     reference VARCHAR(20) NOT NULL UNIQUE,
     room_id VARCHAR(50) NOT NULL,
@@ -114,7 +203,110 @@ CREATE TABLE IF NOT EXISTS bookings (
     phone VARCHAR(20),
     total_amount DECIMAL(10,2) NOT NULL,
     status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'confirmed',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## API Documentation
+
+### Villa Information Endpoints
+
+#### GET /api/villa.php
+Get villa information
+```json
+{
+    "name": "Aspen Villa",
+    "description": "Luxury villa in the mountains",
+    "location": "Aspen, Colorado",
+    "phone": "+1 (555) 123-4567",
+    "email": "info@aspenvilla.com",
+    "website": "https://aspenvilla.com",
+    "address": "123 Mountain View Drive",
+    "city": "Aspen",
+    "state": "Colorado",
+    "country": "United States",
+    "zipcode": "81611",
+    "max_guests": 8,
+    "bedrooms": 4,
+    "bathrooms": 3,
+    "price_per_night": 850.00,
+    "currency": "USD",
+    "checkin_time": "15:00",
+    "checkout_time": "11:00",
+    "cancellation_policy": "Free cancellation 48 hours before check-in",
+    "house_rules": "No smoking, No pets, Quiet hours 10 PM - 8 AM",
+    "social_media": {
+        "facebook": "https://facebook.com/aspenvilla",
+        "instagram": "https://instagram.com/aspenvilla",
+        "twitter": "https://twitter.com/aspenvilla"
+    }
+}
+```
+
+#### PUT /api/villa.php
+Update villa information
+- Content-Type: application/json
+- Body: Villa information object
+
+### Room Endpoints
+
+#### GET /api/index.php/rooms
+Get all available rooms
+
+### Booking Endpoints
+
+#### POST /api/index.php/bookings
+Create new booking
+- Content-Type: application/json
+- Body: Booking information object
+
+## Troubleshooting
+
+### Common Issues
+
+#### XAMPP Issues
+1. **Apache won't start**: Check if port 80 is in use
+   - Stop IIS if running
+   - Change Apache port in XAMPP config
+
+2. **MySQL won't start**: Check if port 3306 is in use
+   - Stop other MySQL services
+   - Check Windows services
+
+#### Database Issues
+1. **Connection failed**: Verify database credentials in `api/config/database.php`
+2. **Tables don't exist**: Run migration script `php database/migrate-db.php`
+3. **No villa data**: Run initialization script `php database/init-data.php`
+
+#### CORS Issues
+1. **API calls blocked**: Ensure CORS headers are set in PHP files
+2. **Credentials not included**: Check fetch requests include credentials
+
+#### Admin Access Issues
+1. **Can't access admin**: Use credentials `admin` / `admin123`
+2. **Admin not loading**: Check if React dev server is running on port 3000
+3. **Changes not saving**: Verify API endpoints are accessible
+
+#### Frontend Issues
+1. **White screen**: Check browser console for errors
+2. **API calls failing**: Verify XAMPP is running and API endpoints are accessible
+3. **Hot reload not working**: Restart Vite dev server
+
+### Development Tips
+- Always keep XAMPP running during development
+- Check browser console for JavaScript errors
+- Use browser Network tab to debug API calls
+- Verify database changes in phpMyAdmin
+- Test admin changes reflect on main page
+
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Make changes and test thoroughly
+4. Submit a pull request
+
+## License
+This project is licensed under the MIT License.
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (room_id) REFERENCES rooms(id),
     INDEX (email), INDEX (check_in), INDEX (check_out)

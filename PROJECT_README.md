@@ -1,16 +1,34 @@
-# 🏨 Hotel Booking Engine - Complete Full-Stack Application
+# � Villa Management System - Complete Full-Stack Application
 
-A modern, full-stack hotel booking engine built with React, TypeScript, PHP, and MySQL. Features a beautiful 3-step booking process, database persistence, and admin management.
+A modern, comprehensive villa management system built with React, TypeScript, PHP, and MySQL. Features a beautiful public villa showcase, secure admin panel, and complete villa information management.
 
 ## 🚀 Features
 
+### Public Villa Website
 - ✅ **3-Step Booking Flow** - Date selection, guest info, and confirmation
-- ✅ **Database Integration** - PHP REST API with MySQL backend  
+- ✅ **Dynamic Villa Showcase** - Real-time villa information display
+- ✅ **Photo Gallery** - Beautiful image carousel with villa photos
+- ✅ **Villa Amenities** - Comprehensive amenity listings
+- ✅ **Responsive Design** - Works on desktop, tablet, and mobile
+- ✅ **Real-time Updates** - Content changes instantly from admin panel
+
+### Secure Admin Panel
+- ✅ **Authentication System** - Secure login with credentials (admin/admin123)
+- ✅ **Villa Information Management** - Complete control over all villa data
+- ✅ **Contact Management** - Phone, email, website administration
+- ✅ **Address Management** - Street, city, state, country, zipcode
+- ✅ **Villa Specifications** - Guests, bedrooms, bathrooms, pricing
+- ✅ **Policy Management** - Cancellation policy, house rules
+- ✅ **Social Media Integration** - Facebook, Instagram, Twitter links
+- ✅ **Real-time Preview** - Changes reflect immediately on main site
+
+### Technical Features
+- ✅ **Database Integration** - PHP REST API with MySQL backend
 - ✅ **Modern UI** - React + TypeScript + Tailwind CSS + Shadcn/ui
 - ✅ **Real-time Validation** - Form validation with error handling
-- ✅ **Responsive Design** - Works on desktop, tablet, and mobile
-- ✅ **Admin Panel** - Booking management interface
 - ✅ **API Documentation** - Complete REST API endpoints
+- ✅ **Security** - Protected admin routes, discrete access
+- ✅ **CORS Support** - Proper cross-origin resource sharing
 
 ## 📁 Project Structure
 
@@ -19,15 +37,25 @@ frontend-booking-engine/
 ├── src/                    # React Frontend
 │   ├── components/         # Reusable UI components
 │   │   ├── ui/            # Shadcn/ui components
-│   │   └── BookingSteps.tsx # 3-step booking component
+│   │   ├── BookingSteps.tsx # 3-step booking component
+│   │   ├── PhotoGallery.tsx # Villa photo carousel
+│   │   ├── Amenities.tsx    # Villa amenity display
+│   │   └── AdminLogin.tsx   # Admin authentication
 │   ├── pages/             # Main page components
-│   │   ├── Index.tsx      # Villa showcase
+│   │   ├── Index.tsx      # Villa showcase page
 │   │   ├── Booking.tsx    # Room booking page
+│   │   ├── Admin.tsx      # Admin management panel
+│   │   ├── AdminBookings.tsx # Booking management
 │   │   └── NotFound.tsx   # 404 page
 │   ├── services/          # API service layer
 │   │   └── api.js         # API communication
 │   ├── hooks/             # Custom React hooks
+│   │   ├── useRooms.tsx   # Room data management
+│   │   └── useVillaInfo.tsx # Villa information hook
+│   ├── context/           # React context providers
+│   │   └── BookingContext.tsx # Booking state management
 │   ├── lib/               # Utilities and configurations
+│   ├── utils/             # Helper functions
 │   └── types.ts           # TypeScript definitions
 ├── api/                   # PHP REST API
 │   ├── controllers/       # API controllers
@@ -40,12 +68,15 @@ frontend-booking-engine/
 │   │   └── database.php
 │   ├── utils/            # Helper functions
 │   │   └── helpers.php
-│   └── index.php         # API router
+│   ├── villa.php         # Villa information API
+│   └── index.php         # Main API router
 ├── database/             # Database schema and migrations
-│   └── schema.sql        # Database setup
-├── admin/               # Admin panel (future)
-├── public/             # Static assets
-└── dist/              # Production build output
+│   ├── schema.sql        # Database setup
+│   ├── migrate-db.php    # Database migration script
+│   └── init-data.php     # Sample data initialization
+├── public/               # Static assets
+│   └── images/           # Villa photos and assets
+└── dist/                 # Production build output
 ```
 
 ## 🛠️ Installation
@@ -62,43 +93,103 @@ cd frontend-booking-engine
 pnpm install
 ```
 
-### 2. Database Setup
-1. Start XAMPP (Apache + MySQL)
-2. Open phpMyAdmin: http://localhost/phpmyadmin
-3. Run the SQL file: `database/schema.sql`
-4. Verify tables: `rooms`, `bookings`, `admin_users`
+### 2. XAMPP Setup
+1. **Install XAMPP** from https://www.apachefriends.org/
+2. **Start Services**: Apache + MySQL
+3. **Copy Project**: Place project folder in `C:\xampp\htdocs\`
+4. **Verify Access**: http://localhost/your-project-folder/
 
-### 3. Development Server
+### 3. Database Setup
+1. **Open phpMyAdmin**: http://localhost/phpmyadmin
+2. **Create Database**: `booking_engine`
+3. **Run Base Schema**: Import `database/schema.sql`
+4. **Run Migration**: Navigate to `http://localhost/your-project/database/migrate-db.php`
+5. **Initialize Data**: Navigate to `http://localhost/your-project/database/init-data.php`
+6. **Verify Tables**: Check `rooms`, `bookings`, `villa_info` tables exist
+
+### 4. Development Server
 ```bash
+# Start frontend development server
 pnpm dev
 ```
-- Frontend: http://localhost:8080
-- API: http://localhost:8080/api
 
-### 4. Production Build
+### 5. System Architecture
+- **Frontend**: http://localhost:3000 (React + Vite)
+- **API**: http://localhost/your-project/api/ (PHP)
+- **Database**: http://localhost/phpmyadmin (MySQL)
+- **Admin Panel**: http://localhost:3000/admin (Secure)
+
+### 6. Production Build
 ```bash
-pnpm run build:full
+pnpm run build
+pnpm run preview
 ```
 
-## 🌐 API Endpoints
+## � Usage Guide
 
-Base URL: `http://localhost:8080/api`
+### Public Villa Website
+1. **Visit Homepage**: Navigate to http://localhost:3000
+2. **Explore Villa**: View dynamic villa information, photos, amenities
+3. **Make Booking**: Use 3-step booking process for reservations
+4. **Contact Information**: All contact details are dynamically managed
+
+### Admin Panel Access
+1. **Discrete Access**: Scroll to footer, click "Staff Portal" 
+2. **Login Credentials**:
+   - Username: `admin`
+   - Password: `admin123`
+3. **Admin Dashboard**: Full villa information management
+4. **Real-time Updates**: Changes reflect immediately on main site
+
+### Admin Management Features
+- **Villa Information**: Name, description, location
+- **Contact Management**: Phone, email, website
+- **Address Details**: Complete address information
+- **Villa Specifications**: Guests, bedrooms, bathrooms, pricing
+- **Timing Settings**: Check-in/check-out times
+- **Policies**: Cancellation policy, house rules
+- **Social Media**: Facebook, Instagram, Twitter links
+
+## �🌐 API Endpoints
+
+Base URL: `http://localhost/your-project/api/`
+
+### Villa Information
+- `GET /villa.php` - Get villa information
+- `PUT /villa.php` - Update villa information (Admin only)
 
 ### Bookings
-- `POST /bookings` - Create new booking
-- `GET /bookings` - Get all bookings  
-- `GET /bookings/{id}` - Get specific booking
-- `GET /bookings?action=availability&room_id={id}&check_in={date}&check_out={date}` - Check availability
+- `POST /index.php/bookings` - Create new booking
+- `GET /index.php/bookings` - Get all bookings  
+- `GET /index.php/bookings/{id}` - Get specific booking
+- `GET /index.php/bookings?action=availability&room_id={id}&check_in={date}&check_out={date}` - Check availability
 
 ### Rooms
-- `GET /rooms` - Get all available rooms
-- `GET /rooms/{id}` - Get specific room
+- `GET /index.php/rooms` - Get all available rooms
+- `GET /index.php/rooms/{id}` - Get specific room
 
 ### Testing
-- `GET /test` - Test API connectivity
+- `GET /index.php/test` - Test API connectivity
 
 ### Example API Usage
 ```javascript
+// Get villa information
+const villaResponse = await fetch('/api/villa.php');
+const villaData = await villaResponse.json();
+
+// Update villa information (Admin)
+const updateData = {
+  name: "Luxury Mountain Villa",
+  phone: "+1 (555) 123-4567",
+  email: "info@villa.com"
+};
+
+const updateResponse = await fetch('/api/villa.php', {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(updateData)
+});
+
 // Create a booking
 const bookingData = {
   roomId: 'villa-deluxe',
@@ -114,14 +205,11 @@ const bookingData = {
   total: 299.99
 };
 
-const response = await fetch('/api/bookings', {
+const bookingResponse = await fetch('/api/index.php/bookings', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(bookingData)
 });
-
-const result = await response.json();
-console.log(result); // { success: true, data: { booking: { id: 1, reference: "BK-1" } } }
 ```
 
 ## 🎯 3-Step Booking Flow
