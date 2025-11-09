@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="config.js"></script>
     <style>
         :root {
             --hotel-gold: #B8860B;
@@ -51,6 +52,11 @@
 
     <script type="text/babel">
         const { useState, useEffect } = React;
+        
+        // Initialize configuration and log current settings
+        logConfig();
+        
+        // API configuration now handled by config.js functions
 
         // Simple auth check
         function useAuth() {
@@ -260,30 +266,207 @@
         // Bookings Management Section
         function BookingsSection() {
             const [bookings, setBookings] = useState([]);
+            const [rooms, setRooms] = useState([]);
+            const [packages, setPackages] = useState([]);
             const [loading, setLoading] = useState(true);
+            const [editingBooking, setEditingBooking] = useState(null);
+            const [showAddForm, setShowAddForm] = useState(false);
+            const [filterStatus, setFilterStatus] = useState('all');
+            const [formData, setFormData] = useState({
+                room_id: '',
+                first_name: '',
+                last_name: '',
+                email: '',
+                phone: '',
+                check_in: '',
+                check_out: '',
+                guests: '',
+                total_price: '',
+                special_requests: '',
+                status: 'confirmed'
+            });
+
+            const bookingStatuses = ['pending', 'confirmed', 'cancelled', 'checked_in', 'checked_out'];
 
             useEffect(() => {
                 loadBookings();
+                loadRooms();
+                loadPackages();
             }, []);
 
             const loadBookings = async () => {
                 try {
-                    const response = await fetch('/api/bookings');
+                    setLoading(true);
+                    const response = await fetch(getApiUrl('bookings.php'));
                     const data = await response.json();
-                    setBookings(data.success ? data.data : []);
+                    console.log('Bookings API Response:', data);
+                    if (data.success) {
+                        setBookings(data.data);
+                        console.log('Bookings loaded:', data.data.length);
+                    } else {
+                        console.error('Error loading bookings:', data.error);
+                        alert('Error loading bookings: ' + data.error);
+                    }
                 } catch (error) {
                     console.error('Error loading bookings:', error);
+                    alert('Error loading bookings. Please check if XAMPP is running. Error: ' + error.message);
                 } finally {
                     setLoading(false);
                 }
             };
+
+            const loadRooms = async () => {
+                try {
+                    const response = await fetch(getApiUrl('rooms.php'));
+                    const data = await response.json();
+                    if (data.success) {
+                        setRooms(data.data.filter(room => room.available));
+                    }
+                } catch (error) {
+                    console.error('Error loading rooms:', error);
+                }
+            };
+
+            const loadPackages = async () => {
+                try {
+                    const response = await fetch(getApiUrl('packages.php'));
+                    const data = await response.json();
+                    if (data.success) {
+                        setPackages(data.data.filter(pkg => pkg.is_active));
+                    }
+                } catch (error) {
+                    console.error('Error loading packages:', error);
+                }
+            };
+
+            const resetForm = () => {
+                setFormData({
+                    room_id: '',
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    phone: '',
+                    check_in: '',
+                    check_out: '',
+                    guests: '',
+                    total_price: '',
+                    special_requests: '',
+                    status: 'confirmed'
+                });
+                setEditingBooking(null);
+                setShowAddForm(false);
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                try {
+                    const url = editingBooking ? getApiUrl(`bookings.php?id=${editingBooking.id}`) : getApiUrl('bookings.php');
+                    const method = editingBooking ? 'PUT' : 'POST';
+                    
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert(editingBooking ? 'Booking updated successfully!' : 'Booking created successfully!');
+                        resetForm();
+                        loadBookings();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                } catch (error) {
+                    console.error('Error saving booking:', error);
+                    alert('Error saving booking: ' + error.message);
+                }
+            };
+
+            const deleteBooking = async (id) => {
+                if (confirm('Are you sure you want to delete this booking?')) {
+                    try {
+                        const response = await fetch(getApiUrl(`bookings.php?id=${id}`), {
+                            method: 'DELETE'
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            alert('Booking deleted successfully!');
+                            loadBookings();
+                        } else {
+                            alert('Error deleting booking: ' + data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error deleting booking:', error);
+                        alert('Error deleting booking: ' + error.message);
+                    }
+                }
+            };
+
+            const editBooking = (booking) => {
+                setFormData({
+                    room_id: booking.room_id,
+                    first_name: booking.first_name,
+                    last_name: booking.last_name,
+                    email: booking.email,
+                    phone: booking.phone,
+                    check_in: booking.check_in.split(' ')[0], // Get just the date part
+                    check_out: booking.check_out.split(' ')[0], // Get just the date part
+                    guests: booking.guests,
+                    total_price: booking.total_price,
+                    special_requests: booking.special_requests || '',
+                    status: booking.status
+                });
+                setEditingBooking(booking);
+                setShowAddForm(true);
+            };
+
+            const updateBookingStatus = async (id, newStatus) => {
+                try {
+                    const booking = bookings.find(b => b.id === id);
+                    const updatedData = { ...booking, status: newStatus };
+                    delete updatedData.room_name; // Remove joined field
+                    
+                    const response = await fetch(getApiUrl(`bookings.php?id=${id}`), {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(updatedData)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert('Booking status updated successfully!');
+                        loadBookings();
+                    } else {
+                        alert('Error updating status: ' + data.error);
+                    }
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    alert('Error updating status: ' + error.message);
+                }
+            };
+
+            const filteredBookings = filterStatus === 'all' 
+                ? bookings 
+                : bookings.filter(booking => booking.status === filterStatus);
 
             return (
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold text-gray-900">Bookings Management</h2>
                         <div className="flex gap-2">
-                            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <button 
+                                onClick={() => setShowAddForm(true)}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                            >
                                 Add Booking
                             </button>
                             <a 
@@ -293,6 +476,25 @@
                                 View Reports
                             </a>
                         </div>
+                    </div>
+
+                    {/* Filter Dropdown */}
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Filter by Status:
+                        </label>
+                        <select 
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                        >
+                            <option value="all">All Bookings</option>
+                            {bookingStatuses.map(status => (
+                                <option key={status} value={status}>
+                                    {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     {loading ? (
@@ -311,37 +513,262 @@
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
-                                    {bookings.slice(0, 10).map((booking, index) => (
-                                        <tr key={index} className="hover:bg-gray-50">
+                                    {filteredBookings.map((booking) => (
+                                        <tr key={booking.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {booking.first_name} {booking.last_name}
+                                                <div>
+                                                    <div className="font-medium">{booking.first_name} {booking.last_name}</div>
+                                                    <div className="text-gray-500">{booking.email}</div>
+                                                    <div className="text-gray-500">{booking.phone}</div>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {booking.room_id}
+                                                <div>
+                                                    <div className="font-medium">{booking.room_name || `Room ${booking.room_id}`}</div>
+                                                    <div className="text-gray-500">{booking.guests} guest{booking.guests > 1 ? 's' : ''}</div>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {booking.check_in} to {booking.check_out}
+                                                <div>
+                                                    <div>Check-in: {booking.check_in.split(' ')[0]}</div>
+                                                    <div>Check-out: {booking.check_out.split(' ')[0]}</div>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                                    booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                                                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                    'bg-red-100 text-red-800'
-                                                }`}>
-                                                    {booking.status}
-                                                </span>
+                                                <select 
+                                                    value={booking.status}
+                                                    onChange={(e) => updateBookingStatus(booking.id, e.target.value)}
+                                                    className={`px-2 py-1 text-xs rounded-full border-0 focus:ring-2 ${
+                                                        booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                                                        booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                        booking.status === 'checked_in' ? 'bg-blue-100 text-blue-800' :
+                                                        booking.status === 'checked_out' ? 'bg-purple-100 text-purple-800' :
+                                                        'bg-red-100 text-red-800'
+                                                    }`}
+                                                >
+                                                    {bookingStatuses.map(status => (
+                                                        <option key={status} value={status}>
+                                                            {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                ${booking.total_price}
+                                                <div className="font-medium">${booking.total_price}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <button className="text-blue-600 hover:text-blue-900 mr-2">Edit</button>
-                                                <button className="text-red-600 hover:text-red-900">Delete</button>
+                                                <button 
+                                                    onClick={() => editBooking(booking)}
+                                                    className="text-blue-600 hover:text-blue-900 mr-3"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button 
+                                                    onClick={() => deleteBooking(booking.id)}
+                                                    className="text-red-600 hover:text-red-900"
+                                                >
+                                                    Delete
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    )}
+
+                    {/* Booking Form Modal */}
+                    {showAddForm && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-screen overflow-y-auto">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-medium">
+                                        {editingBooking ? 'Edit Booking' : 'Add New Booking'}
+                                    </h3>
+                                    <button 
+                                        onClick={resetForm}
+                                        className="text-gray-400 hover:text-gray-600"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Room *
+                                            </label>
+                                            <select 
+                                                value={formData.room_id}
+                                                onChange={(e) => setFormData({...formData, room_id: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                                required
+                                            >
+                                                <option value="">Select Room</option>
+                                                {rooms.map(room => (
+                                                    <option key={room.id} value={room.id}>
+                                                        {room.name} - ${room.price}/night (Max {room.capacity} guests)
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Number of Guests *
+                                            </label>
+                                            <input 
+                                                type="number"
+                                                value={formData.guests}
+                                                onChange={(e) => setFormData({...formData, guests: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                                min="1"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                First Name *
+                                            </label>
+                                            <input 
+                                                type="text"
+                                                value={formData.first_name}
+                                                onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Last Name *
+                                            </label>
+                                            <input 
+                                                type="text"
+                                                value={formData.last_name}
+                                                onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Email *
+                                            </label>
+                                            <input 
+                                                type="email"
+                                                value={formData.email}
+                                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Phone *
+                                            </label>
+                                            <input 
+                                                type="tel"
+                                                value={formData.phone}
+                                                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Check-in Date *
+                                            </label>
+                                            <input 
+                                                type="date"
+                                                value={formData.check_in}
+                                                onChange={(e) => setFormData({...formData, check_in: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Check-out Date *
+                                            </label>
+                                            <input 
+                                                type="date"
+                                                value={formData.check_out}
+                                                onChange={(e) => setFormData({...formData, check_out: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Total Price *
+                                            </label>
+                                            <input 
+                                                type="number"
+                                                step="0.01"
+                                                value={formData.total_price}
+                                                onChange={(e) => setFormData({...formData, total_price: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Status *
+                                            </label>
+                                            <select 
+                                                value={formData.status}
+                                                onChange={(e) => setFormData({...formData, status: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                                required
+                                            >
+                                                {bookingStatuses.map(status => (
+                                                    <option key={status} value={status}>
+                                                        {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Special Requests
+                                        </label>
+                                        <textarea 
+                                            value={formData.special_requests}
+                                            onChange={(e) => setFormData({...formData, special_requests: e.target.value})}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                            rows="3"
+                                            placeholder="Any special requests or notes..."
+                                        />
+                                    </div>
+
+                                    <div className="flex justify-end space-x-3 pt-4">
+                                        <button 
+                                            type="button"
+                                            onClick={resetForm}
+                                            className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button 
+                                            type="submit"
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                        >
+                                            {editingBooking ? 'Update Booking' : 'Create Booking'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -351,32 +778,414 @@
         // Rooms Management Section
         function RoomsSection() {
             const [rooms, setRooms] = useState([]);
+            const [packages, setPackages] = useState([]);
             const [loading, setLoading] = useState(true);
+            const [editingRoom, setEditingRoom] = useState(null);
+            const [showAddForm, setShowAddForm] = useState(false);
+            const [formData, setFormData] = useState({
+                name: '',
+                type: 'Standard',
+                price: '',
+                capacity: '',
+                description: '',
+                size: '',
+                beds: '',
+                features: [],
+                amenities: [],
+                images: [],
+                available: true
+            });
+
+            const roomTypes = ['Standard', 'Deluxe', 'Suite', 'Family', 'Budget', 'Luxury', 'Business'];
 
             useEffect(() => {
                 loadRooms();
+                loadPackages();
             }, []);
 
             const loadRooms = async () => {
                 try {
-                    const response = await fetch('/api/rooms');
+                    setLoading(true);
+                    const response = await fetch(getApiUrl('rooms.php'));
                     const data = await response.json();
-                    setRooms(data.success ? data.data : []);
+                    console.log('Rooms API Response:', data);
+                    if (data.success) {
+                        setRooms(data.data);
+                        console.log('Rooms loaded:', data.data.length);
+                    } else {
+                        console.error('Error loading rooms:', data.error);
+                        alert('Error loading rooms: ' + data.error);
+                    }
                 } catch (error) {
                     console.error('Error loading rooms:', error);
+                    alert('Error loading rooms. Please check if XAMPP is running. Error: ' + error.message);
                 } finally {
                     setLoading(false);
                 }
+            };
+
+            const loadPackages = async () => {
+                try {
+                    const response = await fetch(getApiUrl('packages.php'));
+                    const data = await response.json();
+                    if (data.success) {
+                        setPackages(data.data);
+                    }
+                } catch (error) {
+                    console.error('Error loading packages:', error);
+                }
+            };
+
+            const handleInputChange = (field, value) => {
+                setFormData(prev => ({
+                    ...prev,
+                    [field]: value
+                }));
+            };
+
+            const handleArrayChange = (field, value) => {
+                const items = value.split(',').map(item => item.trim()).filter(item => item);
+                setFormData(prev => ({
+                    ...prev,
+                    [field]: items
+                }));
+            };
+
+            const resetForm = () => {
+                setFormData({
+                    name: '',
+                    type: 'Standard',
+                    price: '',
+                    capacity: '',
+                    description: '',
+                    size: '',
+                    beds: '',
+                    features: [],
+                    amenities: [],
+                    images: [],
+                    available: true
+                });
+                setEditingRoom(null);
+                setShowAddForm(false);
+            };
+
+            const handleEdit = (room) => {
+                setFormData({
+                    name: room.name,
+                    type: room.type,
+                    price: room.price.toString(),
+                    capacity: room.capacity.toString(),
+                    description: room.description || '',
+                    size: room.size || '',
+                    beds: room.beds || '',
+                    features: room.features || [],
+                    amenities: room.amenities || [],
+                    images: room.images || [],
+                    available: room.available
+                });
+                setEditingRoom(room.id);
+                setShowAddForm(true);
+            };
+
+            const handleSave = async () => {
+                if (!formData.name || !formData.price) {
+                    alert('Please fill in required fields (Name and Price)');
+                    return;
+                }
+
+                const roomData = {
+                    ...formData,
+                    price: parseFloat(formData.price),
+                    capacity: parseInt(formData.capacity) || 2
+                };
+
+                try {
+                    if (editingRoom) {
+                        // Update existing room
+                        const response = await fetch(getApiUrl('rooms.php'), {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ ...roomData, id: editingRoom })
+                        });
+                        
+                        const result = await response.json();
+                        if (result.success) {
+                            alert('Room updated successfully!');
+                            loadRooms();
+                        } else {
+                            alert('Error updating room: ' + result.error);
+                            return;
+                        }
+                    } else {
+                        // Add new room
+                        const response = await fetch(getApiUrl('rooms.php'), {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(roomData)
+                        });
+                        
+                        const result = await response.json();
+                        if (result.success) {
+                            alert('Room added successfully!');
+                            loadRooms();
+                        } else {
+                            alert('Error adding room: ' + result.error);
+                            return;
+                        }
+                    }
+
+                    resetForm();
+                } catch (error) {
+                    console.error('Error saving room:', error);
+                    alert('Error saving room. Please check if XAMPP is running.');
+                }
+            };
+
+            const handleDelete = async (id) => {
+                if (confirm('Are you sure you want to delete this room?')) {
+                    try {
+                        const response = await fetch(getApiUrl('rooms.php'), {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ id: id })
+                        });
+                        
+                        const result = await response.json();
+                        if (result.success) {
+                            alert('Room deleted successfully!');
+                            loadRooms();
+                        } else {
+                            alert('Error deleting room: ' + result.error);
+                        }
+                    } catch (error) {
+                        console.error('Error deleting room:', error);
+                        alert('Error deleting room. Please check if XAMPP is running.');
+                    }
+                }
+            };
+
+            const toggleAvailability = async (id) => {
+                try {
+                    const room = rooms.find(r => r.id === id);
+                    if (!room) return;
+
+                    const response = await fetch(getApiUrl('rooms.php'), {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ 
+                            ...room, 
+                            available: room.available ? 0 : 1 
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        loadRooms();
+                    } else {
+                        alert('Error updating room availability: ' + result.error);
+                    }
+                } catch (error) {
+                    console.error('Error updating room availability:', error);
+                    alert('Error updating room availability. Please check if XAMPP is running.');
+                }
+            };
+
+            const getCompatiblePackages = (room) => {
+                return packages.filter(pkg => 
+                    pkg.is_active && 
+                    pkg.max_guests <= room.capacity
+                );
             };
 
             return (
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold text-gray-900">Rooms Management</h2>
-                        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                            Add Room
-                        </button>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={loadRooms}
+                                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                                Refresh
+                            </button>
+                            <button 
+                                onClick={() => setShowAddForm(true)}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                Add Room
+                            </button>
+                        </div>
                     </div>
+
+                    {/* Add/Edit Form Modal */}
+                    {showAddForm && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-screen overflow-y-auto">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-semibold">
+                                        {editingRoom ? 'Edit Room' : 'Add New Room'}
+                                    </h3>
+                                    <button 
+                                        onClick={resetForm}
+                                        className="text-gray-500 hover:text-gray-700"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Room Name*</label>
+                                        <input
+                                            type="text"
+                                            value={formData.name}
+                                            onChange={(e) => handleInputChange('name', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Enter room name"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
+                                        <select
+                                            value={formData.type}
+                                            onChange={(e) => handleInputChange('type', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {roomTypes.map(type => (
+                                                <option key={type} value={type}>{type}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Price per Night ($)*</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={formData.price}
+                                            onChange={(e) => handleInputChange('price', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (Guests)</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={formData.capacity}
+                                            onChange={(e) => handleInputChange('capacity', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="2"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Room Size</label>
+                                        <input
+                                            type="text"
+                                            value={formData.size}
+                                            onChange={(e) => handleInputChange('size', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="e.g., 25 sqm"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Bed Configuration</label>
+                                        <input
+                                            type="text"
+                                            value={formData.beds}
+                                            onChange={(e) => handleInputChange('beds', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="e.g., 1 King Bed"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                        <textarea
+                                            value={formData.description}
+                                            onChange={(e) => handleInputChange('description', e.target.value)}
+                                            rows="3"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Enter room description"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Features (comma-separated)</label>
+                                        <input
+                                            type="text"
+                                            value={formData.features.join(', ')}
+                                            onChange={(e) => handleArrayChange('features', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="e.g., City View, Balcony, Work Desk"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Amenities (comma-separated)</label>
+                                        <input
+                                            type="text"
+                                            value={formData.amenities.join(', ')}
+                                            onChange={(e) => handleArrayChange('amenities', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="e.g., WiFi, Air Conditioning, Minibar"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Image URLs (comma-separated)</label>
+                                        <input
+                                            type="text"
+                                            value={formData.images.join(', ')}
+                                            onChange={(e) => handleArrayChange('images', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.available}
+                                                onChange={(e) => handleInputChange('available', e.target.checked)}
+                                                className="mr-2"
+                                            />
+                                            <span className="text-sm font-medium text-gray-700">Room Available</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2 mt-6">
+                                    <button
+                                        onClick={handleSave}
+                                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                                    >
+                                        {editingRoom ? 'Update Room' : 'Add Room'}
+                                    </button>
+                                    <button
+                                        onClick={resetForm}
+                                        className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {loading ? (
                         <div className="text-center py-8">Loading rooms...</div>
@@ -386,23 +1195,57 @@
                                 <div key={room.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
                                     <div className="flex justify-between items-start mb-4">
                                         <h3 className="text-lg font-semibold text-gray-900">{room.name}</h3>
-                                        <span className={`px-2 py-1 text-xs rounded-full ${
-                                            room.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                        }`}>
+                                        <button
+                                            onClick={() => toggleAvailability(room.id)}
+                                            className={`px-2 py-1 text-xs rounded-full cursor-pointer transition-colors ${
+                                                room.available 
+                                                    ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                                    : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                            }`}
+                                        >
                                             {room.available ? 'Available' : 'Unavailable'}
-                                        </span>
+                                        </button>
                                     </div>
                                     <div className="space-y-2 text-sm text-gray-600 mb-4">
                                         <p><span className="font-medium">Type:</span> {room.type}</p>
                                         <p><span className="font-medium">Price:</span> ${room.price}/night</p>
                                         <p><span className="font-medium">Capacity:</span> {room.capacity} guests</p>
-                                        <p><span className="font-medium">Size:</span> {room.size}</p>
+                                        {room.size && <p><span className="font-medium">Size:</span> {room.size}</p>}
+                                        {room.beds && <p><span className="font-medium">Beds:</span> {room.beds}</p>}
+                                        {room.features && room.features.length > 0 && (
+                                            <div>
+                                                <span className="font-medium">Features:</span>
+                                                <ul className="list-disc list-inside ml-2 mt-1">
+                                                    {room.features.slice(0, 3).map((feature, index) => (
+                                                        <li key={index} className="text-xs">{feature}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {getCompatiblePackages(room).length > 0 && (
+                                            <div>
+                                                <span className="font-medium">Compatible Packages:</span>
+                                                <div className="flex flex-wrap gap-1 mt-1">
+                                                    {getCompatiblePackages(room).slice(0, 2).map((pkg, index) => (
+                                                        <span key={index} className="px-1 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">
+                                                            {pkg.name}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="flex gap-2">
-                                        <button className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors">
+                                        <button 
+                                            onClick={() => handleEdit(room)}
+                                            className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors"
+                                        >
                                             Edit
                                         </button>
-                                        <button className="flex-1 bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 transition-colors">
+                                        <button 
+                                            onClick={() => handleDelete(room.id)}
+                                            className="flex-1 bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 transition-colors"
+                                        >
                                             Delete
                                         </button>
                                     </div>
@@ -418,6 +1261,26 @@
         function PackagesSection() {
             const [packages, setPackages] = useState([]);
             const [loading, setLoading] = useState(true);
+            const [editingPackage, setEditingPackage] = useState(null);
+            const [showAddForm, setShowAddForm] = useState(false);
+            const [formData, setFormData] = useState({
+                name: '',
+                description: '',
+                package_type: 'business',
+                base_price: '',
+                discount_percentage: '',
+                min_nights: '',
+                max_nights: '',
+                max_guests: '',
+                is_active: true,
+                includes: [],
+                valid_from: '',
+                valid_until: '',
+                terms: '',
+                image_url: ''
+            });
+
+            const packageTypes = ['romantic', 'business', 'family', 'luxury', 'weekend', 'holiday', 'spa', 'adventure'];
 
             useEffect(() => {
                 loadPackages();
@@ -425,13 +1288,193 @@
 
             const loadPackages = async () => {
                 try {
-                    const response = await fetch('/api/packages');
+                    setLoading(true);
+                    const response = await fetch(getApiUrl('packages.php'));
                     const data = await response.json();
-                    setPackages(data.success ? data.data : []);
+                    console.log('API Response:', data);
+                    if (data.success) {
+                        setPackages(data.data);
+                        console.log('Packages loaded:', data.data.length);
+                    } else {
+                        console.error('Error loading packages:', data.error);
+                        alert('Error loading packages: ' + data.error);
+                    }
                 } catch (error) {
                     console.error('Error loading packages:', error);
+                    alert('Error loading packages. Please check if XAMPP is running. Error: ' + error.message);
                 } finally {
                     setLoading(false);
+                }
+            };
+
+            const handleInputChange = (field, value) => {
+                setFormData(prev => ({
+                    ...prev,
+                    [field]: value
+                }));
+            };
+
+            const handleIncludesChange = (value) => {
+                const includes = value.split(',').map(item => item.trim()).filter(item => item);
+                setFormData(prev => ({
+                    ...prev,
+                    includes: includes
+                }));
+            };
+
+            const resetForm = () => {
+                setFormData({
+                    name: '',
+                    description: '',
+                    package_type: 'business',
+                    base_price: '',
+                    discount_percentage: '',
+                    min_nights: '',
+                    max_nights: '',
+                    max_guests: '',
+                    is_active: true,
+                    includes: [],
+                    valid_from: '',
+                    valid_until: '',
+                    terms: '',
+                    image_url: ''
+                });
+                setEditingPackage(null);
+                setShowAddForm(false);
+            };
+
+            const handleEdit = (pkg) => {
+                setFormData({
+                    name: pkg.name,
+                    description: pkg.description,
+                    package_type: pkg.package_type,
+                    base_price: pkg.base_price.toString(),
+                    discount_percentage: pkg.discount_percentage.toString(),
+                    min_nights: pkg.min_nights.toString(),
+                    max_nights: pkg.max_nights.toString(),
+                    max_guests: pkg.max_guests.toString(),
+                    is_active: pkg.is_active,
+                    includes: pkg.includes || [],
+                    valid_from: pkg.valid_from || '',
+                    valid_until: pkg.valid_until || '',
+                    terms: pkg.terms || '',
+                    image_url: pkg.image_url || ''
+                });
+                setEditingPackage(pkg.id);
+                setShowAddForm(true);
+            };
+
+            const handleSave = async () => {
+                if (!formData.name || !formData.base_price) {
+                    alert('Please fill in required fields (Name and Base Price)');
+                    return;
+                }
+
+                const packageData = {
+                    ...formData,
+                    base_price: parseFloat(formData.base_price),
+                    discount_percentage: parseInt(formData.discount_percentage) || 0,
+                    min_nights: parseInt(formData.min_nights) || 1,
+                    max_nights: parseInt(formData.max_nights) || 30,
+                    max_guests: parseInt(formData.max_guests) || 1
+                };
+
+                try {
+                    if (editingPackage) {
+                        // Update existing package
+                        const response = await fetch(getApiUrl('packages.php'), {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ ...packageData, id: editingPackage })
+                        });
+                        
+                        const result = await response.json();
+                        if (result.success) {
+                            alert('Package updated successfully!');
+                            loadPackages(); // Reload packages from database
+                        } else {
+                            alert('Error updating package: ' + result.error);
+                            return;
+                        }
+                    } else {
+                        // Add new package
+                        const response = await fetch(getApiUrl('packages.php'), {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(packageData)
+                        });
+                        
+                        const result = await response.json();
+                        if (result.success) {
+                            alert('Package added successfully!');
+                            loadPackages(); // Reload packages from database
+                        } else {
+                            alert('Error adding package: ' + result.error);
+                            return;
+                        }
+                    }
+
+                    resetForm();
+                } catch (error) {
+                    console.error('Error saving package:', error);
+                    alert('Error saving package. Please check if XAMPP is running.');
+                }
+            };
+
+            const handleDelete = async (id) => {
+                if (confirm('Are you sure you want to delete this package?')) {
+                    try {
+                        const response = await fetch(getApiUrl('packages.php'), {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ id: id })
+                        });
+                        
+                        const result = await response.json();
+                        if (result.success) {
+                            alert('Package deleted successfully!');
+                            loadPackages(); // Reload packages from database
+                        } else {
+                            alert('Error deleting package: ' + result.error);
+                        }
+                    } catch (error) {
+                        console.error('Error deleting package:', error);
+                        alert('Error deleting package. Please check if XAMPP is running.');
+                    }
+                }
+            };
+
+            const toggleStatus = async (id) => {
+                try {
+                    const packageData = packages.find(pkg => pkg.id === id);
+                    if (!packageData) return;
+
+                    const response = await fetch(getApiUrl('packages.php'), {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ 
+                            ...packageData, 
+                            is_active: packageData.is_active ? 0 : 1 
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        loadPackages(); // Reload packages from database
+                    } else {
+                        alert('Error updating package status: ' + result.error);
+                    }
+                } catch (error) {
+                    console.error('Error updating package status:', error);
+                    alert('Error updating package status. Please check if XAMPP is running.');
                 }
             };
 
@@ -439,10 +1482,218 @@
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold text-gray-900">Packages Management</h2>
-                        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                            Add Package
-                        </button>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={loadPackages}
+                                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                                Refresh
+                            </button>
+                            <button 
+                                onClick={() => setShowAddForm(true)}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                Add Package
+                            </button>
+                        </div>
                     </div>
+
+                    {/* Add/Edit Form Modal */}
+                    {showAddForm && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-screen overflow-y-auto">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-semibold">
+                                        {editingPackage ? 'Edit Package' : 'Add New Package'}
+                                    </h3>
+                                    <button 
+                                        onClick={resetForm}
+                                        className="text-gray-500 hover:text-gray-700"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Package Name*</label>
+                                        <input
+                                            type="text"
+                                            value={formData.name}
+                                            onChange={(e) => handleInputChange('name', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Enter package name"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                        <textarea
+                                            value={formData.description}
+                                            onChange={(e) => handleInputChange('description', e.target.value)}
+                                            rows="3"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Enter package description"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Package Type</label>
+                                        <select
+                                            value={formData.package_type}
+                                            onChange={(e) => handleInputChange('package_type', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {packageTypes.map(type => (
+                                                <option key={type} value={type}>{type}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Base Price ($)*</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={formData.base_price}
+                                            onChange={(e) => handleInputChange('base_price', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Discount (%)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            value={formData.discount_percentage}
+                                            onChange={(e) => handleInputChange('discount_percentage', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="0"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Max Guests</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={formData.max_guests}
+                                            onChange={(e) => handleInputChange('max_guests', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="1"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Min Nights</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={formData.min_nights}
+                                            onChange={(e) => handleInputChange('min_nights', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="1"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Max Nights</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={formData.max_nights}
+                                            onChange={(e) => handleInputChange('max_nights', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="30"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Valid From</label>
+                                        <input
+                                            type="date"
+                                            value={formData.valid_from}
+                                            onChange={(e) => handleInputChange('valid_from', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Valid Until</label>
+                                        <input
+                                            type="date"
+                                            value={formData.valid_until}
+                                            onChange={(e) => handleInputChange('valid_until', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Package Includes (comma-separated)</label>
+                                        <input
+                                            type="text"
+                                            value={formData.includes.join(', ')}
+                                            onChange={(e) => handleIncludesChange(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="e.g., Breakfast, WiFi, Parking"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions</label>
+                                        <textarea
+                                            value={formData.terms}
+                                            onChange={(e) => handleInputChange('terms', e.target.value)}
+                                            rows="3"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Enter terms and conditions for this package"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                                        <input
+                                            type="url"
+                                            value={formData.image_url}
+                                            onChange={(e) => handleInputChange('image_url', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="https://example.com/image.jpg"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.is_active}
+                                                onChange={(e) => handleInputChange('is_active', e.target.checked)}
+                                                className="mr-2"
+                                            />
+                                            <span className="text-sm font-medium text-gray-700">Active Package</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2 mt-6">
+                                    <button
+                                        onClick={handleSave}
+                                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                                    >
+                                        {editingPackage ? 'Update Package' : 'Add Package'}
+                                    </button>
+                                    <button
+                                        onClick={resetForm}
+                                        className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {loading ? (
                         <div className="text-center py-8">Loading packages...</div>
@@ -453,11 +1704,16 @@
                                     <div className="flex justify-between items-start mb-4">
                                         <h3 className="text-lg font-semibold text-gray-900">{pkg.name}</h3>
                                         <div className="flex gap-2">
-                                            <span className={`px-2 py-1 text-xs rounded-full ${
-                                                pkg.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                            }`}>
+                                            <button
+                                                onClick={() => toggleStatus(pkg.id)}
+                                                className={`px-2 py-1 text-xs rounded-full cursor-pointer transition-colors ${
+                                                    pkg.is_active 
+                                                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                                        : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                                }`}
+                                            >
                                                 {pkg.is_active ? 'Active' : 'Inactive'}
-                                            </span>
+                                            </button>
                                             <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
                                                 {pkg.discount_percentage}% OFF
                                             </span>
@@ -469,12 +1725,42 @@
                                         <p><span className="font-medium">Base Price:</span> ${pkg.base_price}</p>
                                         <p><span className="font-medium">Duration:</span> {pkg.min_nights}-{pkg.max_nights} nights</p>
                                         <p><span className="font-medium">Max Guests:</span> {pkg.max_guests}</p>
+                                        {pkg.valid_from && pkg.valid_until && (
+                                            <p><span className="font-medium">Valid:</span> {pkg.valid_from} to {pkg.valid_until}</p>
+                                        )}
+                                        {pkg.includes && pkg.includes.length > 0 && (
+                                            <div>
+                                                <span className="font-medium">Includes:</span>
+                                                <ul className="list-disc list-inside ml-2 mt-1">
+                                                    {pkg.includes.map((item, index) => (
+                                                        <li key={index} className="text-xs">{item}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {pkg.terms && (
+                                            <div>
+                                                <span className="font-medium">Terms:</span>
+                                                <p className="text-xs mt-1">{pkg.terms}</p>
+                                            </div>
+                                        )}
+                                        {pkg.image_url && (
+                                            <p><span className="font-medium">Image:</span> 
+                                                <a href={pkg.image_url} target="_blank" className="text-blue-600 hover:text-blue-800 ml-1">View Image</a>
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="flex gap-2">
-                                        <button className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors">
+                                        <button 
+                                            onClick={() => handleEdit(pkg)}
+                                            className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors"
+                                        >
                                             Edit
                                         </button>
-                                        <button className="flex-1 bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 transition-colors">
+                                        <button 
+                                            onClick={() => handleDelete(pkg.id)}
+                                            className="flex-1 bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 transition-colors"
+                                        >
                                             Delete
                                         </button>
                                     </div>
