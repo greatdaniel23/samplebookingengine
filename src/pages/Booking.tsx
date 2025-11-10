@@ -146,17 +146,17 @@ const BookingPage = () => {
     try {
       // Prepare booking data for API
       const apiBookingData = {
-        roomId: room.id,
-        from: bookingData.dateRange.from!.toISOString().split('T')[0], // Format as YYYY-MM-DD
-        to: bookingData.dateRange.to!.toISOString().split('T')[0],
+        room_id: room?.id || selectedPackage?.id || '',
+        first_name: bookingData.guestInfo.firstName,
+        last_name: bookingData.guestInfo.lastName,
+        email: bookingData.guestInfo.email,
+        phone: bookingData.guestInfo.phone || '',
+        check_in: bookingData.dateRange.from!.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        check_out: bookingData.dateRange.to!.toISOString().split('T')[0],
         guests: bookingData.guests,
-        user: {
-          firstName: bookingData.guestInfo.firstName,
-          lastName: bookingData.guestInfo.lastName,
-          email: bookingData.guestInfo.email,
-          phone: bookingData.guestInfo.phone || ''
-        },
-        total: bookingData.totalPrice,
+        total_price: bookingData.totalPrice,
+        special_requests: bookingData.guestInfo.specialRequests || '',
+        status: 'confirmed'
       };
 
       // Try to save to database via API
@@ -231,6 +231,32 @@ const BookingPage = () => {
       console.log('📝 [Booking] Booking ID:', dbBookingId);
       console.log('📝 [Booking] Booking Reference:', dbReference);
 
+      // Send email notification
+      try {
+        console.log('📧 [Booking] Sending email notification...');
+        const notificationResponse = await fetch(paths.buildApiUrl('notify.php'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...apiBookingData,
+            id: dbBookingId,
+            reference: dbReference
+          })
+        });
+        
+        const notificationResult = await notificationResponse.json();
+        if (notificationResult.success) {
+          console.log('📧 [Booking] Email notification sent successfully');
+        } else {
+          console.warn('⚠️ [Booking] Email notification failed:', notificationResult.message);
+        }
+      } catch (emailError) {
+        console.warn('⚠️ [Booking] Email notification error:', emailError);
+        // Don't fail the booking if email fails
+      }
+
       setBookingDetails({ id: dbBookingId, reference: dbReference });
       setIsConfirmed(true);
       setIsBooking(false);
@@ -269,7 +295,7 @@ const BookingPage = () => {
       const localBooking: Booking = {
         id: dbBookingId,
         reference: dbReference,
-        roomId: room.id,
+        roomId: room?.id || selectedPackage?.id || '',
         from: bookingData.dateRange.from!.toISOString(),
         to: bookingData.dateRange.to!.toISOString(),
         guests: bookingData.guests,
@@ -290,7 +316,7 @@ const BookingPage = () => {
       const localBooking: Booking = {
         id: bookingId,
         reference,
-        roomId: room.id,
+        roomId: room?.id || selectedPackage?.id || '',
         from: bookingData.dateRange.from!.toISOString(),
         to: bookingData.dateRange.to!.toISOString(),
         guests: bookingData.guests,
@@ -301,6 +327,42 @@ const BookingPage = () => {
       // Persist for later sync
       saveOfflineBooking({ ...localBooking, pendingSync: true });
       addBooking(localBooking);
+      
+      // Try to send email notification even if database failed
+      try {
+        console.log('📧 [Booking] Attempting to send email notification for offline booking...');
+        const emailBookingData = {
+          room_id: room?.id || selectedPackage?.id || '',
+          first_name: bookingData.guestInfo.firstName,
+          last_name: bookingData.guestInfo.lastName,
+          email: bookingData.guestInfo.email,
+          phone: bookingData.guestInfo.phone || '',
+          check_in: bookingData.dateRange.from!.toISOString().split('T')[0],
+          check_out: bookingData.dateRange.to!.toISOString().split('T')[0],
+          guests: bookingData.guests,
+          total_price: bookingData.totalPrice,
+          special_requests: bookingData.guestInfo.specialRequests || '',
+          status: 'confirmed',
+          id: bookingId,
+          reference: reference
+        };
+        
+        const notificationResponse = await fetch(paths.buildApiUrl('notify.php'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(emailBookingData)
+        });
+        
+        const notificationResult = await notificationResponse.json();
+        if (notificationResult.success) {
+          console.log('📧 [Booking] Email notification sent successfully for offline booking');
+        }
+      } catch (emailError) {
+        console.warn('⚠️ [Booking] Email notification also failed for offline booking:', emailError);
+      }
+      
       setBookingDetails({ id: bookingId, reference });
       setIsConfirmed(true);
       setIsBooking(false);
@@ -351,8 +413,8 @@ const BookingPage = () => {
             </CardHeader>
             <CardContent className="text-left space-y-4">
               <div className="flex justify-between">
-                <span className="font-medium">Room:</span>
-                <span>{room.name}</span>
+                <span className="font-medium">{selectedPackage ? 'Package:' : 'Room:'}</span>
+                <span>{selectedPackage ? selectedPackage.name : room?.name}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Guest:</span>
@@ -371,7 +433,7 @@ const BookingPage = () => {
                 <span>{finalBookingData.dateRange.to ? format(finalBookingData.dateRange.to, "MMMM d, yyyy") : ''}</span>
               </div>
               <div className="flex justify-between font-bold text-lg border-t pt-4">
-                <span>Total Paid:</span>
+                <span>Total Amount:</span>
                 <span>${finalBookingData.totalPrice.toFixed(2)}</span>
               </div>
             </CardContent>
@@ -427,19 +489,21 @@ const BookingPage = () => {
                       </div>
                     </div>
                     
-                    <div className="mb-6">
-                      <h3 className="text-xl font-semibold mb-3">Package Includes</h3>
-                      <ul className="space-y-2">
-                        {selectedPackage.includes.map((item, index) => (
-                          <li key={index} className="flex items-center space-x-3">
-                            <CheckCircle2 className="w-5 h-5 text-green-600" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    {selectedPackage.includes && selectedPackage.includes.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-xl font-semibold mb-3">Package Includes</h3>
+                        <ul className="space-y-2">
+                          {selectedPackage.includes.map((item, index) => (
+                            <li key={index} className="flex items-center space-x-3">
+                              <CheckCircle2 className="w-5 h-5 text-green-600" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
-                    {selectedPackage.room_options.length > 0 && (
+                    {selectedPackage.room_options && selectedPackage.room_options.length > 0 && (
                       <div>
                         <h3 className="text-xl font-semibold mb-3">Available Rooms</h3>
                         <div className="space-y-2">

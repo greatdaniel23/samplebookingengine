@@ -1,13 +1,19 @@
-# Image Resources Directory
+# 🖼️ Villa Image Resources
 
-This directory contains all image resources for the booking engine application.
+This directory contains all image assets for the villa booking system, including room photos, amenity icons, and villa showcase images.
 
-## Directory Structure
+## 📁 Directory Structure
 
 ```
 public/images/
-├── rooms/              # Room-specific images
-│   ├── deluxe-suite/
+├── rooms/              # Room-specific photo galleries
+│   ├── business-elite/ # Business Elite package photos
+│   ├── romantic-getaway/ # Romantic package photos
+│   ├── family-fun/     # Family package photos
+│   └── luxury-escape/  # Luxury package photos
+├── amenities/          # Amenity icons and images
+├── villa/              # General villa photos
+└── gallery/            # Main photo gallery images
 │   │   ├── main.jpg           # Primary room image
 │   │   ├── thumbnail.jpg      # Small preview image
 │   │   ├── gallery-1.jpg      # Gallery image 1

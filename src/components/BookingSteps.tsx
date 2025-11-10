@@ -8,7 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { DateRange } from 'react-day-picker';
 import { differenceInDays, format } from 'date-fns';
 import { showError } from '@/utils/toast';
-import { Check, Users, Calendar as CalendarIcon, CreditCard } from 'lucide-react';
+import { Check, Users, Calendar as CalendarIcon, CreditCard, DollarSign } from 'lucide-react';
 import { Room, Package } from '@/types';
 
 interface GuestFormData { firstName: string; lastName: string; email: string; phone: string; specialRequests?: string }
@@ -137,7 +137,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ room, package: pkg, guestCount,
       </div>
     </div>
     <div className="border rounded-lg p-4 bg-green-50 border-green-200">
-      <h4 className="font-semibold mb-3 flex items-center"><CreditCard className="w-4 h-4 mr-2" />Price</h4>
+      <h4 className="font-semibold mb-3 flex items-center"><DollarSign className="w-4 h-4 mr-2" />Price</h4>
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
           <span>
@@ -207,7 +207,7 @@ export function BookingSteps({ room, package: pkg, disabledDates, onBookingCompl
         {[
           { num: 1, label: 'Select Dates', icon: CalendarIcon },
           { num: 2, label: 'Guest Details', icon: Users },
-          { num: 3, label: 'Review & Pay', icon: CreditCard }
+          { num: 3, label: 'Review & Confirm', icon: CreditCard }
         ].map((s, i) => (
           <React.Fragment key={s.num}>
             <div className={`flex items-center ${s.num <= step ? 'text-hotel-gold' : 'text-hotel-bronze'}`}>

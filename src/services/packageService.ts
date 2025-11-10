@@ -5,7 +5,7 @@
 
 import { Package, PackagePricing } from '@/types';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api';
 
 export const packageService = {
   /**
@@ -27,7 +27,7 @@ export const packageService = {
       });
     }
 
-    const url = `${API_BASE_URL}/packages${params.toString() ? '?' + params.toString() : ''}`;
+    const url = `${API_BASE_URL}/packages.php${params.toString() ? '?' + params.toString() : ''}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -41,7 +41,7 @@ export const packageService = {
    * Get package by ID
    */
   async getPackageById(id: string): Promise<{ success: boolean; data: Package; message: string }> {
-    const response = await fetch(`${API_BASE_URL}/packages/${id}`);
+    const response = await fetch(`${API_BASE_URL}/packages.php?id=${id}`);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch package: ${response.status}`);

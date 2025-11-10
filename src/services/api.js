@@ -10,7 +10,7 @@ class ApiService {
   // Rooms API
   static async getRooms() {
     try {
-      const response = await fetch(`${API_BASE_URL}/rooms`);
+      const response = await fetch(`${API_BASE_URL}/rooms.php`);
       if (!response.ok) throw new Error('Failed to fetch rooms');
       const result = await response.json();
       return result.success ? result.data : [];
@@ -22,7 +22,7 @@ class ApiService {
 
   static async getRoom(roomId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/rooms/${roomId}`);
+      const response = await fetch(`${API_BASE_URL}/rooms.php?id=${roomId}`);
       if (!response.ok) throw new Error('Failed to fetch room');
       const result = await response.json();
       return result.success ? result.data : null;
@@ -36,8 +36,8 @@ class ApiService {
   static async getBookings(searchTerm = '') {
     try {
       const url = searchTerm 
-        ? `${API_BASE_URL}/bookings?search=${encodeURIComponent(searchTerm)}`
-        : `${API_BASE_URL}/bookings`;
+        ? `${API_BASE_URL}/bookings.php?search=${encodeURIComponent(searchTerm)}`
+        : `${API_BASE_URL}/bookings.php`;
       
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch bookings');
@@ -51,7 +51,7 @@ class ApiService {
 
   static async createBooking(bookingData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings`, {
+      const response = await fetch(`${API_BASE_URL}/bookings.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,7 +85,7 @@ class ApiService {
   static async checkAvailability(roomId, checkIn, checkOut) {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/bookings/availability/${roomId}?check_in=${checkIn}&check_out=${checkOut}`
+        `${API_BASE_URL}/bookings.php?action=availability&room_id=${roomId}&check_in=${checkIn}&check_out=${checkOut}`
       );
       if (!response.ok) throw new Error('Failed to check availability');
       const result = await response.json();
