@@ -1,51 +1,75 @@
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { Amenities } from "@/components/Amenities";
+import { RoomsSection } from "@/components/RoomsSection";
+import { AboutSection } from "@/components/AboutSection";
 import { Star } from "lucide-react";
 import { PackageCard } from "@/components/PackageCard";
-import { villaData } from "@/data/dummy";
-import { usePackages } from "@/hooks/usePackages";
-import { useVillaInfo } from "@/hooks/useVillaInfo";
+import { useIndexPageData } from "@/hooks/useIndexPageData";
+import { useRoomFiltering } from "@/hooks/useRoomFiltering";
+import { useDescriptionProcessor } from "@/hooks/useDescriptionProcessor";
 import IndexSkeleton from "@/components/IndexSkeleton";
 import Footer from "@/components/Footer";
-import type { Villa } from "@/types";
+import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
+import type { Package } from "@/types";
+
+// Constants
+const DESCRIPTION_MAX_LENGTH = 300; // Maximum characters to show before truncation
+const MAX_PACKAGES_DISPLAY = 6; // Maximum number of packages to display on homepage
 
 const Index = () => {
-  const { packages, loading: packagesLoading, error: packagesError } = usePackages();
-  const { villaInfo, loading: villaLoading, error: villaError, refetch } = useVillaInfo();
-
-  // Normalize villa data to ensure compatibility between VillaInfo and Villa types
-  const normalizeVillaData = (data: any): Villa => {
-    if (!data) return villaData;
-    
-    return {
-      id: data.id || villaData.id,
-      name: data.name || villaData.name,
-      location: data.location || villaData.location,
-      description: data.description || villaData.description,
-      rating: data.rating || villaData.rating,
-      reviews: data.reviews || villaData.reviews,
-      images: data.images || villaData.images,
-      amenities: data.amenities || villaData.amenities,
-      rooms: data.rooms || villaData.rooms, // VillaInfo doesn't have rooms, so use static data rooms
-    };
-  };
-
-  // Use dynamic villa info if available, fallback to static data
-  const currentVillaData = normalizeVillaData(villaInfo);
-
-  // Use dynamic villa info with proper fallback handling
-
-  if (packagesLoading || villaLoading) {
-    return <IndexSkeleton />;
-  }
-
-  if (packagesError) {
-    return <div className="text-center py-10">Error loading packages: {packagesError}</div>;
-  }
+  const navigate = useNavigate();
   
-  // For villa info errors, we just use fallback data and continue
-  if (villaError) {
-    console.warn('Villa info API error, using fallback data:', villaError);
+  // FIXED Issue 2: Separated data fetching concerns
+  const { 
+    safeRooms, 
+    safePackages, 
+    currentVillaData, 
+    isLoading, 
+    error 
+  } = useIndexPageData();
+
+  // FIXED Issue 2: Separated room filtering concerns
+  const {
+    activeRoomTab,
+    setActiveRoomTab,
+    roomTypes,
+    filteredRooms
+  } = useRoomFiltering(safeRooms);
+
+  // FIXED Issue 1: Separated description processing concerns
+  const processedDescription = useDescriptionProcessor(currentVillaData?.description);
+
+  // Display limited packages with proper error handling
+  const displayPackages = useMemo(() => safePackages.slice(0, MAX_PACKAGES_DISPLAY), [safePackages]);
+
+  // FIXED Issue 3: Check error state FIRST to prevent hiding critical errors
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <h2 className="text-2xl font-bold text-red-600 mb-4">Failed to load page content</h2>
+        <p className="text-muted-foreground mb-6">{error}</p>
+        <div className="space-x-4">
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-hotel-sage text-white px-6 py-2 rounded hover:bg-hotel-sage-dark transition-colors"
+          >
+            Retry
+          </button>
+          <button 
+            onClick={() => navigate('/')} 
+            className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600 transition-colors"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Only show loading after confirming no errors exist
+  if (isLoading) {
+    return <IndexSkeleton />;
   }
 
   return (
@@ -74,7 +98,7 @@ const Index = () => {
           <h2 className="text-3xl font-bold text-center mb-2 text-hotel-navy">Select Your Package</h2>
           <p className="text-center text-hotel-bronze mb-10">Choose from our selection of exclusive packages with special pricing and premium amenities.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {Array.isArray(packages) ? packages.slice(0, 6).map((pkg) => (
+            {displayPackages.length > 0 ? displayPackages.map((pkg) => (
               <PackageCard key={pkg.id} package={pkg} />
             )) : (
               <div className="col-span-full text-center py-8">
@@ -83,22 +107,24 @@ const Index = () => {
             )}
           </div>
         </div>
+
+        {/* FIXED Issue 2: Separated Rooms Section Component */}
+        <RoomsSection
+          rooms={safeRooms}
+          roomTypes={roomTypes}
+          activeRoomTab={activeRoomTab}
+          onTabChange={setActiveRoomTab}
+          filteredRooms={filteredRooms}
+        />
         
         <div className="border-t my-16" />
 
-        <div className="mb-12">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
-              <div className="lg:col-span-3">
-                  <h2 className="text-3xl font-bold mb-4">About this Villa</h2>
-                  <p className="text-gray-700 leading-relaxed">
-                      {currentVillaData.description}
-                  </p>
-              </div>
-              <div className="lg:col-span-2">
-                <Amenities amenities={currentVillaData.amenities} />
-              </div>
-          </div>
-        </div>
+        {/* FIXED Issue 2: Separated About Section Component */}
+        <AboutSection
+          villaName={currentVillaData.name}
+          processedDescription={processedDescription}
+          amenities={currentVillaData.amenities}
+        />
       </div>
       <Footer />
     </div>
