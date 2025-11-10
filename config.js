@@ -7,15 +7,15 @@ const CONFIG = {
         // Local development URL (XAMPP)
         LOCAL_BASE_URL: 'http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api',
         
-        // Production URL (replace with your hosting URL)
-        PRODUCTION_BASE_URL: 'https://yourdomain.com/api',
+        // Production URL
+        PRODUCTION_BASE_URL: 'https://api.rumahdaisycantik.com',
         
         // Staging URL (for testing)
-        STAGING_BASE_URL: 'https://staging.yourdomain.com/api',
+        STAGING_BASE_URL: 'https://staging.rumahdaisycantik.com/api',
         
         // Current environment - change this based on deployment
         // Options: 'local', 'staging', 'production'
-        ENVIRONMENT: 'local'
+        ENVIRONMENT: 'production'
     },
     
     // Application Settings
@@ -34,11 +34,10 @@ const CONFIG = {
             PASSWORD: ''
         },
         PRODUCTION: {
-            // Fill these when deploying
-            HOST: 'your-production-db-host',
-            NAME: 'your-production-db-name',  
-            USER: 'your-production-db-user',
-            PASSWORD: 'your-production-db-password'
+            HOST: 'localhost',
+            NAME: 'u289291769_booking',
+            USER: 'u289291769_booking',
+            PASSWORD: 'Kanibal123!!!'
         }
     },
     
