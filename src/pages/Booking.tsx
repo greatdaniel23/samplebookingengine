@@ -31,10 +31,8 @@ const BookingPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { addBooking, getBookingsForRoom } = useBookings();
-  const [isConfirmed, setIsConfirmed] = useState(false);
   const [bookingDetails, setBookingDetails] = useState<{ id: number | null; reference?: string }>({ id: null });
   const [isBooking, setIsBooking] = useState(false);
-  const [finalBookingData, setFinalBookingData] = useState<any>(null);
   const [apiReachable, setApiReachable] = useState<boolean | null>(null); // null = unchecked
 
   useEffect(() => {
@@ -258,7 +256,6 @@ const BookingPage = () => {
       }
 
       setBookingDetails({ id: dbBookingId, reference: dbReference });
-      setIsConfirmed(true);
       setIsBooking(false);
       showSuccess('Booking confirmed and saved to database!');
       
@@ -288,9 +285,8 @@ const BookingPage = () => {
         summaryParams.append('requests', bookingData.guestInfo.specialRequests);
       }
 
-      setTimeout(() => {
-        navigate(`/summary?${summaryParams.toString()}`);
-      }, 2000);
+      // Navigate immediately to summary page
+      navigate(`/summary?${summaryParams.toString()}`);
 
       const localBooking: Booking = {
         id: dbBookingId,
@@ -364,7 +360,6 @@ const BookingPage = () => {
       }
       
       setBookingDetails({ id: bookingId, reference });
-      setIsConfirmed(true);
       setIsBooking(false);
       showSuccess(`Booking stored offline. It will sync automatically when connection is restored. (${reason})`);
       
@@ -394,57 +389,12 @@ const BookingPage = () => {
         summaryParams.append('requests', bookingData.guestInfo.specialRequests);
       }
 
-      setTimeout(() => {
-        navigate(`/summary?${summaryParams.toString()}`);
-      }, 2000);
+      // Navigate immediately to summary page
+      navigate(`/summary?${summaryParams.toString()}`);
     }
   };
 
-  if (isConfirmed && finalBookingData) {
-    return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-green-600 mb-4">Booking Confirmed!</h1>
-          <p className="text-lg text-muted-foreground mb-8">Thank you for booking with us. Your booking is now confirmed.</p>
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Reservation</CardTitle>
-              <CardDescription>Booking ID: {bookingDetails.reference}</CardDescription>
-            </CardHeader>
-            <CardContent className="text-left space-y-4">
-              <div className="flex justify-between">
-                <span className="font-medium">{selectedPackage ? 'Package:' : 'Room:'}</span>
-                <span>{selectedPackage ? selectedPackage.name : room?.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Guest:</span>
-                <span>{finalBookingData.guestInfo.firstName} {finalBookingData.guestInfo.lastName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Email:</span>
-                <span>{finalBookingData.guestInfo.email}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Check-in:</span>
-                <span>{finalBookingData.dateRange.from ? format(finalBookingData.dateRange.from, "MMMM d, yyyy") : ''}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Check-out:</span>
-                <span>{finalBookingData.dateRange.to ? format(finalBookingData.dateRange.to, "MMMM d, yyyy") : ''}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg border-t pt-4">
-                <span>Total Amount:</span>
-                <span>${finalBookingData.totalPrice.toFixed(2)}</span>
-              </div>
-            </CardContent>
-          </Card>
-          <Button asChild size="lg" className="mt-8">
-            <Link to="/">Return to Home</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="bg-gradient-to-br from-white to-hotel-cream min-h-screen">

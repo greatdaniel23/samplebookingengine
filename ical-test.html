@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iCal Calendar Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .test-section h3 {
+            color: #555;
+            margin-top: 0;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .export-btn {
+            background: #28a745;
+        }
+        .export-btn:hover {
+            background: #218838;
+        }
+        .url-display {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .instructions {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .instructions h4 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .platform-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .platform-links button {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 Villa Booking Calendar Integration</h1>
+        
+        <div class="test-section">
+            <h3>🔧 API Tests</h3>
+            <button onclick="testSubscriptionUrls()">Test Subscription URLs</button>
+            <button onclick="testCalendarExport()">Test Calendar Export</button>
+            <button onclick="testCalendarData()">Test Calendar Data</button>
+            <div id="api-status"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📤 Calendar Export</h3>
+            <p>Download your bookings as an .ics file:</p>
+            <button class="export-btn" onclick="downloadCalendar()">📅 Download Calendar (.ics)</button>
+            <button class="export-btn" onclick="downloadCalendar('confirmed')">📅 Confirmed Only</button>
+            <button class="export-btn" onclick="downloadCalendar('pending')">📅 Pending Only</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🔗 Calendar Subscription</h3>
+            <p>Get live calendar URLs for synchronization:</p>
+            <button onclick="generateSubscriptionUrls()">🔄 Generate Sync URLs</button>
+            <div id="subscription-urls"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📚 Platform Integration</h3>
+            <p>Quick links to add your calendar to popular platforms:</p>
+            <div class="platform-links">
+                <button onclick="openGoogleCalendar()">🗓️ Google Calendar</button>
+                <button onclick="openOutlook()">📧 Outlook</button>
+                <button onclick="showAppleInstructions()">🍎 Apple Calendar</button>
+                <button onclick="showAirbnbInstructions()">🏠 Airbnb</button>
+            </div>
+            <div id="platform-instructions"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Calendar Statistics</h3>
+            <button onclick="showCalendarStats()">📈 Show Stats</button>
+            <div id="calendar-stats"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/';
+        
+        // Test subscription URLs
+        async function testSubscriptionUrls() {
+            try {
+                showStatus('api-status', 'Testing subscription URLs...', 'info');
+                const response = await fetch(API_BASE + 'ical.php?action=subscribe');
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus('api-status', 'Subscription URLs generated successfully!', 'success');
+                    console.log('Subscription URLs:', data);
+                } else {
+                    showStatus('api-status', 'Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('api-status', 'Network error: ' + error.message, 'error');
+            }
+        }
+
+        // Test calendar export
+        async function testCalendarExport() {
+            try {
+                showStatus('api-status', 'Testing calendar export...', 'info');
+                const response = await fetch(API_BASE + 'ical.php?action=calendar&format=json');
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus('api-status', `Calendar export successful! Found ${data.count} bookings.`, 'success');
+                    console.log('Calendar data:', data);
+                } else {
+                    showStatus('api-status', 'Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('api-status', 'Network error: ' + error.message, 'error');
+            }
+        }
+
+        // Test calendar data
+        async function testCalendarData() {
+            try {
+                showStatus('api-status', 'Testing calendar data structure...', 'info');
+                const response = await fetch(API_BASE + 'ical.php?action=calendar&format=ics');
+                const icalData = await response.text();
+                
+                if (icalData.includes('BEGIN:VCALENDAR')) {
+                    showStatus('api-status', 'iCal format is valid!', 'success');
+                    console.log('iCal preview:', icalData.substring(0, 500) + '...');
+                } else {
+                    showStatus('api-status', 'Invalid iCal format', 'error');
+                }
+            } catch (error) {
+                showStatus('api-status', 'Network error: ' + error.message, 'error');
+            }
+        }
+
+        // Download calendar
+        function downloadCalendar(status = 'all') {
+            const params = new URLSearchParams({
+                action: 'calendar',
+                format: 'ics',
+                status: status
+            });
+            
+            const url = API_BASE + `ical.php?${params}`;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `villa-bookings-${status}.ics`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showStatus('api-status', `Calendar downloaded for status: ${status}`, 'success');
+        }
+
+        // Generate subscription URLs
+        async function generateSubscriptionUrls() {
+            try {
+                const response = await fetch(API_BASE + 'ical.php?action=subscribe');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('subscription-urls').innerHTML = `
+                        <div class="url-display">
+                            <strong>📱 Standard URL:</strong><br>
+                            <code>${data.subscribe_url}</code>
+                            <button onclick="copyToClipboard('${data.subscribe_url}')">Copy</button>
+                        </div>
+                        <div class="url-display">
+                            <strong>🍎 Webcal URL:</strong><br>
+                            <code>${data.webcal_url}</code>
+                            <button onclick="copyToClipboard('${data.webcal_url}')">Copy</button>
+                        </div>
+                    `;
+                } else {
+                    showStatus('subscription-urls', 'Error generating URLs: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('subscription-urls', 'Network error: ' + error.message, 'error');
+            }
+        }
+
+        // Platform integration functions
+        function openGoogleCalendar() {
+            alert('To add to Google Calendar:\n1. Open Google Calendar\n2. Click + next to "Other calendars"\n3. Select "From URL"\n4. Paste the Standard URL\n5. Click "Add calendar"');
+        }
+
+        function openOutlook() {
+            alert('To add to Outlook:\n1. Open Outlook Calendar\n2. Click "Add calendar" → "Subscribe from web"\n3. Paste the Standard URL\n4. Name your calendar and click "Import"');
+        }
+
+        function showAppleInstructions() {
+            document.getElementById('platform-instructions').innerHTML = `
+                <div class="instructions">
+                    <h4>🍎 Apple Calendar Setup</h4>
+                    <ol>
+                        <li>Open Calendar app on Mac/iPhone/iPad</li>
+                        <li>File → New Calendar Subscription (Mac) or Settings → Calendars → Add Account (iOS)</li>
+                        <li>Paste the Webcal URL</li>
+                        <li>Configure sync frequency (hourly recommended)</li>
+                        <li>Click "OK" or "Add"</li>
+                    </ol>
+                </div>
+            `;
+        }
+
+        function showAirbnbInstructions() {
+            document.getElementById('platform-instructions').innerHTML = `
+                <div class="instructions">
+                    <h4>🏠 Airbnb Integration</h4>
+                    <ol>
+                        <li>Log into your Airbnb host account</li>
+                        <li>Go to your listing → Calendar</li>
+                        <li>Click "Availability settings" → "Import calendar"</li>
+                        <li>Paste the Standard Calendar URL</li>
+                        <li>Set sync frequency to "Hourly" or "Daily"</li>
+                        <li>Save settings - blocked dates will sync automatically</li>
+                    </ol>
+                </div>
+            `;
+        }
+
+        // Show calendar statistics
+        async function showCalendarStats() {
+            try {
+                const response = await fetch(API_BASE + 'ical.php?action=calendar&format=json');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Basic stats from the response
+                    const stats = {
+                        total: data.count,
+                        ical_size: data.ical.length,
+                        events: data.ical.split('BEGIN:VEVENT').length - 1
+                    };
+                    
+                    document.getElementById('calendar-stats').innerHTML = `
+                        <div class="instructions">
+                            <h4>📊 Calendar Statistics</h4>
+                            <p><strong>Total Bookings:</strong> ${stats.total}</p>
+                            <p><strong>Calendar Events:</strong> ${stats.events}</p>
+                            <p><strong>iCal File Size:</strong> ${(stats.ical_size / 1024).toFixed(2)} KB</p>
+                        </div>
+                    `;
+                } else {
+                    showStatus('calendar-stats', 'Error loading stats: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('calendar-stats', 'Network error: ' + error.message, 'error');
+            }
+        }
+
+        // Utility functions
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('URL copied to clipboard!');
+            }).catch(() => {
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('URL copied to clipboard!');
+            });
+        }
+
+        // Initialize page
+        window.onload = function() {
+            showStatus('api-status', 'Ready to test iCal integration', 'success');
+        };
+    </script>
+</body>
+</html>
