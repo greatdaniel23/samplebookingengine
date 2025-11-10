@@ -1,987 +1,391 @@
-# 🏨 Villa Booking Engine - Complete Management System
+# 🏨 Villa Booking Engine
 
-A modern, full-featured villa booking system with React + TypeScript frontend, PHP REST API backend, and comprehensive admin dashboard. Features automatic email notifications, dynamic content management, and real-time database integration for complete villa and booking management.
+A modern, full-stack villa booking and management system featuring a React/TypeScript frontend, a PHP REST API backend, and a comprehensive admin dashboard.
 
-## 🌟 Live Demo
-- **Public Booking Site**: `http://localhost:8082/` (Vite dev server)
-- **Admin Dashboard**: `http://localhost/admin-dashboard.html` (XAMPP hosted)
-- **API Base**: `http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/`
-
-## ⚡ Quick Start Guide
-
-### 1️⃣ **Prerequisites**
-```bash
-# Install XAMPP (Apache + MySQL + PHP)
-# Install Node.js and pnpm
-# Start XAMPP services (Apache + MySQL)
-```
-
-### 2️⃣ **Database Setup**
-```sql
-# Import database schema in phpMyAdmin
-# Go to: http://localhost/phpmyadmin
-# Create database: villa_booking
-# Import: database/schema.sql
-```
-
-### 3️⃣ **Start Development**
-```bash
-# Install dependencies
-pnpm install
-
-# Start frontend server
-pnpm run dev
-# ✅ Frontend: http://localhost:8082/
-
-# Access admin dashboard
-# ✅ Admin: http://localhost/admin-dashboard.html
-# Login: admin / admin123
-```
-
-### 4️⃣ **Configure Email (Optional)**
-```php
-# Edit api/notify.php with your Gmail credentials
-$SMTP_USERNAME = 'your-email@gmail.com';
-$SMTP_PASSWORD = 'your-app-password';
-$TO_EMAIL = 'bookings@rumahdaisycantik.com';
-```
-
-### 5️⃣ **Test System**
-- 📱 Visit booking site and complete a reservation
-- 📧 Check email for booking confirmation
-- 🔐 Login to admin dashboard to manage bookings
-- ✅ System ready for production!
-
-## 🚀 Latest Features (November 2025)
-
-### ✨ **New: Automatic Email Notifications**
-- 📧 **Booking Confirmations**: Automatic HTML email notifications sent on booking completion
-- 📱 **Professional Templates**: Beautiful HTML email design with booking details
-- 🔄 **Offline Support**: Email notifications work even if database connection fails
-- ⚙️ **SMTP Integration**: Gmail SMTP configuration ready for production
-
-### 🎯 **Honest User Experience**
-- ✅ **No Payment Gateway**: Removed misleading "Payment Confirmed" messaging
-- 🔄 **Review & Confirm**: Step 3 now honestly shows "Review & Confirm" instead of payment
-- 💰 **Pricing Summary**: Clear "Total Amount" instead of "Total Paid"
-- 📋 **Booking Confirmed**: Accurate confirmation messaging
-
-### 🏡 **Dynamic Villa System**
-- 🌐 **Database-Driven Contact**: Villa information loaded from database instead of hardcoded
-- 📞 **Dynamic Contact Info**: Phone, email, and address pulled from villa table
-- 🔄 **Real-time Updates**: Changes in admin panel immediately reflect on booking site
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white)
 
 ## ✨ Key Features
 
-### 🏡 **Public Villa Website**
-- 🏠 **Dynamic Villa Information**: Name, description, location, rating, and reviews
-- 📸 **Photo Gallery Management**: Image carousel with admin-controlled content
-- 🎯 **Amenities Display**: Customizable amenities with icons and descriptions
-- 📦 **Package Booking System**: Select and book accommodation packages
-- � **Responsive Design**: Mobile-friendly interface with Tailwind CSS
-- 🌐 **Real-time Content**: All content dynamically loaded from database
+### 🏡 Public Website
+- **Dynamic Villa Content**: View villa details, photo gallery, and amenities loaded from the database.
+- **Room & Package Showcase**: Browse available rooms and special packages.
+- **Interactive Room Filtering**: Filter rooms by type (Suite, Deluxe, etc.).
+- **Multi-Step Booking Flow**: A seamless, 3-step booking process.
+- **Offline Booking Support**: Bookings are saved locally if the network is down and synced later.
+- **Email Notifications**: Automatic booking confirmation emails sent to the guest.
 
-### 🔐 **Comprehensive Admin Dashboard** (`admin-dashboard.html`)
+### 🔐 Admin Dashboard
+- **Booking Management**: Full CRUD (Create, Read, Update, Delete) operations for all bookings.
+- **Room & Package Management**: Manage room inventory, pricing, and promotional packages.
+- **Villa Information Management**: Update site-wide details like contact info and amenities.
+- **Secure Authentication**: Session-based login system for administrators.
+- **Real-time Integration**: Changes made in the admin dashboard are instantly reflected on the public website.
 
-#### 📊 **Overview & Analytics**
-- 📈 **Dashboard Overview**: Real-time statistics and key metrics
-- 📋 **Quick Actions**: Direct access to all management functions
-- � **Business Intelligence**: Revenue tracking and performance indicators
+## 🛠️ Tech Stack
 
-#### 📅 **Bookings Management**
-- 📋 **Complete Booking CRUD**: Create, read, update, delete bookings
-- 🔍 **Advanced Filtering**: Filter by status (pending, confirmed, cancelled, checked_in, checked_out)
-- ⚡ **Quick Status Updates**: Instant status changes via dropdown
-- � **Guest Information**: Full guest details with contact information
-- 📅 **Date Management**: Check-in/check-out date handling
-- 💰 **Pricing Control**: Total price management and tracking
-- 📝 **Special Requests**: Guest requirements and notes management
-- � **Room Integration**: Connected with room availability system
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS, shadcn/ui
+- **Backend**: PHP (procedural REST API)
+- **Database**: MySQL
+- **Local Server Environment**: XAMPP (Apache & MySQL)
 
-#### 🏨 **Rooms Management**
-- 🛏️ **Room CRUD Operations**: Complete room lifecycle management
-- 🏷️ **Room Types**: Standard, Deluxe, Suite, Family, Budget, Luxury, Business
-- 💰 **Dynamic Pricing**: Price per night with currency support
-- 👥 **Capacity Management**: Guest limits and occupancy control
-- � **Room Specifications**: Size, bed configurations, descriptions
-- ✨ **Features & Amenities**: Customizable room features and amenities arrays
-- 🖼️ **Image Management**: Room photo galleries with upload support
-- 🔄 **Availability Toggle**: Enable/disable room availability
-- 📦 **Package Compatibility**: Smart matching with available packages
+## 🚀 Getting Started
 
-#### 📦 **Packages Management**
-- 🎯 **Package Types**: Romantic, Business, Family, Luxury, Weekend, Holiday, Spa, Adventure
-- 💰 **Pricing Control**: Base price and discount percentage management
-- 📅 **Validity Periods**: Valid from/to date management
-- 👥 **Guest Limits**: Maximum guests per package
-- 🌙 **Night Requirements**: Minimum and maximum night stays
-- ✅ **Includes Management**: Package inclusions and features
-- 📋 **Terms & Conditions**: Package terms and policies
-- �️ **Package Images**: Image URL management
-- 🔄 **Active/Inactive Status**: Package availability control
+Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
 
-#### 🏢 **Villa Information Management**
-- 🏠 **Property Details**: Name, description, location, rating
-- � **Contact Information**: Phone, email, website management
-- 🏠 **Address Management**: Complete address details
-- 🛏️ **Villa Specifications**: Max guests, bedrooms, bathrooms
-- 💰 **Pricing & Policies**: Price per night, cancellation policies
-- ⏰ **Timing Management**: Check-in/out times
-- 📱 **Social Media**: Facebook, Instagram, Twitter integration
+### 1. Prerequisites
 
-#### ⚙️ **System Settings**
-- 👤 **User Management**: Admin user accounts and permissions
-- 🔧 **System Configuration**: Application settings and preferences
+- **Node.js**: v18 or later.
+- **pnpm**: `npm install -g pnpm`
+- **XAMPP**: A web server solution to run the PHP backend and MySQL database.
 
-### 🔒 **Security & Authentication**
-- 🔐 **Session-based Authentication**: Secure login system with session management
-- �️ **Protected Routes**: Admin access control and route protection
-- 🚪 **Secure Logout**: Proper session termination
-- � **User Validation**: Username/password authentication
+### 2. Backend & Database Setup
 
-### 🔄 **Real-time Integration**
-- ⚡ **Live Updates**: Changes in admin panel instantly reflect on public site
-- 🔄 **Dynamic Footer**: Contact information updates automatically
-- 📍 **Location Management**: Header location updates based on admin settings
-- 💾 **Database Sync**: All changes saved to MySQL database
-- 🔗 **API Integration**: Complete frontend ↔ backend ↔ database integration
+1.  **Place the Project**: Clone or move the entire project folder into your XAMPP `htdocs` directory.
+    -   Example path: `C:/xampp/htdocs/frontend-booking-engine/`
+2.  **Start XAMPP**: Open the XAMPP Control Panel and start the **Apache** and **MySQL** services.
+3.  **Create Database**:
+    -   Navigate to `http://localhost/phpmyadmin`.
+    -   Create a new database named `villa_booking`.
+    -   Select the `villa_booking` database and go to the "Import" tab.
+    -   Import the `database/schema.sql` file to create all the necessary tables.
 
-## 🚀 System Architecture
+### 3. Frontend Setup & Configuration
 
-✅ **Frontend**: React + TypeScript + Vite  
-✅ **Backend**: PHP REST APIs with comprehensive CRUD operations  
-✅ **Database**: MySQL with complete hotel management schema  
-✅ **Admin System**: HTML-based React dashboard with session authentication  
-✅ **Integration**: Complete end-to-end data synchronization
+1.  **Install Dependencies**: Open your terminal in the project directory and run:
+    ```bash
+    pnpm install
+    ```
+2.  **Configure API URL**: Ensure the API URL in `src/config/paths.ts` correctly points to your local PHP server. The default should work if you've placed the project in `htdocs`.
+    ```typescript
+    // src/config/paths.ts
+    export const API_BASE_URL = 'http://localhost/frontend-booking-engine/api';
+    ```
 
-## 🛠️ Prerequisites
+### 4. Running the Application
 
-| Tool | Purpose | Status |
-|------|---------|--------|
-| XAMPP (Apache + MySQL) | Serves PHP API + database | ✅ Required |
-| Node.js / pnpm | Runs the frontend dev server | ✅ Required |
-| Web Browser | Access the application | ✅ Any modern browser |
+1.  **Start the Frontend**: Run the following command to start the Vite development server:
+    ```bash
+    pnpm run dev
+    ```
+2.  **Access the Application**:
+    -   **Public Website**: `http://localhost:5173` (or whichever port Vite assigns).
+    -   **Admin Dashboard**: `http://localhost/frontend-booking-engine/admin-dashboard.html`
+    -   **API Endpoints**: `http://localhost/frontend-booking-engine/api/`
 
-## 📁 Project Structure
+    > **Default Admin Login**: `admin` / `admin123`
 
-```
-htdocs/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/
-├── admin-dashboard.html        # Complete admin management system
-├── admin-login.html           # Admin authentication
-├── src/
-│   ├── components/            # React components
-│   │   ├── ui/               # Shadcn UI components
-│   │   ├── BookingSteps.tsx  # Booking flow components
-│   │   ├── RoomCard.tsx      # Room display components
-│   │   └── ...
-│   ├── pages/
-│   │   ├── Index.tsx         # Main villa page
-│   │   ├── Booking.tsx       # Booking interface
-│   │   ├── AdminBookings.tsx # Admin booking management
-│   │   └── ...
-│   ├── context/
-│   │   └── BookingContext.tsx # Global booking state
-│   ├── hooks/
-│   │   ├── useRooms.tsx      # Room data management
-│   │   └── ...
-│   └── services/
-│       └── api.js            # API service layer
-├── api/                      # Backend API endpoints
-│   ├── bookings.php         # Bookings CRUD API
-│   ├── rooms.php            # Rooms CRUD API
-│   ├── packages.php         # Packages CRUD API
-│   ├── config/
-│   │   └── database.php     # Database configuration
-│   ├── controllers/
-│   │   ├── BookingController.php
-│   │   └── RoomController.php
-│   ├── models/
-│   │   ├── Booking.php
-│   │   └── Room.php
-│   └── utils/
-│       └── helpers.php      # Utility functions
-├── database/
-│   └── schema.sql           # Database schema
-├── package.json
-├── vite.config.ts
-└── README.md
-```
+## 📦 Available Scripts
 
-### 1️⃣ **Start XAMPP Services**
+-   `pnpm dev`: Starts the frontend development server.
+-   `pnpm build`: Builds the frontend for production.
+-   `pnpm lint`: Runs the ESLint linter to check for code quality issues.
+
+## 🌐 Production Deployment
+
+### Prerequisites for Production
+
+- **Web Server**: Apache or Nginx with PHP support (7.4+)
+- **Database**: MySQL 5.7+ or MariaDB 10.3+
+- **SSL Certificate**: For HTTPS (recommended)
+- **Domain**: Your production domain name
+
+### 1. Server Setup
+
+#### Option A: Shared Hosting (cPanel/WHM)
+
+1. **Upload Files**:
+   ```bash
+   # Build the frontend first
+   pnpm build
+   
+   # Upload the entire project to your hosting's public_html folder
+   # Or to a subdirectory like public_html/booking/
+   ```
+
+2. **Database Setup**:
+   - Create a MySQL database through cPanel
+   - Import `database/schema.sql` via phpMyAdmin
+   - Note the database credentials (host, name, username, password)
+
+#### Option B: VPS/Dedicated Server (Ubuntu/CentOS)
+
+1. **Install LAMP Stack**:
+   ```bash
+   # Ubuntu
+   sudo apt update
+   sudo apt install apache2 mysql-server php php-mysql php-curl php-json
+   
+   # Enable Apache modules
+   sudo a2enmod rewrite
+   sudo systemctl restart apache2
+   ```
+
+2. **Configure Virtual Host**:
+   ```apache
+   # /etc/apache2/sites-available/villa-booking.conf
+   <VirtualHost *:80>
+       ServerName yourdomain.com
+       DocumentRoot /var/www/html/villa-booking
+       
+       <Directory /var/www/html/villa-booking>
+           AllowOverride All
+           Require all granted
+       </Directory>
+   </VirtualHost>
+   ```
+
+3. **Enable Site**:
+   ```bash
+   sudo a2ensite villa-booking.conf
+   sudo systemctl reload apache2
+   ```
+
+### 2. Frontend Production Build
+
+1. **Unified Configuration System** - The project uses a dual configuration approach:
+
+   **Modern React Components** (Auto-switching)
+   ```typescript
+   // src/config/paths.ts - Used by React components
+   // ✅ Automatically detects production vs development
+   // ✅ No manual changes needed
+   
+   import { API_BASE_URL } from '@/config/paths';
+   // Development: http://localhost/fontend-bookingengine-100/.../api  
+   // Production:  https://api.rumahdaisycantik.com
+   ```
+
+   **Admin Dashboard & HTML Files** (Manual switching)
+   ```javascript
+   // config.js - Used by admin dashboard
+   // ⚙️ Manually change environment for admin panel
+   
+   CONFIG.API.ENVIRONMENT = 'production'; // Change this for admin
+   // Then uses: https://api.rumahdaisycantik.com
+   ```
+
+   **Production URLs:**
+   - **Frontend App**: `https://booking.rumahdaisycantik.com/`
+   - **API Endpoint**: `https://api.rumahdaisycantik.com/`
+
+2. **Build for Production**:
+   ```bash
+   pnpm build
+   ```
+   The build process automatically configures the app to use production API endpoints.
+
+   **For Admin Dashboard Users:**
+   ```javascript
+   // Before using admin dashboard in production:
+   // 1. Edit config.js file
+   CONFIG.API.ENVIRONMENT = 'production'; // Change from 'local' to 'production'
+   
+   // 2. Or use the config manager interface:
+   // Open: config-manager.html → Select "Production" environment
+   ```
+
+   **Optional: Override with Environment Variables**
+   ```bash
+   # Create .env.production file (optional)
+   VITE_API_BASE=https://api.rumahdaisycantik.com
+   VITE_PUBLIC_BASE=/
+   ```
+
+3. **Deploy Built Files**:
+   - Upload the contents of the `dist/` folder to your web server
+   - Upload the `api/` folder to the same directory
+   - Upload the `database/` folder (for reference)
+
+### 3. Backend Configuration
+
+1. **Database Configuration** - Now Environment-Aware:
+   ```php
+   // api/config/database.php - Auto-detects environment
+   // ✅ Development: Uses villa_booking database with root user
+   // ✅ Production: Uses u289291769_booking with your credentials
+   // ✅ No manual changes needed - detects rumahdaisycantik.com domain
+   
+   // Your production credentials are already configured:
+   // Database: u289291769_booking
+   // Username: u289291769_booking  
+   // Password: Kanibal123!!!
+   ```
+
+2. **Secure the API** (Create `.htaccess` in api folder):
+   ```apache
+   # api/.htaccess
+   RewriteEngine On
+   
+   # Enable CORS for your domain
+   Header always set Access-Control-Allow-Origin "https://yourdomain.com"
+   Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+   Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+   
+   # Security headers
+   Header always set X-Content-Type-Options nosniff
+   Header always set X-Frame-Options DENY
+   Header always set X-XSS-Protection "1; mode=block"
+   ```
+
+### 4. SSL Certificate Setup
+
+#### Using Let's Encrypt (Free SSL):
 ```bash
-# Open XAMPP Control Panel
-# Start Apache and MySQL services
-# Verify at: http://localhost/
+# Install Certbot
+sudo apt install certbot python3-certbot-apache
+
+# Get certificate
+sudo certbot --apache -d yourdomain.com
+
+# Auto-renewal
+sudo crontab -e
+# Add: 0 12 * * * /usr/bin/certbot renew --quiet
 ```
 
-### 2️⃣ **Database Setup**
-```sql
--- Import the database schema
--- Run the schema.sql file in phpMyAdmin or MySQL CLI
-mysql -u root -p villa_booking < database/schema.sql
-```
+#### Using Commercial SSL:
+- Purchase SSL certificate from your provider
+- Follow their installation instructions for Apache/Nginx
 
-### 3️⃣ **Frontend Setup**
+### 5. Performance Optimization
+
+1. **Enable Gzip Compression** (Add to `.htaccess`):
+   ```apache
+   # .htaccess in document root
+   <IfModule mod_deflate.c>
+       AddOutputFilterByType DEFLATE text/plain
+       AddOutputFilterByType DEFLATE text/html
+       AddOutputFilterByType DEFLATE text/xml
+       AddOutputFilterByType DEFLATE text/css
+       AddOutputFilterByType DEFLATE application/xml
+       AddOutputFilterByType DEFLATE application/xhtml+xml
+       AddOutputFilterByType DEFLATE application/rss+xml
+       AddOutputFilterByType DEFLATE application/javascript
+       AddOutputFilterByType DEFLATE application/x-javascript
+   </IfModule>
+   ```
+
+2. **Browser Caching**:
+   ```apache
+   <IfModule mod_expires.c>
+       ExpiresActive On
+       ExpiresByType text/css "access plus 1 month"
+       ExpiresByType application/javascript "access plus 1 month"
+       ExpiresByType image/png "access plus 1 year"
+       ExpiresByType image/jpg "access plus 1 year"
+       ExpiresByType image/jpeg "access plus 1 year"
+   </IfModule>
+   ```
+
+### 6. Security Considerations
+
+1. **Change Default Admin Credentials**:
+   - Update admin login credentials in the database
+   - Use strong passwords
+
+2. **Database Security**:
+   ```sql
+   -- Create dedicated database user with limited privileges
+   CREATE USER 'villa_app'@'localhost' IDENTIFIED BY 'strong_password_here';
+   GRANT SELECT, INSERT, UPDATE, DELETE ON villa_booking.* TO 'villa_app'@'localhost';
+   FLUSH PRIVILEGES;
+   ```
+
+3. **File Permissions**:
+   ```bash
+   # Set appropriate permissions
+   find /var/www/html/villa-booking -type f -exec chmod 644 {} \;
+   find /var/www/html/villa-booking -type d -exec chmod 755 {} \;
+   
+   # Secure config files
+   chmod 600 api/config/database.php
+   ```
+
+### 7. Production Checklist
+
+- [ ] Frontend built and deployed (`pnpm build`)
+- [ ] Database created and schema imported
+- [ ] API configuration updated with production database credentials
+- [ ] Domain DNS pointing to server
+- [ ] SSL certificate installed and working
+- [ ] Admin credentials changed from defaults
+- [ ] Email service configured for booking notifications
+- [ ] Backup strategy implemented
+- [ ] Monitoring/analytics setup (optional)
+
+### 8. Maintenance & Updates
+
+1. **Regular Backups**:
+   ```bash
+   # Database backup
+   mysqldump -u username -p villa_booking > backup_$(date +%Y%m%d).sql
+   
+   # File backup
+   tar -czf website_backup_$(date +%Y%m%d).tar.gz /var/www/html/villa-booking
+   ```
+
+2. **Updates**:
+   ```bash
+   # For code updates
+   pnpm build
+   # Upload new dist/ contents
+   # Update API files if needed
+   ```
+
+### 9. Troubleshooting Production Issues
+
+**Common Issues:**
+- **CORS Errors**: Check `.htaccess` configuration and API domain settings
+- **Database Connection**: Verify credentials in `api/config/database.php`
+- **404 Errors**: Ensure Apache `mod_rewrite` is enabled
+- **Permission Errors**: Check file/folder permissions (644/755)
+
+**Monitoring:**
 ```bash
-# Install dependencies
-pnpm install
+# Check Apache error logs
+sudo tail -f /var/log/apache2/error.log
 
-# Start development server
-pnpm run dev
-# Server will run on: http://127.0.0.1:5173/
+# Check PHP error logs
+sudo tail -f /var/log/apache2/error.log
 ```
 
-### 4️⃣ **Admin Dashboard Setup**
-```bash
-# The admin dashboard is a standalone HTML file
-# Access directly via file path or serve through web server
-# Default admin credentials: admin / admin123
+## 📁 Folder Structure
+
 ```
-
-### 5️⃣ **Verify Installation**
-- **Main Site**: http://127.0.0.1:5173/
-- **Admin Dashboard**: Open `admin-dashboard.html` in browser
-- **API Test**: http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/bookings.php
-
-## ⚙️ **Environment Configuration**
-
-The system includes a powerful configuration management system for different deployment environments (local, staging, production).
-
-### 🔧 **Configuration Files**
-- **`config.js`**: Core configuration system with environment management
-- **`config-manager.html`**: Web-based configuration interface
-
-### 🌍 **Environment Management**
-
-#### **Local Development** (Default)
-```javascript
-// Automatically configured for XAMPP
-API Base URL: http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api
+.
+├── api/                # Backend PHP REST API files
+│   ├── bookings.php
+│   ├── rooms.php
+│   ├── packages.php
+│   └── config/
+├── database/           # Database schema and migration files
+│   └── schema.sql
+├── public/             # Static assets (images, icons)
+├── src/                # Frontend React application source code
+│   ├── components/     # Reusable React components
+│   ├── hooks/          # Custom React hooks (e.g., useRooms)
+│   ├── pages/          # Page components (Index, Booking, etc.)
+│   ├── services/       # API service functions
+│   └── config/         # Application configuration (e.g., paths)
+├── admin-dashboard.html # Admin panel entry point
+├── package.json        # Project dependencies and scripts
+└── README.md           # You are here!
 ```
-
-#### **Staging Environment**
-```javascript
-// For staging server deployment
-API Base URL: https://staging.yourdomain.com/api
-```
-
-#### **Production Environment**
-```javascript
-// For production deployment
-API Base URL: https://yourdomain.com/api
-```
-
-### 🛠️ **Configuration Manager**
-
-Access the **Configuration Manager** (`config-manager.html`) to:
-
-- ✅ **Switch Environments**: Toggle between local, staging, production
-- 🔗 **Test API Connections**: Verify API endpoints are working
-- ⚙️ **Custom Configuration**: Set custom API URLs
-- 📤 **Export Settings**: Download configuration for deployment
-- 🔄 **Reset to Defaults**: Restore original settings
-
-### 🚀 **Deployment Configuration**
-
-#### **For Staging Deployment:**
-1. Open `config-manager.html`
-2. Select "Staging" environment
-3. Update API base URL to your staging server
-4. Test API connections
-5. Export configuration settings
-
-#### **For Production Deployment:**
-1. Open `config-manager.html`
-2. Select "Production" environment  
-3. Update API base URL to your production server
-4. Test API connections
-5. Deploy with exported configuration
-
-### 🔧 **Manual Configuration**
-
-You can also manually edit `config.js`:
-
-```javascript
-// Set environment
-setEnvironment('production'); // 'local', 'staging', 'production'
-
-// Or set custom URL
-setCustomApiUrl('https://your-custom-domain.com/api');
-```
-
-### 📝 **Environment Variables**
-
-The configuration system replaces traditional environment variables with:
-- Dynamic environment switching
-- Web-based configuration interface
-- API endpoint testing
-- Easy deployment management
-
-## 📧 Email Notification System
-
-### ✨ **Automatic Booking Confirmations**
-The system now includes a comprehensive email notification system that sends professional HTML emails for every booking confirmation.
-
-#### **Features:**
-- 📧 **HTML Email Templates**: Beautiful, professional email design
-- 🔄 **Automatic Sending**: Emails sent immediately after booking confirmation
-- 💪 **Offline Support**: Works even if database connection fails
-- 📋 **Complete Details**: Includes all booking information and villa contact details
-- ⚙️ **SMTP Ready**: Configured for Gmail SMTP (easily customizable)
-
-#### **Setup Email Notifications:**
-
-1. **Configure SMTP Settings** in `api/notify.php`:
-```php
-$SMTP_HOST = 'smtp.gmail.com';
-$SMTP_PORT = 587;
-$SMTP_USERNAME = 'your-email@gmail.com';      // Your Gmail
-$SMTP_PASSWORD = 'your-app-password';         // Gmail App Password
-$FROM_EMAIL = 'your-email@gmail.com';
-$FROM_NAME = 'Villa Booking System';
-$TO_EMAIL = 'bookings@rumahdaisycantik.com';  // Where notifications go
-```
-
-2. **Gmail App Password Setup**:
-   - Enable 2-Factor Authentication on your Gmail account
-   - Generate an App Password: Google Account → Security → App Passwords
-   - Use the generated App Password (not your regular Gmail password)
-
-3. **Test Email System**:
-   - Complete a booking through the website
-   - Check configured email for booking confirmation
-   - Emails include booking reference, guest details, dates, and villa contact info
-
-#### **Email Template Features:**
-- 🎨 **Professional Design**: Clean, branded email layout
-- 📋 **Booking Details**: Reference number, guest info, dates, total amount
-- 🏨 **Villa Information**: Dynamic villa contact details
-- 📱 **Mobile Friendly**: Responsive email design
-- 🔗 **Contact Links**: Clickable phone and email links
-
-## 🎯 Usage Guide
-
-### 🌐 **Public Villa Website**
-1. **Visit**: http://127.0.0.1:5173/ (or http://127.0.0.1:8082/ if port conflicts)
-2. **Browse**: Dynamic villa information, photos, and amenities  
-3. **Book**: Complete 3-step booking process with automatic email confirmations
-4. **View**: Room details and availability
-
-### 🔐 **Admin Dashboard Access**
-1. **Open**: `admin-dashboard.html` directly in your browser
-2. **Login**: Use default credentials (admin / admin123)
-3. **Navigate**: Use the tab navigation to access different sections
-
-**Default Admin Credentials:**
-```
-Username: admin
-Password: admin123
-```
-
-### 📅 **Bookings Management**
-- View all bookings in a comprehensive table
-- Filter bookings by status (all, pending, confirmed, cancelled, checked_in, checked_out)
-- Quick status updates via dropdown selection
-- Create new bookings with complete guest information
-- Edit existing booking details
-- Delete bookings with confirmation
-- View guest contact information and special requests
-
-### 🏨 **Rooms Management**
-- Add new rooms with complete specifications
-- Edit room details, pricing, and availability
-- Manage room features and amenities
-- Upload and manage room images
-- Set room capacity and bed configurations
-- Enable/disable room availability
-- View package compatibility for each room
-
-### 📦 **Packages Management**
-- Create vacation packages with different types
-- Set pricing, discounts, and validity periods
-- Manage package inclusions and features
-- Control package availability and guest limits
-- Set minimum and maximum night requirements
-- Add package images and descriptions
-
-### 🔄 **Real-time Updates**
-- All changes made in admin dashboard save to database
-- Updates are immediately available via API endpoints
-- Frontend applications receive updated data automatically
-- No manual refresh required for most operations
-
-## 🗄️ Database Schema
-
-### Bookings Table
-```sql
-CREATE TABLE bookings (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    room_id VARCHAR(50) NOT NULL,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    phone VARCHAR(20),
-    check_in DATE NOT NULL,
-    check_out DATE NOT NULL,
-    guests INT NOT NULL,
-    total_price DECIMAL(10,2) NOT NULL,
-    special_requests TEXT,
-    status ENUM('pending', 'confirmed', 'cancelled', 'checked_in', 'checked_out') DEFAULT 'confirmed',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (room_id) REFERENCES rooms(id)
-);
-```
-
-### Rooms Table
-```sql
-CREATE TABLE rooms (
-    id VARCHAR(50) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    type ENUM('Standard', 'Deluxe', 'Suite', 'Family', 'Budget', 'Luxury', 'Business') NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    capacity INT NOT NULL,
-    description TEXT,
-    size VARCHAR(50),
-    beds VARCHAR(100),
-    features JSON,
-    amenities JSON,
-    images JSON,
-    available BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-```
-
-### Packages Table
-```sql
-CREATE TABLE packages (
-    id VARCHAR(50) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    package_type ENUM('romantic', 'business', 'family', 'luxury', 'weekend', 'holiday', 'spa', 'adventure') NOT NULL,
-    base_price DECIMAL(10,2) NOT NULL,
-    discount_percentage INT DEFAULT 0,
-    min_nights INT DEFAULT 1,
-    max_nights INT DEFAULT 30,
-    max_guests INT NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    includes JSON,
-    valid_from DATE,
-    valid_until DATE,
-    terms TEXT,
-    image_url VARCHAR(500),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-```
-
-## 🔌 API Documentation
-
-### Base URL
-```
-http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/
-```
-
-### Bookings Endpoints
-
-#### GET `/bookings.php`
-Get all bookings with room information
-```json
-{
-    "success": true,
-    "data": [
-        {
-            "id": 1,
-            "room_id": "deluxe-suite",
-            "first_name": "John",
-            "last_name": "Smith",
-            "email": "john.smith@email.com",
-            "phone": "+1-555-0101",
-            "check_in": "2025-11-20",
-            "check_out": "2025-11-23",
-            "guests": 2,
-            "total_price": "750.00",
-            "special_requests": "Late check-in requested",
-            "status": "confirmed",
-            "room_name": "Deluxe Suite",
-            "room_type": "Suite",
-            "room_price": "250.00"
-        }
-    ]
-}
-```
-
-#### POST `/bookings.php`
-Create new booking
-```json
-{
-    "room_id": "deluxe-suite",
-    "first_name": "John",
-    "last_name": "Doe",
-    "email": "john@example.com",
-    "phone": "+1-555-1234",
-    "check_in": "2025-12-01",
-    "check_out": "2025-12-05",
-    "guests": 2,
-    "total_price": 1000.00,
-    "special_requests": "Ocean view preferred",
-    "status": "confirmed"
-}
-```
-
-#### PUT `/bookings.php?id={id}`
-Update existing booking
-
-#### DELETE `/bookings.php?id={id}`
-Delete booking
-
-### Rooms Endpoints
-
-#### GET `/rooms.php`
-Get all rooms with features and amenities
-```json
-{
-    "success": true,
-    "data": [
-        {
-            "id": "deluxe-suite",
-            "name": "Deluxe Suite",
-            "type": "Suite",
-            "price": "250.00",
-            "capacity": 4,
-            "description": "Spacious luxury suite...",
-            "size": "65 sqm",
-            "beds": "1 King Bed + Sofa Bed",
-            "features": ["City View", "Living Area", "Premium Bathroom"],
-            "amenities": ["WiFi", "TV", "Air Conditioning", "Minibar"],
-            "images": [],
-            "available": 1
-        }
-    ]
-}
-```
-
-#### POST `/rooms.php`
-Create new room
-
-#### PUT `/rooms.php?id={id}`
-Update room
-
-#### DELETE `/rooms.php?id={id}`
-Delete room
-
-### Packages Endpoints
-
-#### GET `/packages.php`
-Get all packages
-```json
-{
-    "success": true,
-    "data": [
-        {
-            "id": "romantic-getaway",
-            "name": "Romantic Getaway",
-            "description": "Perfect for couples...",
-            "package_type": "romantic",
-            "base_price": "199.99",
-            "discount_percentage": 15,
-            "min_nights": 2,
-            "max_nights": 7,
-            "max_guests": 2,
-            "is_active": 1,
-            "includes": ["Champagne", "Rose Petals", "Couples Massage"],
-            "valid_from": "2025-01-01",
-            "valid_until": "2025-12-31"
-        }
-    ]
-}
-```
-
-#### POST `/packages.php`
-Create new package
-
-#### PUT `/packages.php?id={id}`
-Update package
-
-#### DELETE `/packages.php?id={id}`
-Delete package
-
-## 🧪 Testing the System
-
-### API Testing with PowerShell
-```powershell
-# Test bookings endpoint
-Invoke-WebRequest -Uri "http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/bookings.php" | Select-Object StatusCode
-
-# Test rooms endpoint
-Invoke-WebRequest -Uri "http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/rooms.php" | Select-Object StatusCode
-
-# Test packages endpoint  
-Invoke-WebRequest -Uri "http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/packages.php" | Select-Object StatusCode
-
-# Create a test booking
-$booking = @{
-    room_id = "deluxe-suite"
-    first_name = "Test"
-    last_name = "User"
-    email = "test@example.com"
-    phone = "+1-555-0000"
-    check_in = "2025-12-01"
-    check_out = "2025-12-05"
-    guests = 2
-    total_price = 1000.00
-    status = "confirmed"
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/bookings.php" -Method POST -Body $booking -ContentType "application/json"
-```
-
-### Admin Dashboard Testing
-1. Open `admin-dashboard.html` in your browser
-2. Login with admin/admin123
-3. Navigate through each section:
-   - Overview: Check statistics display
-   - Bookings: Create, edit, delete test bookings
-   - Rooms: Manage room inventory
-   - Packages: Control package offerings
-   - Villa Info: Update property details
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-#### XAMPP Issues
-1. **Apache won't start**: Check if port 80 is in use
-   - Stop IIS if running
-   - Change Apache port in XAMPP config
-
-2. **MySQL won't start**: Check if port 3306 is in use
-   - Stop other MySQL services
-   - Check Windows services
-
-#### API Issues
-1. **CORS errors**: APIs are configured with `Access-Control-Allow-Origin: *`
-2. **404 errors**: Verify XAMPP is running and file paths are correct
-3. **Database connection**: Check credentials in `api/config/database.php`
-
-#### Admin Dashboard Issues
-1. **Login fails**: Use default credentials `admin` / `admin123`
-2. **Data not loading**: Check browser console for API errors
-3. **Changes not saving**: Verify API endpoints are accessible
-
-#### Frontend Issues
-1. **Vite server won't start**: Check if port 5173 is available
-2. **API calls failing**: Ensure XAMPP is running
-3. **Build errors**: Run `pnpm install` to install dependencies
-
-### Development Tips
-- Keep XAMPP running during development
-- Check browser console for JavaScript errors
-- Use browser Network tab to debug API calls
-- Verify database changes in phpMyAdmin
-- Test all CRUD operations in admin dashboard
-
-## 📊 System Status
-
-### ✅ **Completed Features**
-- **Admin Dashboard**: Complete management interface
-- **Bookings System**: Full CRUD operations with 10 existing bookings
-- **Rooms Management**: 5 rooms with full specifications
-- **Packages System**: 6 packages with different types
-- **Database Integration**: All systems connected to MySQL
-- **Real-time Updates**: Changes reflect immediately
-- **Security**: Session-based authentication
-- **API Layer**: RESTful APIs for all operations
-
-### 📈 **Current Data**
-- **Bookings**: 10 sample bookings in database
-- **Rooms**: 5 configured rooms (Family, Deluxe, Economy, Master, Standard)
-- **Packages**: 6 active packages (Romantic, Business, Family, etc.)
-- **Admin Users**: Authentication system ready
-
-### 🔮 **Future Enhancements**
-- Email notifications for bookings
-- Payment gateway integration
-- Advanced reporting and analytics
-- Multi-language support
-- Mobile app integration
-- Advanced user roles and permissions
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Contributions are welcome! Please feel free to submit a pull request.
+
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 📞 Support
-
-For support and questions:
-- Check the troubleshooting section
-- Review the API documentation
-- Test with the provided PowerShell commands
-- Verify XAMPP services are running
-
----
-
-**Note**: This system provides a complete hotel management solution with real-time database integration. The admin dashboard (`admin-dashboard.html`) serves as the central control panel for all hotel operations, while the React frontend provides the customer-facing booking interface.
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (room_id) REFERENCES rooms(id),
-    INDEX (email), INDEX (check_in), INDEX (check_out)
-);
-
--- Admin Users table
-CREATE TABLE IF NOT EXISTS admin_users (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    email VARCHAR(255),
-    role ENUM('admin', 'manager') DEFAULT 'admin',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-## 6. Working API Endpoints
-
-The PHP API is fully implemented with the following endpoints:
-
-### **Room Endpoints**
-- `GET /api/rooms` - List all available rooms
-- `GET /api/rooms/{id}` - Get specific room details
-
-### **Booking Endpoints** 
-- `GET /api/bookings` - List all bookings
-- `POST /api/bookings` - Create new booking
-- `GET /api/bookings/{id}` - Get specific booking
-- `GET /api/bookings?action=availability&room_id={id}&check_in={date}&check_out={date}` - Check availability
-
-### **Response Format**
-All endpoints return consistent JSON:
-```json
-{
-  "success": true,
-  "data": { ... },
-  "message": "Operation successful"
-}
-```
-
-### **API Structure**
-```
-api/
-├── index.php              # Main router
-├── config/
-│   └── database.php       # Database connection
-├── controllers/
-│   ├── BookingController.php
-│   └── RoomController.php
-├── models/
-│   ├── Booking.php
-│   └── Room.php
-└── utils/
-    └── helpers.php        # Utility functions
-```
-
-## 7. Testing the API
-
-### **Test with PowerShell:**
-```powershell
-# Test rooms endpoint
-Invoke-RestMethod -Uri "http://localhost/fontend-bookingengine-100/frontend-booking-engine/api/rooms" -Method GET
-
-# Test availability check
-Invoke-RestMethod -Uri "http://localhost/fontend-bookingengine-100/frontend-booking-engine/api/bookings?action=availability&room_id=1&check_in=2024-01-15&check_out=2024-01-20" -Method GET
-
-# Create a booking
-$body = @{
-    room_id = 1
-    first_name = "John"
-    last_name = "Doe"
-    email = "john@example.com"
-    phone = "123-456-7890"
-    check_in = "2024-01-15"
-    check_out = "2024-01-20"
-    guests = 2
-    total_price = 750.00
-} | ConvertTo-Json
-
-Invoke-RestMethod -Uri "http://localhost/fontend-bookingengine-100/frontend-booking-engine/api/bookings" -Method POST -Body $body -ContentType "application/json"
-```
-
-## 8. Frontend Configuration
-
-### **Vite Development Server**
-The React frontend runs on port 8080 with proxy configuration:
-
-```typescript
-// vite.config.ts
-export default defineConfig({
-  server: {
-    port: 8080,
-    proxy: {
-      '/api': {
-        target: 'http://localhost/fontend-bookingengine-100/frontend-booking-engine',
-        changeOrigin: true,
-        secure: false
-      }
-    }
-  }
-})
-```
-
-### **API Service Configuration**
-```javascript
-// src/services/api.js
-const API_BASE_URL = '/api';
-const LOCAL_API_BASE_URL = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine/api';
-
-export const apiService = {
-  async getRooms() {
-    const response = await fetch(`${API_BASE_URL}/rooms`);
-    return response.json();
-  },
-  
-  async createBooking(booking) {
-    const response = await fetch(`${API_BASE_URL}/bookings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(booking)
-    });
-    return response.json();
-  }
-};
-```
-
-## 8. Running Frontend
-
-```powershell
-pnpm install
-pnpm dev
-```
-
-If port 5173 is busy, Vite will pick the next free one—watch terminal output. Ensure API_BASE matches the served Apache path.
-
-## 9. Testing API Connectivity (PowerShell)
-
-```powershell
-Invoke-WebRequest -Uri "http://localhost/fontend-bookingengine-100/frontend-booking-engine/api/bookings" -Method GET | Select-Object StatusCode
-curl http://localhost/fontend-bookingengine-100/frontend-booking-engine/api/bookings
-```
-
-## 9. Running the Application
-
-### **Start Development Environment:**
-```powershell
-# 1. Start XAMPP (Apache + MySQL)
-# 2. Ensure database is created and tables exist
-# 3. Navigate to project directory
-cd "C:\xampp\htdocs\fontend-bookingengine-100\frontend-booking-engine\frontend-booking-engine"
-
-# 4. Install dependencies (if not done)
-pnpm install
-
-# 5. Start development server
-pnpm run dev
-```
-
-### **Access Points:**
-- **Frontend**: http://localhost:8080
-- **API Direct**: http://localhost/fontend-bookingengine-100/frontend-booking-engine/api/
-- **phpMyAdmin**: http://localhost/phpmyadmin
-
-## 🚀 Production Deployment
-
-### **Frontend Deployment**
-```bash
-# Build for production
-npm run build
-
-# Deploy dist/ folder to:
-# - Vercel, Netlify, or any static hosting
-# - CDN for optimal performance
-```
-
-### **Backend Deployment**
-```bash
-# Upload api/ folder to web server
-# Configure database connection in api/config/database.php
-# Update CORS origins for production domain
-# Set up SSL certificate for HTTPS
-```
-
-### **Email Configuration for Production**
-```php
-// Update api/notify.php with production SMTP
-$SMTP_USERNAME = 'production-email@yourdomain.com';
-$SMTP_PASSWORD = 'production-app-password';
-$TO_EMAIL = 'bookings@yourdomain.com';
-```
-
-### **Environment Variables**
-```javascript
-// Update src/config/paths.ts for production
-const API_BASE_URL = 'https://yourdomain.com/api';
-```
-
-## 📊 System Status ✅
-
-### **Fully Working Features:**
-- ✅ Complete 3-step booking flow with email notifications
-- ✅ Dynamic villa information from database
-- ✅ Professional HTML email templates
-- ✅ Comprehensive admin dashboard
-- ✅ Room and package management
-- ✅ Real-time booking management
-- ✅ Offline booking support with email backup
-- ✅ Mobile-responsive design
-- ✅ Production-ready deployment
-- ✅ Date selection and availability checking  
-- ✅ Real-time booking creation
-- ✅ Database integration with conflict prevention
-- ✅ Responsive UI with modern components
-- ✅ Form validation and error handling
-- ✅ Admin booking management interface
-
-### **Verified Endpoints:**
-- ✅ `GET /api/rooms` - Returns formatted room data
-- ✅ `GET /api/bookings` - Returns all bookings
-- ✅ `POST /api/bookings` - Creates new bookings
-- ✅ `GET /api/bookings?action=availability` - Checks room availability
-
-## 11. Common Issues & Solutions
-
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| API 404 errors | Incorrect proxy path | Check vite.config.ts proxy settings |
-| CORS errors | Missing headers | Verify CORS headers in API controllers |
-| Database connection | MySQL not running | Start XAMPP MySQL service |
-| Room data not loading | Type mismatches | Ensure Room interface matches API response |
-| Booking conflicts | Missing availability check | Verify database booking queries |
-
-## 12. Development Notes
-
-### **Database Schema:**
-- All tables use proper indexes for performance
-- Foreign key relationships maintain data integrity  
-- Booking availability uses date range queries
-- Admin users table ready for authentication
-
-### **Frontend Architecture:**
-- React Context for global booking state
-- TypeScript for type safety
-- Tailwind CSS for styling
-- Component-based architecture with shadcn/ui
-
-### **Backend Structure:**
-- MVC pattern with proper separation
-- Consistent JSON API responses
-- Database abstraction layer
-- Error handling and validation
-
----
-This README section was generated to help you run locally with XAMPP. Adjust anything as your backend evolves.
+This project is licensed under the MIT License.

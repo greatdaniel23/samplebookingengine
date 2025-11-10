@@ -1,14 +1,16 @@
 <?php
 /**
- * Database Configuration
+ * Database Configuration - Production Ready for Hostinger
  */
 
 class Database {
     private $host = 'localhost';
-    private $db_name = 'booking_engine';
-    private $username = 'root';
-    private $password = '';
+    private $db_name = 'u289291769_booking';
+    private $username = 'u289291769_booking';
+    private $password = 'Kanibal123!!!';
     private $conn;
+    
+
 
     public function getConnection() {
         $this->conn = null;

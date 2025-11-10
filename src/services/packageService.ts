@@ -4,8 +4,7 @@
  */
 
 import { Package, PackagePricing } from '@/types';
-
-const API_BASE_URL = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api';
+import { API_BASE_URL } from '@/config/paths';
 
 export const packageService = {
   /**
