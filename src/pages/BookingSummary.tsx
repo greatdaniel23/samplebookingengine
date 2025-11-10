@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Package, Room } from '@/types';
 import { packageService } from '@/services/packageService';
+import { useVillaInfo } from '@/hooks/useVillaInfo';
 // @ts-ignore
 import ApiService from '@/services/api.js';
 import { 
@@ -56,11 +57,21 @@ interface BookingSummaryData {
 const BookingSummary = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { villaInfo } = useVillaInfo();
   
   // Get URL parameters
   const bookingRef = searchParams.get('ref');
   const packageId = searchParams.get('package');
   const roomId = searchParams.get('room');
+
+  // Dynamic contact information helpers
+  const getContactPhone = () => {
+    return villaInfo?.phone || "+1 (555) 123-4567";
+  };
+
+  const getContactEmail = () => {
+    return villaInfo?.email || "support@villa.com";
+  };
   
   // State
   const [loading, setLoading] = useState(true);
@@ -387,7 +398,7 @@ Total: $${bookingData?.pricing.totalPrice}
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <CreditCard className="h-5 w-5 mr-2" />
-                  Payment Summary
+                  Pricing Summary
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -403,7 +414,7 @@ Total: $${bookingData?.pricing.totalPrice}
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold">Total Paid</span>
+                  <span className="font-semibold">Total Amount</span>
                   <span className="font-bold text-lg text-green-600">
                     ${bookingData.pricing.totalPrice.toFixed(2)}
                   </span>
@@ -411,7 +422,7 @@ Total: $${bookingData?.pricing.totalPrice}
                 <div className="flex items-center justify-center pt-2">
                   <Badge className="bg-green-100 text-green-700">
                     <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Payment Confirmed
+                    Booking Confirmed
                   </Badge>
                 </div>
               </CardContent>
@@ -462,11 +473,11 @@ Total: $${bookingData?.pricing.totalPrice}
                   <div className="space-y-2">
                     <div className="flex items-center">
                       <Phone className="h-4 w-4 mr-2" />
-                      <span>+1 (555) 123-4567</span>
+                      <span>{getContactPhone()}</span>
                     </div>
                     <div className="flex items-center">
                       <Mail className="h-4 w-4 mr-2" />
-                      <span>support@villa.com</span>
+                      <span>{getContactEmail()}</span>
                     </div>
                   </div>
                 </div>

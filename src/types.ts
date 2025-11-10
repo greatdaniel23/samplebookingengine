@@ -82,14 +82,14 @@ export interface Package {
   valid_until: string; // Date string
   is_active: number; // API returns as number (0/1)
   max_guests: number;
-  includes: string[]; // Array of included services
+  includes?: string[]; // Array of included services - can be undefined
   terms: string;
   image_url: string;
   created_at: string;
   updated_at: string;
-  room_options: PackageRoomOption[];
-  discount_display: string; // e.g., "25.00% OFF"
-  validity_period: string; // e.g., "Nov 1, 2025 - Dec 31, 2026"
+  room_options?: PackageRoomOption[]; // Can be undefined
+  discount_display?: string; // e.g., "25.00% OFF" - optional
+  validity_period?: string; // e.g., "Nov 1, 2025 - Dec 31, 2026" - optional
 }
 
 export interface PackagePricing {

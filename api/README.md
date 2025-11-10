@@ -1,11 +1,11 @@
-# Villa Management API
+# Villa Management API - Complete REST Endpoints
 
 ## Overview
-RESTful API for the Villa Management System providing endpoints for villa information, room management, and booking operations.
+Comprehensive RESTful API for the Villa Management System providing endpoints for villa information, room management, booking operations, and automatic email notifications.
 
 ## Base URL
 ```
-http://localhost:80/api/
+http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/
 ```
 
 ## Authentication
@@ -13,11 +13,21 @@ Admin endpoints require authentication. Use the following credentials:
 - Username: `admin`
 - Password: `admin123`
 
-## Endpoints
+## 📧 Latest Feature: Email Notifications
+The API now includes automatic email notification system for booking confirmations with professional HTML templates.
 
-### Villa Information
-- `GET /villa.php` - Get villa information
+## API Endpoints
+
+### 🏨 Villa Information
+- `GET /villa.php` - Get complete villa information and contact details
 - `PUT /villa.php` - Update villa information (Admin only)
+
+### 📧 Email Notifications *(NEW)*
+- `POST /notify.php` - Send booking confirmation email
+  - Automatically triggered on booking completion
+  - Professional HTML email templates
+  - SMTP integration with Gmail support
+  - Includes complete booking details and villa contact info
 
 #### Villa Information Structure
 ```json
@@ -50,18 +60,72 @@ Admin endpoints require authentication. Use the following credentials:
 }
 ```
 
-### Rooms
-- `GET /index.php/rooms` - Get all available rooms
-- `GET /index.php/rooms/{id}` - Get specific room by ID
+### 🏨 Rooms Management
+- `GET /rooms.php` - Get all available rooms with details
+- `GET /rooms.php?id={room_id}` - Get specific room by ID
+- `POST /rooms.php` - Create new room (Admin only)
+- `PUT /rooms.php` - Update room information (Admin only)
+- `DELETE /rooms.php?id={room_id}` - Delete room (Admin only)
 
-### Bookings
-- `GET /index.php/bookings` - Get all bookings
-- `GET /index.php/bookings/{id}` - Get specific booking by ID
-- `POST /index.php/bookings` - Create new booking
-- `GET /index.php/bookings?action=availability&room_id={id}&check_in={date}&check_out={date}` - Check availability
+### 📦 Packages Management
+- `GET /packages.php` - Get all available packages
+- `GET /packages.php?id={package_id}` - Get specific package by ID
+- `POST /packages.php` - Create new package (Admin only)
+- `PUT /packages.php` - Update package information (Admin only)
+- `DELETE /packages.php?id={package_id}` - Delete package (Admin only)
 
-### Test
-- `GET /index.php/test` - Test API connectivity
+### 📋 Bookings Management
+- `GET /bookings.php` - Get all bookings with filtering options
+- `GET /bookings.php?id={booking_id}` - Get specific booking by ID
+- `POST /bookings.php` - Create new booking (triggers email notification)
+- `PUT /bookings.php` - Update booking information (Admin only)
+- `DELETE /bookings.php?id={booking_id}` - Delete booking (Admin only)
+- `GET /bookings.php?action=availability&room_id={id}&check_in={date}&check_out={date}` - Check room availability
+
+### 🔐 Authentication
+- `POST /auth.php` - Admin login authentication
+- `POST /auth.php?action=logout` - Admin logout
+- `GET /auth.php?action=check` - Check authentication status
+
+## 📧 Email Notification System
+
+### Configuration
+Update SMTP settings in `notify.php`:
+```php
+$SMTP_HOST = 'smtp.gmail.com';
+$SMTP_PORT = 587;
+$SMTP_USERNAME = 'your-email@gmail.com';
+$SMTP_PASSWORD = 'your-app-password';  // Gmail App Password
+$FROM_EMAIL = 'your-email@gmail.com';
+$FROM_NAME = 'Villa Booking System';
+$TO_EMAIL = 'bookings@rumahdaisycantik.com';
+```
+
+### Email Notification Payload
+```json
+{
+  "id": "12345",
+  "reference": "BK-2025-001",
+  "room_id": "business-elite",
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john.doe@example.com",
+  "phone": "+1234567890",
+  "check_in": "2025-12-01",
+  "check_out": "2025-12-05",
+  "guests": 2,
+  "total_price": 2500.00,
+  "special_requests": "Late check-in requested",
+  "status": "confirmed"
+}
+```
+
+### Email Features
+- ✅ **HTML Templates**: Professional email design
+- ✅ **Booking Details**: Complete reservation information
+- ✅ **Villa Contact**: Dynamic villa contact information
+- ✅ **Mobile Responsive**: Works on all devices
+- ✅ **Error Handling**: Graceful failure management
 
 ## Example Usage
 
@@ -91,29 +155,82 @@ fetch('/api/villa.php', {
 });
 ```
 
-### Create Booking
+### Create Booking with Email Notification
 ```javascript
 const bookingData = {
-  roomId: 'villa-deluxe',
-  from: '2025-11-10',
-  to: '2025-11-12',
+  room_id: 'business-elite',
+  first_name: 'John',
+  last_name: 'Doe',
+  email: 'john@example.com',
+  phone: '+1234567890',
+  check_in: '2025-12-01',
+  check_out: '2025-12-05',
   guests: 2,
-  user: {
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john@example.com',
-    phone: '+1234567890'
-  },
-  total: 299.99
+  total_price: 2500.00,
+  special_requests: 'Late check-in requested',
+  status: 'confirmed'
 };
 
-fetch('/api/index.php/bookings', {
+// Create booking (automatically triggers email notification)
+fetch('/api/bookings.php', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
   },
   body: JSON.stringify(bookingData)
 });
+```
+
+### Send Manual Email Notification
+```javascript
+const emailData = {
+  id: '12345',
+  reference: 'BK-2025-001',
+  room_id: 'business-elite',
+  first_name: 'John',
+  last_name: 'Doe',
+  email: 'john@example.com',
+  phone: '+1234567890',
+  check_in: '2025-12-01',
+  check_out: '2025-12-05',
+  guests: 2,
+  total_price: 2500.00,
+  special_requests: 'Late check-in requested',
+  status: 'confirmed'
+};
+
+fetch('/api/notify.php', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify(emailData)
+});
+```
+
+### Get Available Packages
+```javascript
+fetch('/api/packages.php')
+  .then(response => response.json())
+  .then(data => {
+    console.log('Available packages:', data.data);
+  });
+```
+
+### Check Room Availability
+```javascript
+const params = new URLSearchParams({
+  action: 'availability',
+  room_id: 'business-elite',
+  check_in: '2025-12-01',
+  check_out: '2025-12-05'
+});
+
+fetch(`/api/bookings.php?${params}`)
+  .then(response => response.json())
+  .then(data => {
+    console.log('Room availability:', data.available);
+  });
 ```
 
 ## CORS Configuration

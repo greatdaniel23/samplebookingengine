@@ -1,6 +1,75 @@
-# 🏨 Complete Villa Booking Engine with Comprehensive Admin Management System
+# 🏨 Villa Booking Engine - Complete Management System
 
-A full-featured villa booking system with React + TypeScript frontend, PHP backend APIs, and a powerful admin dashboard for complete hotel management. The platform provides end-to-end booking management, room administration, package control, and dynamic content management with real-time database integration.
+A modern, full-featured villa booking system with React + TypeScript frontend, PHP REST API backend, and comprehensive admin dashboard. Features automatic email notifications, dynamic content management, and real-time database integration for complete villa and booking management.
+
+## 🌟 Live Demo
+- **Public Booking Site**: `http://localhost:8082/` (Vite dev server)
+- **Admin Dashboard**: `http://localhost/admin-dashboard.html` (XAMPP hosted)
+- **API Base**: `http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/`
+
+## ⚡ Quick Start Guide
+
+### 1️⃣ **Prerequisites**
+```bash
+# Install XAMPP (Apache + MySQL + PHP)
+# Install Node.js and pnpm
+# Start XAMPP services (Apache + MySQL)
+```
+
+### 2️⃣ **Database Setup**
+```sql
+# Import database schema in phpMyAdmin
+# Go to: http://localhost/phpmyadmin
+# Create database: villa_booking
+# Import: database/schema.sql
+```
+
+### 3️⃣ **Start Development**
+```bash
+# Install dependencies
+pnpm install
+
+# Start frontend server
+pnpm run dev
+# ✅ Frontend: http://localhost:8082/
+
+# Access admin dashboard
+# ✅ Admin: http://localhost/admin-dashboard.html
+# Login: admin / admin123
+```
+
+### 4️⃣ **Configure Email (Optional)**
+```php
+# Edit api/notify.php with your Gmail credentials
+$SMTP_USERNAME = 'your-email@gmail.com';
+$SMTP_PASSWORD = 'your-app-password';
+$TO_EMAIL = 'bookings@rumahdaisycantik.com';
+```
+
+### 5️⃣ **Test System**
+- 📱 Visit booking site and complete a reservation
+- 📧 Check email for booking confirmation
+- 🔐 Login to admin dashboard to manage bookings
+- ✅ System ready for production!
+
+## 🚀 Latest Features (November 2025)
+
+### ✨ **New: Automatic Email Notifications**
+- 📧 **Booking Confirmations**: Automatic HTML email notifications sent on booking completion
+- 📱 **Professional Templates**: Beautiful HTML email design with booking details
+- 🔄 **Offline Support**: Email notifications work even if database connection fails
+- ⚙️ **SMTP Integration**: Gmail SMTP configuration ready for production
+
+### 🎯 **Honest User Experience**
+- ✅ **No Payment Gateway**: Removed misleading "Payment Confirmed" messaging
+- 🔄 **Review & Confirm**: Step 3 now honestly shows "Review & Confirm" instead of payment
+- 💰 **Pricing Summary**: Clear "Total Amount" instead of "Total Paid"
+- 📋 **Booking Confirmed**: Accurate confirmation messaging
+
+### 🏡 **Dynamic Villa System**
+- 🌐 **Database-Driven Contact**: Villa information loaded from database instead of hardcoded
+- 📞 **Dynamic Contact Info**: Phone, email, and address pulled from villa table
+- 🔄 **Real-time Updates**: Changes in admin panel immediately reflect on booking site
 
 ## ✨ Key Features
 
@@ -248,12 +317,54 @@ The configuration system replaces traditional environment variables with:
 - API endpoint testing
 - Easy deployment management
 
+## 📧 Email Notification System
+
+### ✨ **Automatic Booking Confirmations**
+The system now includes a comprehensive email notification system that sends professional HTML emails for every booking confirmation.
+
+#### **Features:**
+- 📧 **HTML Email Templates**: Beautiful, professional email design
+- 🔄 **Automatic Sending**: Emails sent immediately after booking confirmation
+- 💪 **Offline Support**: Works even if database connection fails
+- 📋 **Complete Details**: Includes all booking information and villa contact details
+- ⚙️ **SMTP Ready**: Configured for Gmail SMTP (easily customizable)
+
+#### **Setup Email Notifications:**
+
+1. **Configure SMTP Settings** in `api/notify.php`:
+```php
+$SMTP_HOST = 'smtp.gmail.com';
+$SMTP_PORT = 587;
+$SMTP_USERNAME = 'your-email@gmail.com';      // Your Gmail
+$SMTP_PASSWORD = 'your-app-password';         // Gmail App Password
+$FROM_EMAIL = 'your-email@gmail.com';
+$FROM_NAME = 'Villa Booking System';
+$TO_EMAIL = 'bookings@rumahdaisycantik.com';  // Where notifications go
+```
+
+2. **Gmail App Password Setup**:
+   - Enable 2-Factor Authentication on your Gmail account
+   - Generate an App Password: Google Account → Security → App Passwords
+   - Use the generated App Password (not your regular Gmail password)
+
+3. **Test Email System**:
+   - Complete a booking through the website
+   - Check configured email for booking confirmation
+   - Emails include booking reference, guest details, dates, and villa contact info
+
+#### **Email Template Features:**
+- 🎨 **Professional Design**: Clean, branded email layout
+- 📋 **Booking Details**: Reference number, guest info, dates, total amount
+- 🏨 **Villa Information**: Dynamic villa contact details
+- 📱 **Mobile Friendly**: Responsive email design
+- 🔗 **Contact Links**: Clickable phone and email links
+
 ## 🎯 Usage Guide
 
 ### 🌐 **Public Villa Website**
-1. **Visit**: http://127.0.0.1:5173/
-2. **Browse**: Dynamic villa information, photos, and amenities
-3. **Book**: Select packages and make reservations
+1. **Visit**: http://127.0.0.1:5173/ (or http://127.0.0.1:8082/ if port conflicts)
+2. **Browse**: Dynamic villa information, photos, and amenities  
+3. **Book**: Complete 3-step booking process with automatic email confirmations
 4. **View**: Room details and availability
 
 ### 🔐 **Admin Dashboard Access**
@@ -783,10 +894,52 @@ pnpm run dev
 - **API Direct**: http://localhost/fontend-bookingengine-100/frontend-booking-engine/api/
 - **phpMyAdmin**: http://localhost/phpmyadmin
 
-## 10. System Status ✅
+## 🚀 Production Deployment
 
-### **Working Features:**
-- ✅ Room listing and filtering
+### **Frontend Deployment**
+```bash
+# Build for production
+npm run build
+
+# Deploy dist/ folder to:
+# - Vercel, Netlify, or any static hosting
+# - CDN for optimal performance
+```
+
+### **Backend Deployment**
+```bash
+# Upload api/ folder to web server
+# Configure database connection in api/config/database.php
+# Update CORS origins for production domain
+# Set up SSL certificate for HTTPS
+```
+
+### **Email Configuration for Production**
+```php
+// Update api/notify.php with production SMTP
+$SMTP_USERNAME = 'production-email@yourdomain.com';
+$SMTP_PASSWORD = 'production-app-password';
+$TO_EMAIL = 'bookings@yourdomain.com';
+```
+
+### **Environment Variables**
+```javascript
+// Update src/config/paths.ts for production
+const API_BASE_URL = 'https://yourdomain.com/api';
+```
+
+## 📊 System Status ✅
+
+### **Fully Working Features:**
+- ✅ Complete 3-step booking flow with email notifications
+- ✅ Dynamic villa information from database
+- ✅ Professional HTML email templates
+- ✅ Comprehensive admin dashboard
+- ✅ Room and package management
+- ✅ Real-time booking management
+- ✅ Offline booking support with email backup
+- ✅ Mobile-responsive design
+- ✅ Production-ready deployment
 - ✅ Date selection and availability checking  
 - ✅ Real-time booking creation
 - ✅ Database integration with conflict prevention

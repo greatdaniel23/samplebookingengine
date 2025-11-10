@@ -52,9 +52,9 @@ export const paths: AppPaths = {
   host,
   apiBase: API_BASE,
   api: {
-    bookings: buildApiUrl('bookings'),
-    bookingById: (id) => buildApiUrl(`bookings/${id}`),
-    rooms: buildApiUrl('rooms') // Placeholder; implement in backend
+    bookings: buildApiUrl('bookings.php'),
+    bookingById: (id) => buildApiUrl(`bookings.php?id=${id}`),
+    rooms: buildApiUrl('rooms.php')
   },
   frontendBase: PUBLIC_BASE,
   adminBase: ADMIN_BASE,

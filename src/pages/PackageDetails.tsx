@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Package } from '@/types';
 import { packageService } from '@/services/packageService';
+import { useVillaInfo } from '@/hooks/useVillaInfo';
 import { 
   ArrowLeft, 
   Clock, 
@@ -24,9 +25,19 @@ import BookingSkeleton from '@/components/BookingSkeleton';
 const PackageDetails = () => {
   const { packageId } = useParams<{ packageId: string }>();
   const navigate = useNavigate();
+  const { villaInfo } = useVillaInfo();
   const [pkg, setPackage] = useState<Package | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Dynamic contact information helpers
+  const getContactPhone = () => {
+    return villaInfo?.phone || "+1 (555) 123-4567";
+  };
+
+  const getContactEmail = () => {
+    return villaInfo?.email || "support@villa.com";
+  };
 
   useEffect(() => {
     const fetchPackage = async () => {
@@ -303,11 +314,11 @@ const PackageDetails = () => {
                   <div className="space-y-2">
                     <div className="flex items-center text-xs text-muted-foreground">
                       <Phone className="h-3 w-3 mr-2" />
-                      <span>+1 (555) 123-4567</span>
+                      <span>{getContactPhone()}</span>
                     </div>
                     <div className="flex items-center text-xs text-muted-foreground">
                       <Mail className="h-3 w-3 mr-2" />
-                      <span>bookings@villa.com</span>
+                      <span>{getContactEmail()}</span>
                     </div>
                   </div>
                 </div>
