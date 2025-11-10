@@ -135,7 +135,6 @@ const BookingPage = () => {
     totalPrice: number;
   }) => {
     setIsBooking(true);
-    setFinalBookingData(bookingData);
     
     // Generate booking details first
     const bookingId = Math.floor(Math.random() * 10000);
@@ -260,18 +259,22 @@ const BookingPage = () => {
       showSuccess('Booking confirmed and saved to database!');
       
       // Redirect to summary page with booking details
+      const nights = differenceInDays(bookingData.dateRange.to!, bookingData.dateRange.from!);
+      const basePrice = nights * parseFloat(selectedPackage?.base_price || room?.price || '0');
+      const serviceFee = basePrice * 0.1; // 10% of base price, not total price
+      
       const summaryParams = new URLSearchParams({
         ref: dbReference,
         checkIn: bookingData.dateRange.from!.toISOString().split('T')[0],
         checkOut: bookingData.dateRange.to!.toISOString().split('T')[0],
         guests: bookingData.guests.toString(),
-        nights: differenceInDays(bookingData.dateRange.to!, bookingData.dateRange.from!).toString(),
+        nights: nights.toString(),
         firstName: bookingData.guestInfo.firstName,
         lastName: bookingData.guestInfo.lastName,
         email: bookingData.guestInfo.email,
         phone: bookingData.guestInfo.phone,
-        basePrice: (differenceInDays(bookingData.dateRange.to!, bookingData.dateRange.from!) * parseFloat(selectedPackage?.base_price || room?.price || '0')).toString(),
-        serviceFee: (bookingData.totalPrice * 0.1).toString(),
+        basePrice: basePrice.toString(),
+        serviceFee: serviceFee.toString(),
         totalPrice: bookingData.totalPrice.toString()
       });
 
@@ -286,6 +289,8 @@ const BookingPage = () => {
       }
 
       // Navigate immediately to summary page
+      console.log('🔄 [Booking] Navigating to summary with params (online):', summaryParams.toString());
+      console.log('🔄 [Booking] Full URL (online):', `/summary?${summaryParams.toString()}`);
       navigate(`/summary?${summaryParams.toString()}`);
 
       const localBooking: Booking = {
@@ -364,18 +369,22 @@ const BookingPage = () => {
       showSuccess(`Booking stored offline. It will sync automatically when connection is restored. (${reason})`);
       
       // Redirect to summary page with booking details
+      const nights = differenceInDays(bookingData.dateRange.to!, bookingData.dateRange.from!);
+      const basePrice = nights * parseFloat(selectedPackage?.base_price || room?.price || '0');
+      const serviceFee = basePrice * 0.1; // 10% of base price, not total price
+      
       const summaryParams = new URLSearchParams({
         ref: reference,
         checkIn: bookingData.dateRange.from!.toISOString().split('T')[0],
         checkOut: bookingData.dateRange.to!.toISOString().split('T')[0],
         guests: bookingData.guests.toString(),
-        nights: differenceInDays(bookingData.dateRange.to!, bookingData.dateRange.from!).toString(),
+        nights: nights.toString(),
         firstName: bookingData.guestInfo.firstName,
         lastName: bookingData.guestInfo.lastName,
         email: bookingData.guestInfo.email,
         phone: bookingData.guestInfo.phone,
-        basePrice: (differenceInDays(bookingData.dateRange.to!, bookingData.dateRange.from!) * parseFloat(selectedPackage?.base_price || room?.price || '0')).toString(),
-        serviceFee: (bookingData.totalPrice * 0.1).toString(),
+        basePrice: basePrice.toString(),
+        serviceFee: serviceFee.toString(),
         totalPrice: bookingData.totalPrice.toString()
       });
 
@@ -390,6 +399,8 @@ const BookingPage = () => {
       }
 
       // Navigate immediately to summary page
+      console.log('🔄 [Booking] Navigating to summary with params (offline):', summaryParams.toString());
+      console.log('🔄 [Booking] Full URL (offline):', `/summary?${summaryParams.toString()}`);
       navigate(`/summary?${summaryParams.toString()}`);
     }
   };

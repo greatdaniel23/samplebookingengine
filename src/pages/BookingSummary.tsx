@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Package, Room } from '@/types';
 import { packageService } from '@/services/packageService';
 import { useVillaInfo } from '@/hooks/useVillaInfo';
+import { API_BASE_URL } from '@/config/paths';
 // @ts-ignore
 import ApiService from '@/services/api.js';
 import { 
@@ -55,6 +57,7 @@ interface BookingSummaryData {
 }
 
 const BookingSummary = () => {
+  console.log('📄 [BookingSummary] Component loaded');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { villaInfo } = useVillaInfo();
@@ -63,6 +66,13 @@ const BookingSummary = () => {
   const bookingRef = searchParams.get('ref');
   const packageId = searchParams.get('package');
   const roomId = searchParams.get('room');
+  
+  console.log('📄 [BookingSummary] URL params:', {
+    bookingRef,
+    packageId,
+    roomId,
+    allParams: Object.fromEntries(searchParams.entries())
+  });
 
   // Dynamic contact information helpers
   const getContactPhone = () => {
@@ -79,63 +89,140 @@ const BookingSummary = () => {
   const [bookingData, setBookingData] = useState<BookingSummaryData | null>(null);
   const [packageData, setPackageData] = useState<Package | null>(null);
   const [roomData, setRoomData] = useState<Room | null>(null);
+  const [isUsingFallbackData, setIsUsingFallbackData] = useState(false);
 
-  useEffect(() => {
-    loadSummaryData();
-  }, [bookingRef, packageId, roomId]);
-
-  const loadSummaryData = async () => {
+  const loadSummaryData = useCallback(async () => {
+    console.log('📄 [BookingSummary] loadSummaryData started');
     try {
       setLoading(true);
       setError(null);
 
-      // For demo purposes, we'll create mock booking data
-      // In a real app, you'd fetch this from your API using the booking reference
-      const mockBookingData: BookingSummaryData = {
-        bookingId: Math.floor(Math.random() * 10000).toString(),
-        reference: bookingRef || `BK-${Math.floor(Math.random() * 10000)}`,
-        packageId: packageId || undefined,
-        roomId: roomId || undefined,
-        checkIn: searchParams.get('checkIn') || new Date(Date.now() + 86400000).toISOString().split('T')[0],
-        checkOut: searchParams.get('checkOut') || new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0],
-        guests: parseInt(searchParams.get('guests') || '2'),
-        nights: parseInt(searchParams.get('nights') || '2'),
-        guestInfo: {
-          firstName: searchParams.get('firstName') || 'John',
-          lastName: searchParams.get('lastName') || 'Doe',
-          email: searchParams.get('email') || 'john.doe@email.com',
-          phone: searchParams.get('phone') || '+1234567890',
-          specialRequests: searchParams.get('requests') || undefined
-        },
-        pricing: {
-          basePrice: parseFloat(searchParams.get('basePrice') || '300'),
-          serviceFee: parseFloat(searchParams.get('serviceFee') || '30'),
-          totalPrice: parseFloat(searchParams.get('totalPrice') || '330')
-        },
-        status: 'confirmed',
-        createdAt: new Date().toISOString()
-      };
-
-      setBookingData(mockBookingData);
-
-      // Load package or room data
-      if (packageId) {
-        const pkgResponse = await packageService.getPackageById(packageId);
-        setPackageData(pkgResponse.data);
+      // Check if we have required parameters
+      if (!bookingRef) {
+        throw new Error('Booking reference is required');
       }
 
-      if (roomId) {
-        const roomResponse = await ApiService.getRoom(roomId);
-        setRoomData(roomResponse);
+      // Fetch actual booking data from API
+      let bookingApiData = null;
+      let isUsingFallbackData = false;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/bookings.php?reference=${bookingRef}`);
+        
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        if (!result.success || !result.data) {
+          throw new Error(result.message || 'No booking data found');
+        }
+        
+        bookingApiData = result.data;
+        console.log('📄 [BookingSummary] Successfully loaded booking from API:', bookingApiData);
+        
+      } catch (apiError) {
+        console.error('📄 [BookingSummary] Failed to load booking from API:', apiError);
+        
+        // Check if we have minimum required URL parameters to proceed
+        const hasMinimumParams = searchParams.get('checkIn') && 
+                                searchParams.get('checkOut') && 
+                                searchParams.get('totalPrice');
+        
+        if (!hasMinimumParams) {
+          throw new Error(`Unable to load booking data: ${apiError instanceof Error ? apiError.message : 'API failed'} and insufficient URL parameters provided`);
+        }
+        
+        isUsingFallbackData = true;
+        console.warn('📄 [BookingSummary] Using URL parameters as fallback data');
+      }
+
+      // Get dates from API or URL parameters
+      const checkInDate = bookingApiData?.check_in || searchParams.get('checkIn');
+      const checkOutDate = bookingApiData?.check_out || searchParams.get('checkOut');
+      
+      if (!checkInDate || !checkOutDate) {
+        throw new Error('Check-in and check-out dates are required');
+      }
+
+      // Calculate nights from actual dates
+      const checkIn = new Date(checkInDate);
+      const checkOut = new Date(checkOutDate);
+      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (nights <= 0) {
+        throw new Error('Invalid date range: check-out must be after check-in');
+      }
+
+      // Create booking data from API response or URL parameters
+      const bookingData: BookingSummaryData = {
+        bookingId: bookingApiData?.id?.toString() || searchParams.get('bookingId') || 'UNKNOWN',
+        reference: bookingRef,
+        packageId: packageId || bookingApiData?.package_id || undefined,
+        roomId: roomId || bookingApiData?.room_id || undefined,
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
+        guests: parseInt(searchParams.get('guests') || bookingApiData?.guests?.toString() || '2'),
+        nights: nights,
+        guestInfo: {
+          firstName: searchParams.get('firstName') || bookingApiData?.guest_name?.split(' ')[0] || 'Guest',
+          lastName: searchParams.get('lastName') || bookingApiData?.guest_name?.split(' ').slice(1).join(' ') || 'User',
+          email: searchParams.get('email') || bookingApiData?.guest_email || 'guest@example.com',
+          phone: searchParams.get('phone') || bookingApiData?.guest_phone || '+1234567890',
+          specialRequests: searchParams.get('requests') || bookingApiData?.special_requests || undefined
+        },
+        pricing: {
+          basePrice: parseFloat(searchParams.get('basePrice') || bookingApiData?.base_price || '300'),
+          serviceFee: parseFloat(searchParams.get('serviceFee') || bookingApiData?.service_fee || '30'),
+          totalPrice: parseFloat(searchParams.get('totalPrice') || bookingApiData?.total_price || '330')
+        },
+        status: bookingApiData?.status || 'confirmed',
+        createdAt: bookingApiData?.created_at || new Date().toISOString()
+      };
+
+      console.log('📄 [BookingSummary] Setting booking data:', bookingData);
+      setBookingData(bookingData);
+      setIsUsingFallbackData(isUsingFallbackData);
+
+      // Load package or room data using the ACTUAL booking data, not URL parameters
+      const actualPackageId = bookingData.packageId;  // From authoritative booking data
+      const actualRoomId = bookingData.roomId;        // From authoritative booking data
+
+      if (actualPackageId) {
+        try {
+          const pkgResponse = await packageService.getPackageById(actualPackageId);
+          setPackageData(pkgResponse.data);
+          console.log('📄 [BookingSummary] Loaded package data:', pkgResponse.data);
+        } catch (pkgError) {
+          console.error('📄 [BookingSummary] Failed to load package data:', pkgError);
+          // Don't fail the entire component if package data fails
+        }
+      }
+
+      if (actualRoomId) {
+        try {
+          const roomResponse = await ApiService.getRoom(actualRoomId);
+          setRoomData(roomResponse);
+          console.log('📄 [BookingSummary] Loaded room data:', roomResponse);
+        } catch (roomError) {
+          console.error('📄 [BookingSummary] Failed to load room data:', roomError);
+          // Don't fail the entire component if room data fails
+        }
       }
 
     } catch (err) {
       console.error('Error loading summary data:', err);
       setError('Failed to load booking summary');
     } finally {
+      console.log('📄 [BookingSummary] loadSummaryData completed, setting loading to false');
       setLoading(false);
     }
-  };
+  }, [bookingRef, packageId, roomId, searchParams]);
+
+  useEffect(() => {
+    loadSummaryData();
+  }, [loadSummaryData]);
 
   const handleDownloadConfirmation = () => {
     // Mock download functionality
@@ -178,10 +265,12 @@ Total: $${bookingData?.pricing.totalPrice}
   };
 
   if (loading) {
+    console.log('📄 [BookingSummary] Rendering loading state');
     return <BookingSkeleton />;
   }
 
   if (error || !bookingData) {
+    console.log('📄 [BookingSummary] Rendering error state - error:', error, 'bookingData:', bookingData);
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <div className="max-w-md mx-auto">
@@ -198,9 +287,20 @@ Total: $${bookingData?.pricing.totalPrice}
     );
   }
 
+  console.log('📄 [BookingSummary] Rendering main content');
   return (
     <div className="bg-gradient-to-br from-white to-hotel-cream min-h-screen">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Warning Alert for Fallback Data */}
+        {isUsingFallbackData && (
+          <Alert className="mb-6 border-yellow-200 bg-yellow-50">
+            <AlertDescription className="text-yellow-800">
+              ⚠️ <strong>Data Warning:</strong> Unable to load latest booking information from server. 
+              Displaying basic booking details. Please contact support if you need updated information.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Success Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-hotel-sage-light rounded-full mb-4">
@@ -368,7 +468,7 @@ Total: $${bookingData?.pricing.totalPrice}
           </Card>
 
           {/* Package Includes (if package booking) */}
-          {packageData && (
+          {packageData && packageData.includes && Array.isArray(packageData.includes) && packageData.includes.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
