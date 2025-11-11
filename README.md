@@ -1,6 +1,6 @@
 # 🏨 Villa Booking Engine
 
-A modern, full-stack villa booking and management system featuring a React/TypeScript frontend, a PHP REST API backend, and a comprehensive admin dashboard.
+A modern, full-stack villa booking and management system featuring a React/TypeScript frontend, a PHP REST API backend, and a comprehensive admin dashboard with **Enhanced Database System v2.0**.
 
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
@@ -8,6 +8,8 @@ A modern, full-stack villa booking and management system featuring a React/TypeS
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white)
+
+> 🚀 **Now with Enhanced Database System**: 17 tables, international booking support, calendar integration, platform synchronization, and analytics ready!
 
 ## ✨ Key Features
 
@@ -43,16 +45,31 @@ Follow these instructions to get a copy of the project up and running on your lo
 - **pnpm**: `npm install -g pnpm`
 - **XAMPP**: A web server solution to run the PHP backend and MySQL database.
 
-### 2. Backend & Database Setup
+### 2. Backend & Enhanced Database Setup
 
 1.  **Place the Project**: Clone or move the entire project folder into your XAMPP `htdocs` directory.
     -   Example path: `C:/xampp/htdocs/frontend-booking-engine/`
 2.  **Start XAMPP**: Open the XAMPP Control Panel and start the **Apache** and **MySQL** services.
-3.  **Create Database**:
+3.  **Install Enhanced Database System** (Recommended - PowerShell method):
+    ```powershell
+    # Navigate to project directory
+    cd "C:\xampp\htdocs\frontend-booking-engine-1"
+    
+    # Install enhanced database with 17 tables
+    Get-Content "database\enhanced-install-complete.sql" | & "C:\xampp\mysql\bin\mysql.exe" -u root
+    Get-Content "database\enhanced-install-part2.sql" | & "C:\xampp\mysql\bin\mysql.exe" -u root
+    
+    # Add realistic international booking data (30 bookings from 15+ countries)
+    Get-Content "database\enhanced-dummy-data-complete.sql" | & "C:\xampp\mysql\bin\mysql.exe" -u root
+    Get-Content "database\enhanced-dummy-data-part2.sql" | & "C:\xampp\mysql\bin\mysql.exe" -u root
+    ```
+    
+    **Alternative (Basic Setup)**:
     -   Navigate to `http://localhost/phpmyadmin`.
-    -   Create a new database named `villa_booking`.
-    -   Select the `villa_booking` database and go to the "Import" tab.
-    -   Import the `database/schema.sql` file to create all the necessary tables.
+    -   Create a new database named `booking_engine`.
+    -   Import `database/install.sql` for basic 5-table setup.
+
+    > 📊 **Enhanced System Includes**: 17 tables, calendar integration, platform sync, payment gateways, analytics, and 30 international bookings ready for testing!
 
 ### 3. Frontend Setup & Configuration
 

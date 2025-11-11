@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Booking API</title>
+    <script>
+        async function testBookingSubmission() {
+            const testBooking = {
+                room_id: 'deluxe-suite',
+                first_name: 'Test',
+                last_name: 'User',
+                email: 'test@test.com',
+                phone: '+1234567890',
+                check_in: '2025-12-01',
+                check_out: '2025-12-03',
+                guests: 2,
+                total_price: 500,
+                special_requests: 'Test booking via API',
+                status: 'confirmed'
+            };
+            
+            try {
+                console.log('Testing booking submission...');
+                const response = await fetch('http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api/bookings.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testBooking)
+                });
+                
+                const result = await response.json();
+                console.log('Response status:', response.status);
+                console.log('Response data:', result);
+                
+                document.getElementById('result').innerHTML = 
+                    '<h3>API Test Result:</h3>' +
+                    '<p><strong>Status:</strong> ' + response.status + '</p>' +
+                    '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                    
+            } catch (error) {
+                console.error('Booking test error:', error);
+                document.getElementById('result').innerHTML = 
+                    '<h3>Error:</h3><p>' + error.message + '</p>';
+            }
+        }
+        
+        // Test on page load
+        window.onload = testBookingSubmission;
+    </script>
+</head>
+<body>
+    <h1>Booking API Test</h1>
+    <button onclick="testBookingSubmission()">Test Booking Submission</button>
+    <div id="result">Testing...</div>
+</body>
+</html>

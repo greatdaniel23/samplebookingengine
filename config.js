@@ -5,7 +5,7 @@ const CONFIG = {
     // API Configuration
     API: {
         // Local development URL (XAMPP)
-        LOCAL_BASE_URL: 'http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api',
+        LOCAL_BASE_URL: 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api',
         
         // Production URL
         PRODUCTION_BASE_URL: 'https://api.rumahdaisycantik.com',
@@ -15,7 +15,7 @@ const CONFIG = {
         
         // Current environment - change this based on deployment
         // Options: 'local', 'staging', 'production'
-        ENVIRONMENT: 'production'
+        ENVIRONMENT: 'local'
     },
     
     // Application Settings

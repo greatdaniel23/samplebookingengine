@@ -86,34 +86,93 @@ function handlePost($db) {
     try {
         $input = json_decode(file_get_contents('php://input'), true);
         
-        if (!$input || !isset($input['room_id']) || !isset($input['first_name']) || !isset($input['email'])) {
+        // Validate required fields
+        $requiredFields = ['room_id', 'first_name', 'email', 'check_in', 'check_out', 'guests', 'total_price'];
+        foreach ($requiredFields as $field) {
+            if (!isset($input[$field]) || $input[$field] === '') {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => "Missing required field: $field"]);
+                return;
+            }
+        }
+        
+        // Validate room_id exists in rooms table
+        $validRoomIds = ['deluxe-suite', 'economy-room', 'family-room', 'master-suite', 'standard-room'];
+        if (!in_array($input['room_id'], $validRoomIds)) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Room ID, first name, and email are required']);
+            echo json_encode(['success' => false, 'error' => "Invalid room_id: {$input['room_id']}. Must be one of: " . implode(', ', $validRoomIds)]);
             return;
         }
         
+        // Validate total_price is positive
+        $totalPrice = floatval($input['total_price']);
+        if ($totalPrice <= 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'total_price must be a positive number']);
+            return;
+        }
+        
+        // Validate package_id if provided
+        if (isset($input['package_id']) && $input['package_id'] !== null) {
+            $packageId = intval($input['package_id']);
+            if ($packageId < 1 || $packageId > 5) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => "Invalid package_id: {$packageId}. Must be between 1 and 5"]);
+                return;
+            }
+        }
+        
+        // Generate unique booking reference
+        $bookingReference = 'BK-' . str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT);
+        
+        // Check if reference already exists and regenerate if needed
+        $checkStmt = $db->prepare("SELECT COUNT(*) FROM bookings WHERE booking_reference = ?");
+        $checkStmt->execute([$bookingReference]);
+        while ($checkStmt->fetchColumn() > 0) {
+            $bookingReference = 'BK-' . str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT);
+            $checkStmt->execute([$bookingReference]);
+        }
+
         $stmt = $db->prepare("
-            INSERT INTO bookings (room_id, first_name, last_name, email, phone, check_in, 
-                                check_out, guests, total_price, special_requests, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO bookings (booking_reference, room_id, package_id, first_name, last_name, email, phone, 
+                                check_in, check_out, guests, adults, children, total_price, 
+                                special_requests, status, payment_status, source) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
+        $adults = $input['adults'] ?? $input['guests'] ?? 1;
+        $children = $input['children'] ?? 0;
+        $totalGuests = $adults + $children;
+        
         $stmt->execute([
+            $bookingReference,
             $input['room_id'],
+            $input['package_id'] ?? null,
             $input['first_name'],
             $input['last_name'] ?? '',
             $input['email'],
             $input['phone'] ?? '',
             $input['check_in'],
             $input['check_out'],
-            $input['guests'] ?? 1,
+            $totalGuests,
+            $adults,
+            $children,
             $input['total_price'] ?? 0,
             $input['special_requests'] ?? '',
-            $input['status'] ?? 'confirmed'
+            $input['status'] ?? 'confirmed',
+            $input['payment_status'] ?? 'pending',
+            $input['source'] ?? 'direct'
         ]);
         
         $bookingId = $db->lastInsertId();
-        echo json_encode(['success' => true, 'data' => ['id' => $bookingId]]);
+        echo json_encode([
+            'success' => true, 
+            'data' => [
+                'id' => $bookingId,
+                'booking_reference' => $bookingReference,
+                'reference' => $bookingReference
+            ]
+        ]);
         
     } catch (Exception $e) {
         http_response_code(500);
@@ -134,10 +193,15 @@ function handlePut($db) {
         $stmt = $db->prepare("
             UPDATE bookings SET 
                 room_id = ?, first_name = ?, last_name = ?, email = ?, phone = ?, 
-                check_in = ?, check_out = ?, guests = ?, total_price = ?, 
-                special_requests = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+                check_in = ?, check_out = ?, guests = ?, adults = ?, children = ?, 
+                total_price = ?, special_requests = ?, status = ?, payment_status = ?, 
+                updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         ");
+        
+        $adults = $input['adults'] ?? $input['guests'] ?? 1;
+        $children = $input['children'] ?? 0;
+        $totalGuests = $adults + $children;
         
         $stmt->execute([
             $input['room_id'],
@@ -147,10 +211,13 @@ function handlePut($db) {
             $input['phone'] ?? '',
             $input['check_in'],
             $input['check_out'],
-            $input['guests'] ?? 1,
+            $totalGuests,
+            $adults,
+            $children,
             $input['total_price'] ?? 0,
             $input['special_requests'] ?? '',
             $input['status'] ?? 'confirmed',
+            $input['payment_status'] ?? 'pending',
             $input['id']
         ]);
         

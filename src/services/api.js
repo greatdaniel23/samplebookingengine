@@ -3,7 +3,7 @@
  * Replaces localStorage with REST API calls
  */
 
-const API_BASE_URL = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api';
+const API_BASE_URL = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api';
 const ADMIN_API_BASE_URL = 'http://localhost:8080/admin/api';
 
 class ApiService {

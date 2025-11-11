@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
     ...(mode === 'development' && {
       proxy: {
         '/api': {
-          target: 'http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine',
+          target: 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1',
           changeOrigin: true,
           secure: false,
           configure: (proxy, options) => {

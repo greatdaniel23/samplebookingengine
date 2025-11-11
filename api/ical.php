@@ -52,7 +52,7 @@ class iCalGenerator {
                 r.type as room_type,
                 p.name as package_name,
                 v.name as villa_name,
-                v.location as villa_location,
+                v.address as villa_location,
                 v.phone as villa_phone,
                 v.email as villa_email
             FROM bookings b

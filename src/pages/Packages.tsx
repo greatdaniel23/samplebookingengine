@@ -88,7 +88,7 @@ export const PackagesPage: React.FC = () => {
       filtered = filtered.filter(pkg => 
         pkg.name.toLowerCase().includes(search) ||
         pkg.description.toLowerCase().includes(search) ||
-        pkg.includes.some(item => item.toLowerCase().includes(search))
+        (pkg.inclusions || pkg.includes || []).some(item => item.toLowerCase().includes(search))
       );
     }
 

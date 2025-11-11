@@ -5,11 +5,17 @@ interface PhotoGalleryProps {
 }
 
 export const PhotoGallery = ({ images }: PhotoGalleryProps) => {
-  if (!images || images.length === 0) {
-    return null;
-  }
-
-  const [firstImage, secondImage, thirdImage, fourthImage, fifthImage] = images;
+  // Use placeholder images if no images are provided
+  const defaultImages = [
+    'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?q=80&w=2574&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=2670&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=2574&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1613977257363-3116958f136b?q=80&w=2670&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2670&auto=format&fit=crop',
+  ];
+  
+  const displayImages = images && images.length > 0 ? images : defaultImages;
+  const [firstImage, secondImage, thirdImage, fourthImage, fifthImage] = displayImages;
 
   return (
     <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-2 h-[55vh] rounded-xl overflow-hidden">
