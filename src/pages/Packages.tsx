@@ -77,9 +77,12 @@ export const PackagesPage: React.FC = () => {
   const applyFilters = () => {
     let filtered = [...packages];
 
+    // CRITICAL: Filter out inactive packages for customers
+    filtered = filtered.filter(pkg => pkg.available === 1 || pkg.available === true);
+
     // Filter by type
-    if (filters.type) {
-      filtered = filtered.filter(pkg => pkg.package_type === filters.type);
+    if (filters.type && filters.type !== 'all') {
+      filtered = filtered.filter(pkg => (pkg.type || pkg.package_type) === filters.type);
     }
 
     // Filter by search term
@@ -153,11 +156,22 @@ export const PackagesPage: React.FC = () => {
     <div className="bg-gradient-to-br from-white to-hotel-cream min-h-screen">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-hotel-navy">Hotel Packages</h1>
-          <p className="text-hotel-bronze">
-            Discover our special packages designed to make your stay unforgettable
-          </p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold mb-2 text-hotel-navy">Hotel Packages</h1>
+            <p className="text-hotel-bronze">
+              Discover our special packages designed to make your stay unforgettable
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={loadPackages}
+            disabled={loading}
+            className="ml-4"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Refresh
+          </Button>
         </div>
 
       {/* Filters */}
@@ -196,7 +210,7 @@ export const PackagesPage: React.FC = () => {
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types ({packages.length})</SelectItem>
+                  <SelectItem value="all">All types ({packages.length})</SelectItem>
                   {packageTypes.map((type) => (
                     <SelectItem key={type.package_type} value={type.package_type}>
                       {packageService.getPackageTypeDisplayName(type.package_type)} ({type.count})

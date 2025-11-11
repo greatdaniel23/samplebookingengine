@@ -101,7 +101,7 @@ export const packageService = {
    * Get available package types
    */
   async getPackageTypes(): Promise<{ success: boolean; data: Array<{ package_type: string; count: number }>; message: string }> {
-    const response = await fetch(`${API_BASE_URL}/packages?action=types`);
+    const response = await fetch(`${API_BASE_URL}/packages.php?action=types`);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch package types: ${response.status}`);
@@ -158,36 +158,54 @@ export const packageService = {
    * Get package type display name
    */
   getPackageTypeDisplayName(type: string): string {
+    if (!type) return 'Package';
+    
+    const normalizedType = type.toLowerCase();
+    
     const typeNames = {
-      romantic: 'Romantic',
-      business: 'Business',
-      family: 'Family',
-      luxury: 'Luxury',
-      weekend: 'Weekend',
-      holiday: 'Holiday',
-      spa: 'Spa & Wellness',
-      adventure: 'Adventure'
+      // API format mappings
+      romance: 'Romantic Getaway',
+      romantic: 'Romantic Getaway',
+      adventure: 'Adventure Package',
+      wellness: 'Wellness & Spa',
+      culture: 'Cultural Experience',
+      cultural: 'Cultural Experience',
+      family: 'Family Package',
+      business: 'Business Package',
+      luxury: 'Luxury Experience',
+      weekend: 'Weekend Getaway',
+      holiday: 'Holiday Special',
+      spa: 'Spa & Wellness'
     };
 
-    return typeNames[type as keyof typeof typeNames] || type;
+    return typeNames[normalizedType as keyof typeof typeNames] || type;
   },
 
   /**
    * Get package type color for UI
    */
   getPackageTypeColor(type: string): string {
+    if (!type) return 'bg-gray-100 text-gray-800';
+    
+    const normalizedType = type.toLowerCase();
+    
     const typeColors = {
+      // API format mappings
+      romance: 'bg-rose-100 text-rose-800',
       romantic: 'bg-rose-100 text-rose-800',
-      business: 'bg-blue-100 text-blue-800',
+      adventure: 'bg-yellow-100 text-yellow-800',
+      wellness: 'bg-teal-100 text-teal-800',
+      culture: 'bg-purple-100 text-purple-800',
+      cultural: 'bg-purple-100 text-purple-800',
       family: 'bg-green-100 text-green-800',
+      business: 'bg-blue-100 text-blue-800',
       luxury: 'bg-purple-100 text-purple-800',
       weekend: 'bg-orange-100 text-orange-800',
       holiday: 'bg-red-100 text-red-800',
-      spa: 'bg-teal-100 text-teal-800',
-      adventure: 'bg-yellow-100 text-yellow-800'
+      spa: 'bg-teal-100 text-teal-800'
     };
 
-    return typeColors[type as keyof typeof typeColors] || 'bg-gray-100 text-gray-800';
+    return typeColors[normalizedType as keyof typeof typeColors] || 'bg-gray-100 text-gray-800';
   }
 };
 

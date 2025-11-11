@@ -128,6 +128,25 @@ const BookingPage = () => {
     return <NotFound />;
   }
 
+  // Check if selected package is inactive
+  if (selectedPackage && !selectedPackage.available) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="p-6 text-center">
+            <h2 className="text-xl font-semibold mb-2">Package Not Available</h2>
+            <p className="text-muted-foreground mb-4">
+              This package is currently not available for booking.
+            </p>
+            <Button onClick={() => navigate('/packages')}>
+              View Available Packages
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const handleBookingComplete = async (bookingData: {
     dateRange: DateRange;
     guests: number;

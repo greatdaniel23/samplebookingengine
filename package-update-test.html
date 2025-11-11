@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Package Update Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        pre { background-color: #f8f9fa; padding: 10px; overflow-x: auto; }
+        .package-form { background-color: #e7f3ff; padding: 15px; margin: 10px 0; }
+        input, textarea, select { margin: 5px; padding: 8px; width: 200px; }
+        button { padding: 10px 15px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Package Management Update Test</h1>
+    
+    <div class="package-form">
+        <h3>🎁 Test Package Update</h3>
+        <form id="updateForm">
+            <div>
+                <label>Package ID:</label>
+                <input type="number" id="packageId" value="1" required>
+            </div>
+            <div>
+                <label>Name:</label>
+                <input type="text" id="name" value="Updated Romantic Getaway" required>
+            </div>
+            <div>
+                <label>Description:</label>
+                <textarea id="description">Updated romantic escape with premium amenities</textarea>
+            </div>
+            <div>
+                <label>Type:</label>
+                <select id="type">
+                    <option value="Romance">Romance</option>
+                    <option value="Adventure">Adventure</option>
+                    <option value="Family">Family</option>
+                    <option value="Business">Business</option>
+                </select>
+            </div>
+            <div>
+                <label>Price:</label>
+                <input type="number" id="price" value="699.00" step="0.01" required>
+            </div>
+            <div>
+                <label>Duration Days:</label>
+                <input type="number" id="duration_days" value="4" required>
+            </div>
+            <div>
+                <label>Max Guests:</label>
+                <input type="number" id="max_guests" value="2" required>
+            </div>
+            <div>
+                <button type="submit">Update Package</button>
+            </div>
+        </form>
+    </div>
+    
+    <div>
+        <button onclick="loadPackage()">Load Package Data</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        const API_BASE = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api';
+        
+        function addResult(title, success, data) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${success ? 'success' : 'error'}`;
+            resultDiv.innerHTML = `
+                <h3>${title}</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function loadPackage() {
+            const packageId = document.getElementById('packageId').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/packages.php?id=${packageId}`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    // Populate form with existing data
+                    document.getElementById('name').value = data.data.name || '';
+                    document.getElementById('description').value = data.data.description || '';
+                    document.getElementById('type').value = data.data.type || 'Romance';
+                    document.getElementById('price').value = data.data.price || '';
+                    document.getElementById('duration_days').value = data.data.duration_days || '';
+                    document.getElementById('max_guests').value = data.data.max_guests || '';
+                    
+                    addResult('✅ Package Loaded Successfully', true, {
+                        message: 'Package data loaded into form',
+                        packageData: data.data
+                    });
+                } else {
+                    addResult('❌ Package Load Failed', false, data);
+                }
+            } catch (error) {
+                addResult('❌ Package Load Error', false, { error: error.message });
+            }
+        }
+        
+        document.getElementById('updateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const packageData = {
+                id: parseInt(document.getElementById('packageId').value),
+                name: document.getElementById('name').value,
+                description: document.getElementById('description').value,
+                type: document.getElementById('type').value,
+                price: parseFloat(document.getElementById('price').value),
+                duration_days: parseInt(document.getElementById('duration_days').value),
+                max_guests: parseInt(document.getElementById('max_guests').value),
+                available: 1
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/packages.php`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(packageData)
+                });
+                
+                const responseText = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    data = { parseError: parseError.message, rawResponse: responseText };
+                }
+                
+                const success = response.ok && data.success;
+                
+                addResult(success ? '✅ Package Updated Successfully' : '❌ Package Update Failed', success, {
+                    request: packageData,
+                    response: {
+                        status: response.status,
+                        success: data.success,
+                        error: data.error || null,
+                        rawResponse: !data.success ? responseText : undefined
+                    }
+                });
+                
+                if (success) {
+                    // Reload the package to verify the update
+                    setTimeout(() => loadPackage(), 1000);
+                }
+                
+            } catch (error) {
+                addResult('❌ Package Update Error', false, { 
+                    error: error.message,
+                    requestData: packageData
+                });
+            }
+        });
+        
+        // Load package data on page load
+        window.onload = () => {
+            loadPackage();
+        };
+    </script>
+</body>
+</html>

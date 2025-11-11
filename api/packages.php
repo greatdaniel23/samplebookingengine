@@ -47,7 +47,13 @@ try {
 
 function handleGet($db) {
     try {
-        if (isset($_GET['id'])) {
+        if (isset($_GET['action']) && $_GET['action'] === 'types') {
+            // Get package types with counts
+            $stmt = $db->query("SELECT type as package_type, COUNT(*) as count FROM packages GROUP BY type ORDER BY type");
+            $types = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode(['success' => true, 'data' => $types]);
+        } elseif (isset($_GET['id'])) {
             // Get specific package
             $stmt = $db->prepare("SELECT * FROM packages WHERE id = ?");
             $stmt->execute([$_GET['id']]);
@@ -99,43 +105,42 @@ function handlePost($db) {
     try {
         $input = json_decode(file_get_contents('php://input'), true);
         
-        if (!$input || !isset($input['name']) || !isset($input['base_price'])) {
+        if (!$input || !isset($input['name']) || (!isset($input['price']) && !isset($input['base_price']))) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Name and base_price are required']);
+            echo json_encode(['success' => false, 'error' => 'Name and price are required']);
             return;
         }
         
-        // Generate ID from name
-        $id = strtolower(str_replace(' ', '-', preg_replace('/[^a-zA-Z0-9\s]/', '', $input['name'])));
-        
         $stmt = $db->prepare("
-            INSERT INTO packages (id, name, description, package_type, base_price, discount_percentage, 
-                                min_nights, max_nights, max_guests, is_active, includes, valid_from, valid_until, terms, image_url) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO packages (name, description, type, price, duration_days, max_guests, 
+                                available, inclusions, exclusions, images, valid_from, valid_until, terms_conditions) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
-        $includes = isset($input['includes']) ? json_encode($input['includes']) : '[]';
-        $packageType = strtolower($input['package_type'] ?? 'business');
+        $inclusions = isset($input['inclusions']) ? json_encode($input['inclusions']) : null;
+        $exclusions = isset($input['exclusions']) ? json_encode($input['exclusions']) : null;
+        $images = isset($input['images']) ? json_encode($input['images']) : null;
+        $packageType = $input['type'] ?? $input['package_type'] ?? 'Romance';
         
         $stmt->execute([
-            $id,
             $input['name'],
             $input['description'] ?? '',
             $packageType,
-            $input['base_price'],
-            $input['discount_percentage'] ?? 0,
-            $input['min_nights'] ?? 1,
-            $input['max_nights'] ?? 30,
+            $input['price'] ?? $input['base_price'], // Support both field names
+            $input['duration_days'] ?? 1,
             $input['max_guests'] ?? 2,
-            $input['is_active'] ?? 1,
-            $includes,
+            $input['available'] ?? $input['is_active'] ?? 1,
+            $inclusions,
+            $exclusions,
+            $images,
             $input['valid_from'] ?? date('Y-m-d'),
             $input['valid_until'] ?? date('Y-m-d', strtotime('+1 year')),
-            $input['terms'] ?? '',
-            $input['image_url'] ?? ''
+            $input['terms_conditions'] ?? $input['terms'] ?? ''
         ]);
         
-        echo json_encode(['success' => true, 'data' => ['id' => $id]]);
+        $lastInsertId = $db->lastInsertId();
+        
+        echo json_encode(['success' => true, 'data' => ['id' => $lastInsertId]]);
         
     } catch (Exception $e) {
         http_response_code(500);
@@ -155,31 +160,32 @@ function handlePut($db) {
         
         $stmt = $db->prepare("
             UPDATE packages SET 
-                name = ?, description = ?, package_type = ?, base_price = ?, 
-                discount_percentage = ?, min_nights = ?, max_nights = ?, 
-                max_guests = ?, is_active = ?, includes = ?, valid_from = ?, 
-                valid_until = ?, terms = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP
+                name = ?, description = ?, type = ?, price = ?, 
+                duration_days = ?, max_guests = ?, available = ?, inclusions = ?, 
+                exclusions = ?, images = ?, valid_from = ?, valid_until = ?, terms_conditions = ?, 
+                updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         ");
         
-        $includes = isset($input['includes']) ? json_encode($input['includes']) : '[]';
-        $packageType = strtolower($input['package_type'] ?? 'business');
+        $inclusions = isset($input['inclusions']) ? json_encode($input['inclusions']) : null;
+        $exclusions = isset($input['exclusions']) ? json_encode($input['exclusions']) : null;
+        $images = isset($input['images']) ? json_encode($input['images']) : null;
+        $packageType = $input['type'] ?? $input['package_type'] ?? 'Romance';
         
         $stmt->execute([
             $input['name'],
             $input['description'] ?? '',
             $packageType,
-            $input['base_price'],
-            $input['discount_percentage'] ?? 0,
-            $input['min_nights'] ?? 1,
-            $input['max_nights'] ?? 30,
+            $input['price'] ?? $input['base_price'], // Support both field names
+            $input['duration_days'] ?? 1,
             $input['max_guests'] ?? 2,
-            $input['is_active'] ?? 1,
-            $includes,
+            $input['available'] ?? $input['is_active'] ?? 1,
+            $inclusions,
+            $exclusions,
+            $images,
             $input['valid_from'] ?? date('Y-m-d'),
             $input['valid_until'] ?? date('Y-m-d', strtotime('+1 year')),
-            $input['terms'] ?? '',
-            $input['image_url'] ?? '',
+            $input['terms_conditions'] ?? $input['terms'] ?? '',
             $input['id']
         ]);
         

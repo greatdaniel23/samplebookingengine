@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Gallery - Villa Booking Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .image-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .image-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .copy-btn {
+            transition: background-color 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+                <i class="fas fa-images text-blue-600"></i>
+                Image Gallery Manager
+            </h1>
+            <p class="text-gray-600 text-lg">
+                Browse and manage all images from the <code class="bg-gray-200 px-2 py-1 rounded">/public/images</code> directory
+            </p>
+        </div>
+
+        <!-- Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Total Images</p>
+                        <p class="text-2xl font-bold text-blue-600" id="total-images">0</p>
+                    </div>
+                    <i class="fas fa-image text-2xl text-blue-600"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Categories</p>
+                        <p class="text-2xl font-bold text-green-600">6</p>
+                    </div>
+                    <i class="fas fa-folder-open text-2xl text-green-600"></i>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Hero Images</p>
+                        <p class="text-2xl font-bold text-red-600">26</p>
+                    </div>
+                    <i class="fas fa-image text-2xl text-red-600"></i>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Filtered</p>
+                        <p class="text-2xl font-bold text-purple-600" id="filtered-count">0</p>
+                    </div>
+                    <i class="fas fa-search text-2xl text-purple-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Filters & Search</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Search Images</label>
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input
+                            type="text"
+                            id="search-input"
+                            placeholder="Search by name or category..."
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <select id="category-filter" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="all">All Categories</option>
+                        <option value="hero">Hero</option>
+                        <option value="packages">Packages</option>
+                        <option value="amenities">Amenities</option>
+                        <option value="ui">UI</option>
+                        <option value="rooms">Rooms</option>
+                        <option value="villa">Villa</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">File Type</label>
+                    <select id="type-filter" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="all">All Types</option>
+                        <option value="jpg">JPG</option>
+                        <option value="png">PNG</option>
+                        <option value="svg">SVG</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image Grid -->
+        <div id="image-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Images will be populated by JavaScript -->
+        </div>
+
+        <!-- No Results -->
+        <div id="no-results" class="bg-white rounded-lg shadow text-center py-12 hidden">
+            <i class="fas fa-image text-6xl text-gray-400 mb-4"></i>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">No images found</h3>
+            <p class="text-gray-600">
+                Try adjusting your search terms or filters to find what you're looking for.
+            </p>
+        </div>
+
+        <!-- Directory Structure Info -->
+        <div class="bg-white rounded-lg shadow p-6 mt-8">
+            <h3 class="text-lg font-semibold mb-4">Directory Structure</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                        <i class="fas fa-folder-open text-sm"></i>
+                        /images/hero/
+                    </h4>
+                    <p class="text-sm text-gray-600">26 files</p>
+                    <p class="text-xs text-gray-500 mt-1">Types: jpg</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                        <i class="fas fa-folder-open text-sm"></i>
+                        /images/packages/
+                    </h4>
+                    <p class="text-sm text-gray-600">2 files</p>
+                    <p class="text-xs text-gray-500 mt-1">Types: jpg</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                        <i class="fas fa-folder-open text-sm"></i>
+                        /images/amenities/
+                    </h4>
+                    <p class="text-sm text-gray-600">4 files</p>
+                    <p class="text-xs text-gray-500 mt-1">Types: svg</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                        <i class="fas fa-folder-open text-sm"></i>
+                        /images/ui/
+                    </h4>
+                    <p class="text-sm text-gray-600">3 files</p>
+                    <p class="text-xs text-gray-500 mt-1">Types: svg</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                        <i class="fas fa-folder-open text-sm"></i>
+                        /images/rooms/
+                    </h4>
+                    <p class="text-sm text-gray-600">0 files (empty)</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                        <i class="fas fa-folder-open text-sm"></i>
+                        /images/villa/
+                    </h4>
+                    <p class="text-sm text-gray-600">0 files (empty)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg hidden transform transition-transform duration-300">
+        <i class="fas fa-check mr-2"></i>
+        <span id="toast-message">Copied to clipboard!</span>
+    </div>
+
+    <script>
+        // Image inventory based on the current /public/images structure
+        const imageInventory = {
+            hero: [
+                'DSC02125.JPG', 'DSC02126.JPG', 'DSC02129.JPG', 'DSC02132.JPG', 'DSC02137.JPG',
+                'DSC02140.JPG', 'DSC02176.JPG', 'DSC02188.JPG', 'DSC02192.JPG', 'DSC02199.JPG',
+                'DSC06769.JPG', 'DSC06778.JPG', 'DSC06793.JPG', 'DSC06806.JPG', 'DSC06813.JPG',
+                'DSC06817.JPG', 'DSC06826.JPG', 'DSC06840.JPG', 'DSCF0006.jpg', 'DSCF0009.jpg',
+                'DSCF0013.jpg', 'DSCF0015.jpg', 'DSCF0019.jpg', 'villa-living.jpg', 'villa-main.jpg', 'villa-pool.jpg'
+            ],
+            packages: [
+                'business-elite.jpg',
+                'romantic-escape.jpg'
+            ],
+            amenities: [
+                'air-conditioning.svg',
+                'balcony.svg',
+                'tv.svg',
+                'wifi.svg'
+            ],
+            ui: [
+                'no-image.svg',
+                'placeholder-villa.svg',
+                'placeholder.svg'
+            ],
+            rooms: [], // Currently empty
+            villa: []  // Currently empty
+        };
+
+        let allImages = [];
+        let filteredImages = [];
+
+        // Generate full image inventory
+        function generateImageList() {
+            allImages = [];
+            
+            Object.entries(imageInventory).forEach(([category, files]) => {
+                files.forEach(filename => {
+                    const extension = filename.split('.').pop()?.toLowerCase() || '';
+                    const type = ['jpg', 'jpeg'].includes(extension) ? 'jpg' : 
+                                extension === 'png' ? 'png' : 
+                                extension === 'svg' ? 'svg' : 'other';
+                    
+                    allImages.push({
+                        name: filename,
+                        category,
+                        url: `/images/${category}/${filename}`,
+                        fullUrl: `http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/public/images/${category}/${filename}`,
+                        type
+                    });
+                });
+            });
+
+            filteredImages = [...allImages];
+            updateUI();
+        }
+
+        // Update statistics and image grid
+        function updateUI() {
+            document.getElementById('total-images').textContent = allImages.length;
+            document.getElementById('filtered-count').textContent = filteredImages.length;
+            
+            const imageGrid = document.getElementById('image-grid');
+            const noResults = document.getElementById('no-results');
+            
+            if (filteredImages.length === 0) {
+                imageGrid.innerHTML = '';
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+                imageGrid.innerHTML = filteredImages.map(image => createImageCard(image)).join('');
+            }
+        }
+
+        // Create image card HTML
+        function createImageCard(image) {
+            const categoryColors = {
+                hero: 'bg-red-100 text-red-800',
+                packages: 'bg-blue-100 text-blue-800',
+                amenities: 'bg-green-100 text-green-800',
+                ui: 'bg-purple-100 text-purple-800',
+                rooms: 'bg-yellow-100 text-yellow-800',
+                villa: 'bg-pink-100 text-pink-800'
+            };
+
+            const typeColors = {
+                jpg: 'bg-blue-100 text-blue-800',
+                png: 'bg-green-100 text-green-800',
+                svg: 'bg-purple-100 text-purple-800',
+                other: 'bg-gray-100 text-gray-800'
+            };
+
+            return `
+                <div class="bg-white rounded-lg shadow overflow-hidden image-card">
+                    <div class="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
+                        ${image.type === 'svg' ? 
+                            `<img src="${image.url}" alt="${image.name}" class="max-w-full max-h-full object-contain p-4" onerror="this.src='/images/ui/no-image.svg'">` :
+                            `<img src="${image.url}" alt="${image.name}" class="w-full h-full object-cover" onerror="this.src='/images/ui/no-image.svg'">`
+                        }
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="mb-3">
+                            <h3 class="font-semibold text-gray-900 truncate" title="${image.name}">
+                                ${image.name}
+                            </h3>
+                            <div class="flex gap-2 mt-2">
+                                <span class="px-2 py-1 text-xs rounded-full ${categoryColors[image.category] || 'bg-gray-100 text-gray-800'}">
+                                    ${image.category}
+                                </span>
+                                <span class="px-2 py-1 text-xs rounded-full ${typeColors[image.type] || 'bg-gray-100 text-gray-800'}">
+                                    ${image.type.toUpperCase()}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div>
+                                <label class="text-xs text-gray-500">Relative URL:</label>
+                                <div class="flex items-center gap-2">
+                                    <code class="text-xs bg-gray-100 p-1 rounded flex-1 truncate">
+                                        ${image.url}
+                                    </code>
+                                    <button class="copy-btn p-1 rounded hover:bg-gray-100" onclick="copyToClipboard('${image.url}', 'Relative URL')">
+                                        <i class="fas fa-copy text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-gray-500">Full URL:</label>
+                                <div class="flex items-center gap-2">
+                                    <code class="text-xs bg-gray-100 p-1 rounded flex-1 truncate">
+                                        ${image.fullUrl}
+                                    </code>
+                                    <button class="copy-btn p-1 rounded hover:bg-gray-100" onclick="copyToClipboard('${image.fullUrl}', 'Full URL')">
+                                        <i class="fas fa-copy text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2 pt-2">
+                                <button class="flex-1 px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50" onclick="window.open('${image.fullUrl}', '_blank')">
+                                    View
+                                </button>
+                                <button class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50" onclick="downloadImage('${image.fullUrl}', '${image.name}')">
+                                    <i class="fas fa-download text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Filter images based on search and filters
+        function filterImages() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const selectedCategory = document.getElementById('category-filter').value;
+            const selectedType = document.getElementById('type-filter').value;
+
+            filteredImages = allImages.filter(image => {
+                const matchesSearch = !searchTerm || 
+                    image.name.toLowerCase().includes(searchTerm) ||
+                    image.category.toLowerCase().includes(searchTerm);
+                
+                const matchesCategory = selectedCategory === 'all' || image.category === selectedCategory;
+                const matchesType = selectedType === 'all' || image.type === selectedType;
+
+                return matchesSearch && matchesCategory && matchesType;
+            });
+
+            updateUI();
+        }
+
+        // Copy to clipboard function
+        function copyToClipboard(text, type) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(`${type} copied to clipboard!`);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast(`${type} copied to clipboard!`);
+            });
+        }
+
+        // Download image function
+        function downloadImage(url, filename) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Event listeners
+        document.getElementById('search-input').addEventListener('input', filterImages);
+        document.getElementById('category-filter').addEventListener('change', filterImages);
+        document.getElementById('type-filter').addEventListener('change', filterImages);
+
+        // Initialize the application
+        generateImageList();
+    </script>
+</body>
+</html>

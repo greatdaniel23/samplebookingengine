@@ -32,7 +32,8 @@ const PUBLIC_BASE = import.meta.env.VITE_PUBLIC_BASE || '/';
 // For local development under XAMPP the Apache document root might expose the project
 // at http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/
 // Adjust API_BASE if the PHP API lives in that same folder under /api.
-const DEFAULT_LOCAL_API = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api';
+// Use relative path for Vite proxy in development, absolute path for production
+const DEFAULT_LOCAL_API = '/api'; // Use Vite proxy in development
 const DEFAULT_PRODUCTION_API = 'https://api.rumahdaisycantik.com';
 
 // Force production API URL for production builds

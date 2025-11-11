@@ -334,7 +334,8 @@
                     const response = await fetch(getApiUrl('packages.php'));
                     const data = await response.json();
                     if (data.success) {
-                        setPackages(data.data.filter(pkg => pkg.is_active));
+                        // Admin needs to see ALL packages including inactive ones for management
+                        setPackages(data.data);
                     }
                 } catch (error) {
                     console.error('Error loading packages:', error);
@@ -1230,7 +1231,7 @@
 
             const getCompatiblePackages = (room) => {
                 return packages.filter(pkg => 
-                    pkg.is_active && 
+                    (pkg.available || pkg.is_active) && 
                     pkg.max_guests <= room.capacity
                 );
             };
@@ -1503,7 +1504,7 @@
                 max_nights: '',
                 max_guests: '',
                 is_active: true,
-                includes: [],
+                includes: '', // Store as string for easier typing
                 valid_from: '',
                 valid_until: '',
                 terms: '',
@@ -1545,10 +1546,10 @@
             };
 
             const handleIncludesChange = (value) => {
-                const includes = value.split(',').map(item => item.trim()).filter(item => item);
+                // Store the raw string value, don't process until save
                 setFormData(prev => ({
                     ...prev,
-                    includes: includes
+                    includes: value // Store as string, not array
                 }));
             };
 
@@ -1563,7 +1564,7 @@
                     max_nights: '',
                     max_guests: '',
                     is_active: true,
-                    includes: [],
+                    includes: '',
                     valid_from: '',
                     valid_until: '',
                     terms: '',
@@ -1574,20 +1575,23 @@
             };
 
             const handleEdit = (pkg) => {
+                const includesValue = pkg.inclusions || pkg.includes || [];
+                const includesString = Array.isArray(includesValue) ? includesValue.join(', ') : includesValue.toString();
+                
                 setFormData({
                     name: pkg.name,
                     description: pkg.description,
-                    package_type: pkg.package_type,
-                    base_price: pkg.base_price.toString(),
-                    discount_percentage: pkg.discount_percentage.toString(),
-                    min_nights: pkg.min_nights.toString(),
-                    max_nights: pkg.max_nights.toString(),
-                    max_guests: pkg.max_guests.toString(),
-                    is_active: pkg.is_active,
-                    includes: pkg.includes || [],
+                    package_type: pkg.type || pkg.package_type, // Handle both field names
+                    base_price: (pkg.price || pkg.base_price || 0).toString(), // Handle both field names
+                    discount_percentage: (pkg.discount_percentage || 0).toString(),
+                    min_nights: (pkg.min_nights || 1).toString(),
+                    max_nights: (pkg.max_nights || 30).toString(),
+                    max_guests: (pkg.max_guests || 2).toString(),
+                    is_active: pkg.available || pkg.is_active || true,
+                    includes: includesString,
                     valid_from: pkg.valid_from || '',
                     valid_until: pkg.valid_until || '',
-                    terms: pkg.terms || '',
+                    terms: pkg.terms_conditions || pkg.terms || '',
                     image_url: pkg.image_url || ''
                 });
                 setEditingPackage(pkg.id);
@@ -1600,9 +1604,28 @@
                     return;
                 }
 
+                // Convert includes string to array for API
+                const includesArray = formData.includes 
+                    ? formData.includes.split(',').map(item => item.trim()).filter(item => item)
+                    : [];
+
+                // Convert image_url to images array format
+                const imagesArray = formData.image_url 
+                    ? [formData.image_url.trim()] 
+                    : [];
+
                 const packageData = {
                     ...formData,
-                    base_price: parseFloat(formData.base_price),
+                    price: parseFloat(formData.base_price), // Convert base_price to price for API
+                    base_price: parseFloat(formData.base_price), // Keep for backward compatibility
+                    type: formData.package_type, // Convert package_type to type for API
+                    package_type: formData.package_type, // Keep for backward compatibility
+                    inclusions: includesArray, // Convert includes to inclusions for API
+                    includes: includesArray, // Keep for backward compatibility
+                    images: imagesArray, // Convert image_url to images array for API
+                    image_url: formData.image_url, // Keep for backward compatibility
+                    available: formData.is_active ? 1 : 0, // Convert is_active to available for API
+                    is_active: formData.is_active, // Keep for backward compatibility
                     discount_percentage: parseInt(formData.discount_percentage) || 0,
                     min_nights: parseInt(formData.min_nights) || 1,
                     max_nights: parseInt(formData.max_nights) || 30,
@@ -1692,7 +1715,7 @@
                         },
                         body: JSON.stringify({ 
                             ...packageData, 
-                            is_active: packageData.is_active ? 0 : 1 
+                            available: packageData.available ? 0 : 1 
                         })
                     });
                     
@@ -1865,7 +1888,7 @@
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Package Includes (comma-separated)</label>
                                         <input
                                             type="text"
-                                            value={formData.includes.join(', ')}
+                                            value={formData.includes}
                                             onChange={(e) => handleIncludesChange(e.target.value)}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             placeholder="e.g., Breakfast, WiFi, Parking"
@@ -1937,12 +1960,12 @@
                                             <button
                                                 onClick={() => toggleStatus(pkg.id)}
                                                 className={`px-2 py-1 text-xs rounded-full cursor-pointer transition-colors ${
-                                                    pkg.is_active 
+                                                    (pkg.available || pkg.is_active) 
                                                         ? 'bg-green-100 text-green-800 hover:bg-green-200' 
                                                         : 'bg-red-100 text-red-800 hover:bg-red-200'
                                                 }`}
                                             >
-                                                {pkg.is_active ? 'Active' : 'Inactive'}
+                                                {(pkg.available || pkg.is_active) ? 'Active' : 'Inactive'}
                                             </button>
                                             <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
                                                 {pkg.discount_percentage}% OFF
@@ -1951,18 +1974,18 @@
                                     </div>
                                     <p className="text-sm text-gray-600 mb-4">{pkg.description}</p>
                                     <div className="space-y-2 text-sm text-gray-600 mb-4">
-                                        <p><span className="font-medium">Type:</span> {pkg.package_type}</p>
-                                        <p><span className="font-medium">Base Price:</span> ${pkg.base_price}</p>
-                                        <p><span className="font-medium">Duration:</span> {pkg.min_nights}-{pkg.max_nights} nights</p>
+                                        <p><span className="font-medium">Type:</span> {pkg.type || pkg.package_type}</p>
+                                        <p><span className="font-medium">Price:</span> ${pkg.price || pkg.base_price}</p>
+                                        <p><span className="font-medium">Duration:</span> {pkg.duration_days || `${pkg.min_nights}-${pkg.max_nights}`} {pkg.duration_days ? 'days' : 'nights'}</p>
                                         <p><span className="font-medium">Max Guests:</span> {pkg.max_guests}</p>
                                         {pkg.valid_from && pkg.valid_until && (
                                             <p><span className="font-medium">Valid:</span> {pkg.valid_from} to {pkg.valid_until}</p>
                                         )}
-                                        {pkg.includes && pkg.includes.length > 0 && (
+                                        {(pkg.inclusions || pkg.includes) && (pkg.inclusions || pkg.includes).length > 0 && (
                                             <div>
                                                 <span className="font-medium">Includes:</span>
                                                 <ul className="list-disc list-inside ml-2 mt-1">
-                                                    {pkg.includes.map((item, index) => (
+                                                    {(pkg.inclusions || pkg.includes).map((item, index) => (
                                                         <li key={index} className="text-xs">{item}</li>
                                                     ))}
                                                 </ul>
