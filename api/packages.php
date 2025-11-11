@@ -54,9 +54,15 @@ function handleGet($db) {
             $package = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($package) {
-                // Decode JSON includes
-                if ($package['includes']) {
-                    $package['includes'] = json_decode($package['includes'], true);
+                // Decode JSON inclusions and exclusions
+                if ($package['inclusions']) {
+                    $package['inclusions'] = json_decode($package['inclusions'], true);
+                }
+                if ($package['exclusions']) {
+                    $package['exclusions'] = json_decode($package['exclusions'], true);
+                }
+                if ($package['images']) {
+                    $package['images'] = json_decode($package['images'], true);
                 }
                 echo json_encode(['success' => true, 'data' => $package]);
             } else {
@@ -68,10 +74,16 @@ function handleGet($db) {
             $stmt = $db->query("SELECT * FROM packages ORDER BY created_at DESC");
             $packages = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Decode JSON includes for all packages
+            // Decode JSON inclusions for all packages
             foreach ($packages as &$package) {
-                if ($package['includes']) {
-                    $package['includes'] = json_decode($package['includes'], true);
+                if ($package['inclusions']) {
+                    $package['inclusions'] = json_decode($package['inclusions'], true);
+                }
+                if ($package['exclusions']) {
+                    $package['exclusions'] = json_decode($package['exclusions'], true);
+                }
+                if ($package['images']) {
+                    $package['images'] = json_decode($package['images'], true);
                 }
             }
             

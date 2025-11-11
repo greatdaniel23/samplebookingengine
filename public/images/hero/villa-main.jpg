@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" fill="none">
+  <rect width="600" height="400" fill="#f3f4f6"/>
+  <rect x="50" y="100" width="500" height="200" rx="8" fill="#e5e7eb" stroke="#d1d5db" stroke-width="2"/>
+  <path d="M100 200 L200 150 L300 180 L400 120 L500 160 L500 250 L100 250 Z" fill="#9ca3af" opacity="0.6"/>
+  <circle cx="150" cy="170" r="20" fill="#6b7280"/>
+  <text x="300" y="320" text-anchor="middle" fill="#6b7280" font-family="Arial, sans-serif" font-size="16">Villa Image Loading...</text>
+</svg>

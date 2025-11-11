@@ -73,18 +73,31 @@ export interface Package {
   id: string;
   name: string;
   description: string;
-  package_type: 'romantic' | 'business' | 'family' | 'luxury' | 'weekend' | 'holiday' | 'spa' | 'adventure';
-  base_price: string; // API returns as string
-  discount_percentage: string; // API returns as string
-  min_nights: number;
-  max_nights: number;
+  type?: string; // Enhanced database uses 'type' field
+  package_type?: 'romantic' | 'business' | 'family' | 'luxury' | 'weekend' | 'holiday' | 'spa' | 'adventure';
+  price: string; // Enhanced database uses 'price' instead of 'base_price'
+  base_price?: string; // Legacy field - API returns as string
+  discount_percentage?: string; // API returns as string
+  duration_days?: number; // Enhanced database field
+  min_nights?: number;
+  max_nights?: number;
   valid_from: string; // Date string
   valid_until: string; // Date string
-  is_active: number; // API returns as number (0/1)
+  available?: number; // Enhanced database uses 'available' instead of 'is_active'
+  is_active?: number; // Legacy field - API returns as number (0/1)
   max_guests: number;
-  includes?: string[]; // Array of included services - can be undefined
-  terms: string;
-  image_url: string;
+  inclusions?: string[]; // Enhanced database field - Array of included services
+  includes?: string[]; // Legacy field for backward compatibility
+  exclusions?: string[]; // Enhanced database field - Array of excluded services
+  terms_conditions?: string; // Enhanced database field
+  terms?: string; // Legacy field
+  images?: string[]; // Enhanced database field - Array of image URLs
+  image_url?: string; // Legacy field
+  booking_advance_days?: number; // Enhanced database field
+  cancellation_policy?: string; // Enhanced database field
+  seo_title?: string; // Enhanced database field
+  seo_description?: string; // Enhanced database field
+  sort_order?: number; // Enhanced database field
   created_at: string;
   updated_at: string;
   room_options?: PackageRoomOption[]; // Can be undefined

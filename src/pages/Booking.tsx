@@ -141,9 +141,46 @@ const BookingPage = () => {
     const reference = `BK-${bookingId}`;
 
     try {
+      // Package to Room mapping - packages need to be assigned to specific rooms
+      const packageRoomMapping: Record<string, string> = {
+        '1': 'deluxe-suite',    // Romantic Getaway → Deluxe Suite
+        '2': 'master-suite',    // Adventure Explorer → Master Suite  
+        '3': 'standard-room',   // Wellness Retreat → Standard Room
+        '4': 'family-room',     // Cultural Heritage → Family Room
+        '5': 'family-room'      // Family Fun → Family Room
+      };
+
+      // Determine the correct room_id and package_id
+      let roomId: string;
+      let packageId: number | undefined;
+
+      if (room) {
+        // Direct room booking
+        roomId = room.id;
+        packageId = undefined;
+      } else if (selectedPackage) {
+        // Package booking - map package to appropriate room
+        roomId = packageRoomMapping[selectedPackage.id] || 'standard-room';
+        packageId = parseInt(selectedPackage.id);
+      } else {
+        throw new Error('No room or package selected for booking');
+      }
+
+      // Validate room_id exists in database
+      const validRoomIds = ['deluxe-suite', 'economy-room', 'family-room', 'master-suite', 'standard-room'];
+      if (!validRoomIds.includes(roomId)) {
+        throw new Error(`Invalid room_id: ${roomId}. Must be one of: ${validRoomIds.join(', ')}`);
+      }
+
+      // Ensure total_price is always provided and valid
+      if (!bookingData.totalPrice || bookingData.totalPrice <= 0) {
+        throw new Error('Invalid total_price: must be a positive number');
+      }
+
       // Prepare booking data for API
       const apiBookingData = {
-        room_id: room?.id || selectedPackage?.id || '',
+        room_id: roomId,
+        package_id: packageId,
         first_name: bookingData.guestInfo.firstName,
         last_name: bookingData.guestInfo.lastName,
         email: bookingData.guestInfo.email,
@@ -260,7 +297,7 @@ const BookingPage = () => {
       
       // Redirect to summary page with booking details
       const nights = differenceInDays(bookingData.dateRange.to!, bookingData.dateRange.from!);
-      const basePrice = nights * parseFloat(selectedPackage?.base_price || room?.price || '0');
+      const basePrice = nights * parseFloat(selectedPackage?.price || selectedPackage?.base_price || room?.price || '0');
       const serviceFee = basePrice * 0.1; // 10% of base price, not total price
       
       const summaryParams = new URLSearchParams({
@@ -370,7 +407,7 @@ const BookingPage = () => {
       
       // Redirect to summary page with booking details
       const nights = differenceInDays(bookingData.dateRange.to!, bookingData.dateRange.from!);
-      const basePrice = nights * parseFloat(selectedPackage?.base_price || room?.price || '0');
+      const basePrice = nights * parseFloat(selectedPackage?.price || selectedPackage?.base_price || room?.price || '0');
       const serviceFee = basePrice * 0.1; // 10% of base price, not total price
       
       const summaryParams = new URLSearchParams({

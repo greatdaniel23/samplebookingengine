@@ -69,15 +69,21 @@ try {
                 $row['socialMedia'] = isset($row['social_media']) ? json_decode($row['social_media'], true) ?: [] : [];
                 
                 // Map database field names to interface field names with default values
-                $row['zipCode'] = $row['zip_code'] ?? '';
+                $row['zipCode'] = $row['postal_code'] ?? '';
                 $row['checkInTime'] = $row['check_in_time'] ?? '15:00';
                 $row['checkOutTime'] = $row['check_out_time'] ?? '11:00';
-                $row['maxGuests'] = $row['max_guests'] ?? 8;
-                $row['pricePerNight'] = $row['price_per_night'] ?? 0;
                 $row['cancellationPolicy'] = $row['cancellation_policy'] ?? '';
                 $row['houseRules'] = $row['house_rules'] ?? '';
                 
-                // Set default values for new fields if they don't exist
+                // Create location field from address components
+                $locationParts = array_filter([
+                    $row['city'] ?? '',
+                    $row['state'] ?? '',
+                    $row['country'] ?? ''
+                ]);
+                $row['location'] = implode(', ', $locationParts) ?: 'Location not specified';
+                
+                // Set default values for fields
                 $row['phone'] = $row['phone'] ?? '';
                 $row['email'] = $row['email'] ?? '';
                 $row['website'] = $row['website'] ?? '';
@@ -85,14 +91,16 @@ try {
                 $row['city'] = $row['city'] ?? '';
                 $row['state'] = $row['state'] ?? '';
                 $row['country'] = $row['country'] ?? '';
-                $row['bedrooms'] = $row['bedrooms'] ?? 4;
-                $row['bathrooms'] = $row['bathrooms'] ?? 3;
                 $row['currency'] = $row['currency'] ?? 'USD';
+                $row['rating'] = 4.9; // Default rating since enhanced DB doesn't have this
+                $row['reviews'] = 128; // Default reviews since enhanced DB doesn't have this
                 
-                // Remove database field names
-                unset($row['zip_code'], $row['check_in_time'], $row['check_out_time'], 
-                      $row['max_guests'], $row['price_per_night'], $row['cancellation_policy'], 
-                      $row['house_rules'], $row['social_media']);
+                // Remove database field names that are different
+                unset($row['postal_code'], $row['check_in_time'], $row['check_out_time'], 
+                      $row['cancellation_policy'], $row['house_rules'], $row['social_media'],
+                      $row['latitude'], $row['longitude'], $row['timezone'], $row['language'],
+                      $row['tax_rate'], $row['service_fee'], $row['nearby_attractions'],
+                      $row['seo_title'], $row['seo_description'], $row['seo_keywords']);
                 
                 echo json_encode([
                     'success' => true,
@@ -185,7 +193,7 @@ try {
             }
             
             // Validate required fields
-            $required = ['name', 'location', 'description', 'rating', 'reviews'];
+            $required = ['name', 'description'];
             foreach ($required as $field) {
                 if (!isset($input[$field])) {
                     http_response_code(400);
@@ -217,30 +225,22 @@ try {
             
             $query = "UPDATE villa_info SET 
                         name = :name,
-                        location = :location,
                         description = :description,
-                        rating = :rating,
-                        reviews = :reviews,
-                        images = :images,
-                        amenities = :amenities,
                         phone = :phone,
                         email = :email,
                         website = :website,
                         address = :address,
                         city = :city,
                         state = :state,
-                        zip_code = :zip_code,
+                        postal_code = :postal_code,
                         country = :country,
                         check_in_time = :check_in_time,
                         check_out_time = :check_out_time,
-                        max_guests = :max_guests,
-                        bedrooms = :bedrooms,
-                        bathrooms = :bathrooms,
-                        price_per_night = :price_per_night,
                         currency = :currency,
                         cancellation_policy = :cancellation_policy,
                         house_rules = :house_rules,
-                        social_media = :social_media,
+                        amenities = :amenities,
+                        images = :images,
                         updated_at = NOW()
                       WHERE id = 1";
 
@@ -248,30 +248,22 @@ try {
             
             $result = $stmt->execute([
                 'name' => htmlspecialchars(strip_tags($input['name'])),
-                'location' => htmlspecialchars(strip_tags($input['location'])),
                 'description' => htmlspecialchars(strip_tags($input['description'])),
-                'rating' => floatval($input['rating']),
-                'reviews' => intval($input['reviews']),
-                'images' => json_encode($input['images']),
-                'amenities' => json_encode($input['amenities']),
                 'phone' => htmlspecialchars(strip_tags($input['phone'] ?? '')),
                 'email' => htmlspecialchars(strip_tags($input['email'] ?? '')),
                 'website' => htmlspecialchars(strip_tags($input['website'] ?? '')),
                 'address' => htmlspecialchars(strip_tags($input['address'] ?? '')),
                 'city' => htmlspecialchars(strip_tags($input['city'] ?? '')),
                 'state' => htmlspecialchars(strip_tags($input['state'] ?? '')),
-                'zip_code' => htmlspecialchars(strip_tags($input['zipCode'] ?? '')),
+                'postal_code' => htmlspecialchars(strip_tags($input['zipCode'] ?? '')),
                 'country' => htmlspecialchars(strip_tags($input['country'] ?? '')),
-                'check_in_time' => htmlspecialchars(strip_tags($input['checkInTime'] ?? '')),
-                'check_out_time' => htmlspecialchars(strip_tags($input['checkOutTime'] ?? '')),
-                'max_guests' => intval($input['maxGuests'] ?? 0),
-                'bedrooms' => intval($input['bedrooms'] ?? 0),
-                'bathrooms' => intval($input['bathrooms'] ?? 0),
-                'price_per_night' => floatval($input['pricePerNight'] ?? 0),
+                'check_in_time' => htmlspecialchars(strip_tags($input['checkInTime'] ?? '15:00')),
+                'check_out_time' => htmlspecialchars(strip_tags($input['checkOutTime'] ?? '11:00')),
                 'currency' => htmlspecialchars(strip_tags($input['currency'] ?? 'USD')),
                 'cancellation_policy' => htmlspecialchars(strip_tags($input['cancellationPolicy'] ?? '')),
                 'house_rules' => htmlspecialchars(strip_tags($input['houseRules'] ?? '')),
-                'social_media' => json_encode($input['socialMedia'] ?? [])
+                'amenities' => json_encode($input['amenities'] ?? []),
+                'images' => json_encode($input['images'] ?? [])
             ]);
             
             if ($result) {

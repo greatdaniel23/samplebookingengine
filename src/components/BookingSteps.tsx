@@ -167,7 +167,9 @@ export function BookingSteps({ room, package: pkg, disabledDates, onBookingCompl
   const nights = useMemo(() => (dateRange?.from && dateRange?.to ? differenceInDays(dateRange.to, dateRange.from) : 0), [dateRange]);
   const basePrice = useMemo(() => {
     if (pkg) {
-      return nights * parseFloat(pkg.base_price);
+      // Enhanced database uses 'price' field, fallback to 'base_price' for legacy compatibility
+      const packagePrice = pkg.price || pkg.base_price || '0';
+      return nights * parseFloat(packagePrice);
     }
     return nights * parseFloat(room?.price || '0');
   }, [nights, room?.price, pkg]);

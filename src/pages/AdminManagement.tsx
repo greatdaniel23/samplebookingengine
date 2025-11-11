@@ -966,8 +966,8 @@ const PackageEditForm: React.FC<{
         <Label htmlFor="includes">Includes (comma-separated)</Label>
         <Textarea
           id="includes"
-          value={pkg.includes.join(', ')}
-          onChange={(e) => handleArrayFieldChange('includes', e.target.value)}
+          value={(pkg.inclusions || pkg.includes || []).join(', ')}
+          onChange={(e) => handleArrayFieldChange('inclusions', e.target.value)}
           placeholder="Breakfast, Welcome drink, Spa access"
           rows={2}
         />

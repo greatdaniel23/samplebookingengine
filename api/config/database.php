@@ -5,12 +5,14 @@
 
 class Database {
     private $host = 'localhost';
-    private $db_name = 'u289291769_booking';
-    private $username = 'u289291769_booking';
-    private $password = 'Kanibal123!!!';
+    private $db_name = 'booking_engine';
+    private $username = 'root';
+    private $password = '';
     private $conn;
     
-
+    public function __construct() {
+        // Constructor - allows class instantiation
+    }
 
     public function getConnection() {
         $this->conn = null;

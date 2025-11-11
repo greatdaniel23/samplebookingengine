@@ -49,7 +49,7 @@ export const useVillaInfo = () => {
   const fetchVillaInfo = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/villa.php');
+      const response = await fetch('http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api/villa.php');
       
       // Check if response is ok
       if (!response.ok) {
@@ -82,7 +82,7 @@ export const useVillaInfo = () => {
 
   const updateVillaInfo = async (data: Partial<VillaInfo>) => {
     try {
-      const response = await fetch('http://localhost/fontend-bookingengine-100/frontend-booking-engine/frontend-booking-engine/api/villa.php', {
+      const response = await fetch('http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api/villa.php', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

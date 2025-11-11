@@ -71,7 +71,7 @@ const PackageDetails = () => {
   }
 
   const discountPercentage = parseFloat(pkg.discount_percentage);
-  const basePrice = parseFloat(pkg.base_price);
+  const basePrice = parseFloat(pkg.price || pkg.base_price || '0');
   const originalPrice = basePrice / (1 - discountPercentage / 100);
 
   const handleBookNow = () => {
@@ -155,7 +155,7 @@ const PackageDetails = () => {
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <Gift className="h-6 w-6 mx-auto mb-2 text-orange-600" />
                   <div className="text-sm text-muted-foreground">Includes</div>
-                  <div className="font-semibold">{pkg.includes.length} items</div>
+                  <div className="font-semibold">{(pkg.inclusions || pkg.includes || []).length} items</div>
                 </div>
               </div>
             </CardContent>
@@ -171,7 +171,7 @@ const PackageDetails = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {pkg.includes.map((item, index) => (
+                {(pkg.inclusions || pkg.includes || []).map((item, index) => (
                   <div key={index} className="flex items-start space-x-3">
                     <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                     <span className="text-sm">{item}</span>
@@ -273,15 +273,15 @@ const PackageDetails = () => {
                 <div className="space-y-3">
                   <h4 className="font-medium">Key Features:</h4>
                   <div className="space-y-2">
-                    {pkg.includes.slice(0, 4).map((item, index) => (
+                    {(pkg.inclusions || pkg.includes || []).slice(0, 4).map((item, index) => (
                       <div key={index} className="flex items-center text-sm">
                         <Star className="h-3 w-3 mr-2 text-yellow-500" />
                         <span className="line-clamp-1">{item}</span>
                       </div>
                     ))}
-                    {pkg.includes.length > 4 && (
+                    {(pkg.inclusions || pkg.includes || []).length > 4 && (
                       <div className="text-xs text-muted-foreground italic">
-                        +{pkg.includes.length - 4} more benefits included
+                        +{(pkg.inclusions || pkg.includes || []).length - 4} more benefits included
                       </div>
                     )}
                   </div>

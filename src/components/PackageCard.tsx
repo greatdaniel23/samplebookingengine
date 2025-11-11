@@ -29,7 +29,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
 }) => {
   const navigate = useNavigate();
   const discountPercentage = parseFloat(pkg.discount_percentage);
-  const basePrice = parseFloat(pkg.base_price);
+  const basePrice = parseFloat(pkg.price || pkg.base_price || '0');
   const originalPrice = basePrice / (1 - discountPercentage / 100);
 
   const handleSelect = () => {
@@ -106,15 +106,15 @@ export const PackageCard: React.FC<PackageCardProps> = ({
             What's Included:
           </h4>
           <div className="space-y-1">
-            {pkg.includes.slice(0, 3).map((item, index) => (
+            {(pkg.inclusions || pkg.includes || []).slice(0, 3).map((item, index) => (
               <div key={index} className="flex items-center text-xs text-gray-600">
                 <Star className="h-3 w-3 mr-1 text-yellow-500" />
                 <span className="line-clamp-1">{item}</span>
               </div>
             ))}
-            {pkg.includes.length > 3 && (
+            {(pkg.inclusions || pkg.includes || []).length > 3 && (
               <div className="text-xs text-gray-500 italic">
-                +{pkg.includes.length - 3} more benefits
+                +{(pkg.inclusions || pkg.includes || []).length - 3} more benefits
               </div>
             )}
           </div>

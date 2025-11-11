@@ -19,15 +19,49 @@ export const useIndexPageData = () => {
   const normalizeVillaData = (data: any): Villa => {
     if (!data) return villaData;
     
+    // Convert amenities from string array to object array
+    const normalizeAmenities = (amenities: any) => {
+      if (!Array.isArray(amenities)) return villaData.amenities;
+      
+      // If already objects with name and icon, return as is
+      if (amenities.length > 0 && typeof amenities[0] === 'object' && amenities[0].name) {
+        return amenities;
+      }
+      
+      // Convert string array to object array with default icons
+      const iconMap: { [key: string]: string } = {
+        'Swimming Pool': 'Bath',
+        'Spa Services': 'Bath', 
+        'Restaurant': 'CookingPot',
+        'Free WiFi': 'Wifi',
+        'Airport Shuttle': 'Car',
+        'Bicycle Rental': 'Car',
+        'Yoga Studio': 'AirVent',
+        'Library': 'Flame',
+        'Garden': 'AirVent',
+        'Parking': 'Car',
+        '24/7 Reception': 'Flame',
+        'Room Service': 'CookingPot',
+        'Laundry Service': 'Bath',
+        'Tour Desk': 'Flame',
+        'Currency Exchange': 'Flame'
+      };
+      
+      return amenities.map((amenity: string) => ({
+        name: amenity,
+        icon: iconMap[amenity] || 'AirVent' // Default icon
+      }));
+    };
+    
     return {
       id: data.id || villaData.id,
       name: data.name || villaData.name,
-      location: data.location || villaData.location,
+      location: data.address || data.location || villaData.location, // Enhanced DB uses 'address'
       description: data.description || villaData.description,
       rating: data.rating || villaData.rating,
       reviews: data.reviews || villaData.reviews,
       images: data.images || villaData.images,
-      amenities: data.amenities || villaData.amenities,
+      amenities: normalizeAmenities(data.amenities),
       rooms: data.rooms || villaData.rooms,
     };
   };
