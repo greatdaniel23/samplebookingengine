@@ -13,6 +13,8 @@ import AdminLogin from "./pages/AdminLogin";
 import PackagesPage from "./pages/Packages";
 import PackageDetails from "./pages/PackageDetails";
 import BookingSummary from "./pages/BookingSummary";
+import ImageGalleryPage from "./pages/ImageGalleryPage";
+import DebugPackages from "./components/DebugPackages";
 import { BookingProvider } from "@/context/BookingContext";
 
 const queryClient = new QueryClient();
@@ -35,6 +37,8 @@ const App = () => (
             <Route path="/admin/bookings" element={<AdminBookings />} />
             <Route path="/admin/management" element={<AdminManagement />} />
             <Route path="/admin/villa" element={<Admin />} />
+            <Route path="/images" element={<ImageGalleryPage />} />
+            <Route path="/debug-packages" element={<DebugPackages />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

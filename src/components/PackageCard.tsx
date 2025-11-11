@@ -41,12 +41,37 @@ export const PackageCard: React.FC<PackageCardProps> = ({
     }
   };
 
+  // Get the image URL from either images array or image_url field
+  const getPackageImageUrl = () => {
+    // If pkg.images is an array and has items, use the first one
+    if (pkg.images && Array.isArray(pkg.images) && pkg.images.length > 0) {
+      return pkg.images[0];
+    }
+    
+    // Fallback to image_url field (for backward compatibility)
+    if (pkg.image_url) {
+      return pkg.image_url;
+    }
+    
+    // Default images based on package type
+    const typeImageMap: Record<string, string> = {
+      'Romance': '/images/packages/romantic-escape.jpg',
+      'Business': '/images/packages/business-elite.jpg',
+      'Family': '/images/ui/placeholder.svg',
+      'Adventure': '/images/ui/placeholder.svg',
+      'Wellness': '/images/ui/placeholder.svg',
+      'Culture': '/images/ui/placeholder.svg'
+    };
+    
+    return typeImageMap[pkg.type] || '/images/ui/placeholder.svg';
+  };
+
   return (
     <Card className={`card-hotel overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] ${className}`}>
       <CardHeader className="p-0">
         <div className="relative">
           <img 
-            src={pkg.image_url} 
+            src={getPackageImageUrl()} 
             alt={pkg.name}
             className="w-full h-48 object-cover"
             onError={(e) => {
@@ -68,7 +93,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
           {/* Package Type Badge */}
           <div className="absolute top-3 left-3">
             <Badge className="bg-hotel-navy/90 text-white backdrop-blur-sm">
-              {packageService.getPackageTypeDisplayName(pkg.package_type)}
+              {packageService.getPackageTypeDisplayName(pkg.type || pkg.package_type)}
             </Badge>
           </div>
         </div>
@@ -121,11 +146,11 @@ export const PackageCard: React.FC<PackageCardProps> = ({
         </div>
 
         {/* Room Options */}
-        {showRoomOptions && pkg.room_options.length > 0 && (
+        {showRoomOptions && pkg.room_options && pkg.room_options.length > 0 && (
           <div className="mb-4">
             <h4 className="text-sm font-medium mb-2">Available Rooms:</h4>
             <div className="space-y-1">
-              {pkg.room_options.slice(0, 2).map((room, index) => (
+              {(pkg.room_options || []).slice(0, 2).map((room, index) => (
                 <div key={index} className="flex justify-between items-center text-xs">
                   <span className="text-gray-600">{room.name}</span>
                   {room.price_override && (
@@ -133,7 +158,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
                   )}
                 </div>
               ))}
-              {pkg.room_options.length > 2 && (
+              {pkg.room_options && pkg.room_options.length > 2 && (
                 <div className="text-xs text-gray-500 italic">
                   +{pkg.room_options.length - 2} more room types
                 </div>

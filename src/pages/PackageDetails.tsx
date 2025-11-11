@@ -70,12 +70,56 @@ const PackageDetails = () => {
     return <NotFound />;
   }
 
+  // Check if package is inactive - redirect to not found for customers
+  if (!pkg.available) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="p-6 text-center">
+            <h2 className="text-xl font-semibold mb-2">Package Not Available</h2>
+            <p className="text-muted-foreground mb-4">
+              This package is currently not available for booking.
+            </p>
+            <Button onClick={() => navigate('/packages')}>
+              View Available Packages
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const discountPercentage = parseFloat(pkg.discount_percentage);
   const basePrice = parseFloat(pkg.price || pkg.base_price || '0');
   const originalPrice = basePrice / (1 - discountPercentage / 100);
 
   const handleBookNow = () => {
     navigate(`/book?package=${pkg.id}`);
+  };
+
+  // Get the image URL from either images array or image_url field
+  const getPackageImageUrl = () => {
+    // If pkg.images is an array and has items, use the first one
+    if (pkg.images && Array.isArray(pkg.images) && pkg.images.length > 0) {
+      return pkg.images[0];
+    }
+    
+    // Fallback to image_url field (for backward compatibility)
+    if (pkg.image_url) {
+      return pkg.image_url;
+    }
+    
+    // Default images based on package type
+    const typeImageMap: Record<string, string> = {
+      'Romance': '/images/packages/romantic-escape.jpg',
+      'Business': '/images/packages/business-elite.jpg',
+      'Family': '/images/ui/placeholder.svg',
+      'Adventure': '/images/ui/placeholder.svg',
+      'Wellness': '/images/ui/placeholder.svg',
+      'Culture': '/images/ui/placeholder.svg'
+    };
+    
+    return typeImageMap[pkg.type || pkg.package_type] || '/images/ui/placeholder.svg';
   };
 
   return (
@@ -99,7 +143,7 @@ const PackageDetails = () => {
           <Card className="overflow-hidden">
             <div className="relative">
               <img 
-                src={pkg.image_url} 
+                src={getPackageImageUrl()} 
                 alt={pkg.name}
                 className="w-full h-[400px] object-cover"
                 onError={(e) => {
@@ -112,10 +156,10 @@ const PackageDetails = () => {
               <div className="absolute top-4 left-4">
                 <Badge 
                   variant="secondary" 
-                  className={`text-white border-0 ${packageService.getPackageTypeColor(pkg.package_type)}`}
+                  className={`text-white border-0 ${packageService.getPackageTypeColor(pkg.type || pkg.package_type)}`}
                 >
                   <Tag className="h-3 w-3 mr-1" />
-                  {pkg.package_type.charAt(0).toUpperCase() + pkg.package_type.slice(1)}
+                  {(pkg.type || pkg.package_type)?.charAt(0).toUpperCase() + (pkg.type || pkg.package_type)?.slice(1)}
                 </Badge>
               </div>
 
@@ -182,7 +226,7 @@ const PackageDetails = () => {
           </Card>
 
           {/* Available Rooms */}
-          {pkg.room_options.length > 0 && (
+          {pkg.room_options && pkg.room_options.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -192,7 +236,7 @@ const PackageDetails = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {pkg.room_options.map((room, index) => (
+                  {(pkg.room_options || []).map((room, index) => (
                     <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                       <div>
                         <h4 className="font-medium">{room.name}</h4>
