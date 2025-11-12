@@ -615,3 +615,59 @@ All critical issues have been resolved and the system is operating at full capac
    - **Files Updated**: `src/components/PackageCard.tsx` - Added comprehensive null safety for room_options field access
    - **Result**: PackageCard components now render without runtime errors, gracefully handle missing room_options data
    - **Testing**: Verified packages page loads without console errors, package cards display correctly
+
+### **Booking Page Package Image Display Issue Resolved** ✅ (November 13, 2025)
+12. **Package Images Not Showing on /book?package=1 Path**
+   - **Issue**: Package images not displaying on booking page (`/book?package=1`) - image src was empty
+   - **Root Cause**: `Booking.tsx` using `selectedPackage.image_url` but packages use `images` array field  
+   - **Investigation**: 
+     - API returns `"images":["http://localhost/.../DSC02126.JPG"]` array format
+     - Other components like `PackageCard.tsx` already had proper `getPackageImageUrl()` function
+     - `Booking.tsx` was missing the image array handling logic
+   - **Solutions Implemented**:
+     - **Image URL Function**: Added `getPackageImageUrl()` function to `Booking.tsx` with same logic as `PackageCard.tsx`
+     - **Array Handling**: Function handles `pkg.images` array, falls back to `pkg.image_url`, then to type-based defaults
+     - **Consistent Logic**: Applied same image resolution pattern used successfully in other components
+     - **Fallback System**: Added type-based default images and placeholder handling
+   - **Files Updated**: 
+     - `src/pages/Booking.tsx` - Added `getPackageImageUrl()` function and updated image src
+   - **Result**: Package images now display correctly on booking page (`/book?package=1`)
+   - **Testing**: Verified booking page shows package image from `images` array field
+
+### **Summary Page Package Image Display Issue Resolved** ✅ (November 13, 2025)
+13. **Package Images Not Showing on /summary Path**
+   - **Issue**: Package images not displaying on booking summary page (`/summary?ref=BK-xxx&package=1`) - same issue as booking page
+   - **Root Cause**: `BookingSummary.tsx` using `packageData.image_url` but packages use `images` array field
+   - **Investigation**: 
+     - Same pattern as booking page - using deprecated `image_url` field instead of `images` array
+     - Component needed consistent image handling logic with other package components
+   - **Solutions Implemented**:
+     - **Image URL Function**: Added `getPackageImageUrl()` function to `BookingSummary.tsx` with same logic as other components
+     - **Array Handling**: Function handles `pkg.images` array, falls back to `pkg.image_url`, then to type-based defaults
+     - **Consistent Logic**: Applied same image resolution pattern across all package components
+   - **Files Updated**: 
+     - `src/pages/BookingSummary.tsx` - Added `getPackageImageUrl()` function and updated image src from `packageData.image_url` to `getPackageImageUrl(packageData)`
+   - **Result**: Package images now display correctly on booking summary page
+   - **Testing**: Verified summary page shows package image with real booking reference `BK-299163`
+
+### **Email Emoji Character Encoding Issue Resolved** ✅ (November 13, 2025)
+14. **Corrupted Emoji Characters in Email ("ЁЯПи", "ðŸŽ‰")**
+   - **Issue**: Emojis appearing as corrupted characters in sent emails - "🎉" showing as "ðŸŽ‰" and "🏨" showing as "ЁЯПи"
+   - **Root Cause**: Missing UTF-8 character encoding specification in PHPMailer configuration
+   - **Investigation**: 
+     - Emojis in source files (`email-service.php`, `email-templates/*.html`, `email-templates/*.txt`) were correct
+     - HTML templates had proper `<meta charset="UTF-8">` declarations
+     - PHPMailer was missing `CharSet` and `Encoding` properties
+     - Email clients were not properly interpreting the character encoding
+   - **Solutions Implemented**:
+     - **Character Set Fix**: Added `$mail->CharSet = 'UTF-8';` to PHPMailer configuration
+     - **Encoding Method**: Added `$mail->Encoding = 'base64';` for reliable character transmission
+     - **Email Header Fix**: Ensures proper UTF-8 encoding in email headers and body
+   - **Files Updated**: 
+     - `email-service.php` - Added UTF-8 charset and base64 encoding to PHPMailer configuration
+   - **Result**: Emojis now display correctly in both HTML and text emails (🎉, 🏨, 🔔)
+   - **Testing**: Verified with `test_booking` action - emails display proper emojis instead of corrupted characters
+   - **Email Locations**: 
+     - Guest confirmation email subject: "🎉 Booking Confirmation"
+     - Admin notification subject: "🔔 NEW BOOKING ALERT"
+     - Email body content: "🏨 Villa Daisy Cantik" displays correctly

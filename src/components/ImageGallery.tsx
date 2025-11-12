@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Copy, Download, Search, Image as ImageIcon, FolderOpen } from 'lucide-react';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '@/config/paths';
 
-// API Configuration
-const API_BASE_URL = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api';
+// Using centralized API configuration
 
 interface ImageItem {
   name: string;

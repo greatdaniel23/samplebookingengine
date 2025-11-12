@@ -35,6 +35,31 @@ const BookingPage = () => {
   const [isBooking, setIsBooking] = useState(false);
   const [apiReachable, setApiReachable] = useState<boolean | null>(null); // null = unchecked
 
+  // Get the image URL from either images array or image_url field  
+  const getPackageImageUrl = (pkg: Package) => {
+    // If pkg.images is an array and has items, use the first one
+    if (pkg.images && Array.isArray(pkg.images) && pkg.images.length > 0) {
+      return pkg.images[0];
+    }
+    
+    // Fallback to image_url field (for backward compatibility)
+    if (pkg.image_url) {
+      return pkg.image_url;
+    }
+    
+    // Default images based on package type
+    const typeImageMap: Record<string, string> = {
+      'Romance': '/images/packages/romantic-escape.jpg',
+      'Business': '/images/packages/business-elite.jpg', 
+      'Family': '/images/ui/placeholder.svg',
+      'Adventure': '/images/ui/placeholder.svg',
+      'Wellness': '/images/ui/placeholder.svg',
+      'Culture': '/images/ui/placeholder.svg'
+    };
+    
+    return typeImageMap[pkg.type] || '/images/ui/placeholder.svg';
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -477,7 +502,7 @@ const BookingPage = () => {
           <Card>
             <CardHeader className="p-0">
               <img 
-                src={selectedPackage ? selectedPackage.image_url : room?.image_url} 
+                src={selectedPackage ? getPackageImageUrl(selectedPackage) : room?.image_url} 
                 alt={selectedPackage ? selectedPackage.name : room?.name} 
                 className="w-full h-[400px] object-cover rounded-t-lg" 
               />

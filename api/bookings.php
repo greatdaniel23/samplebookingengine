@@ -165,14 +165,54 @@ function handlePost($db) {
         ]);
         
         $bookingId = $db->lastInsertId();
-        echo json_encode([
-            'success' => true, 
-            'data' => [
-                'id' => $bookingId,
+        
+        // SEND EMAIL CONFIRMATIONS
+        try {
+            // Prepare booking data for emails
+            $emailBookingData = [
+                'guest_name' => trim($input['first_name'] . ' ' . ($input['last_name'] ?? '')),
+                'guest_email' => $input['email'],
                 'booking_reference' => $bookingReference,
-                'reference' => $bookingReference
-            ]
-        ]);
+                'check_in' => $input['check_in'],
+                'check_out' => $input['check_out'],
+                'guests' => $totalGuests,
+                'adults' => $adults,
+                'children' => $children,
+                'room_id' => $input['room_id'],
+                'total_amount' => number_format($input['total_price'], 2),
+                'special_requests' => $input['special_requests'] ?? '',
+                'phone' => $input['phone'] ?? '',
+                'package_id' => $input['package_id'] ?? null
+            ];
+            
+            // Send emails via email service
+            $emailResponse = sendBookingEmails($emailBookingData);
+            
+            echo json_encode([
+                'success' => true, 
+                'data' => [
+                    'id' => $bookingId,
+                    'booking_reference' => $bookingReference,
+                    'reference' => $bookingReference
+                ],
+                'email_status' => $emailResponse
+            ]);
+            
+        } catch (Exception $emailError) {
+            // Booking was successful, but email failed - still return success
+            echo json_encode([
+                'success' => true, 
+                'data' => [
+                    'id' => $bookingId,
+                    'booking_reference' => $bookingReference,
+                    'reference' => $bookingReference
+                ],
+                'email_status' => [
+                    'success' => false,
+                    'error' => 'Email sending failed: ' . $emailError->getMessage()
+                ]
+            ]);
+        }
         
     } catch (Exception $e) {
         http_response_code(500);
@@ -252,6 +292,79 @@ function handleDelete($db) {
     } catch (Exception $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+}
+
+/**
+ * Send booking confirmation and admin notification emails
+ */
+function sendBookingEmails($bookingData) {
+    try {
+        // Prepare email service request
+        $emailServiceData = [
+            'action' => 'booking_confirmation',
+            'booking_data' => $bookingData
+        ];
+        
+        $results = [];
+        
+        // Send guest confirmation email
+        $guestResult = sendEmailRequest($emailServiceData);
+        $results['guest_email'] = $guestResult;
+        
+        // Send admin notification email
+        $adminEmailData = [
+            'action' => 'admin_notification',
+            'booking_data' => $bookingData
+        ];
+        $adminResult = sendEmailRequest($adminEmailData);
+        $results['admin_email'] = $adminResult;
+        
+        return [
+            'success' => true,
+            'guest_email' => $guestResult,
+            'admin_email' => $adminResult
+        ];
+        
+    } catch (Exception $e) {
+        return [
+            'success' => false,
+            'error' => 'Email service failed: ' . $e->getMessage()
+        ];
+    }
+}
+
+/**
+ * Helper function to send email requests
+ */
+function sendEmailRequest($emailData) {
+    try {
+        $ch = curl_init();
+        // Build the correct URL to the email service
+        $baseUrl = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'];
+        $currentPath = dirname($_SERVER['REQUEST_URI']);
+        $emailServiceUrl = $baseUrl . $currentPath . '/../email-service.php';
+        
+        curl_setopt($ch, CURLOPT_URL, $emailServiceUrl);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($emailData));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        
+        $response = curl_exec($ch);
+        $httpStatus = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($response === false || $httpStatus !== 200) {
+            return ['success' => false, 'error' => 'HTTP request failed'];
+        }
+        
+        $result = json_decode($response, true);
+        return $result ?: ['success' => false, 'error' => 'Invalid response format'];
+        
+    } catch (Exception $e) {
+        return ['success' => false, 'error' => $e->getMessage()];
     }
 }
 ?>

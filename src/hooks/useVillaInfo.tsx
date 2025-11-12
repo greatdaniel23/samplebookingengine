@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '@/config/paths';
 
 export interface VillaInfo {
   id: number;
@@ -49,7 +50,7 @@ export const useVillaInfo = () => {
   const fetchVillaInfo = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api/villa.php');
+      const response = await fetch(`${API_BASE_URL}/villa.php`);
       
       // Check if response is ok
       if (!response.ok) {
@@ -82,7 +83,7 @@ export const useVillaInfo = () => {
 
   const updateVillaInfo = async (data: Partial<VillaInfo>) => {
     try {
-      const response = await fetch('http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api/villa.php', {
+      const response = await fetch(`${API_BASE_URL}/villa.php`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

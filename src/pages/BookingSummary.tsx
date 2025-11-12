@@ -61,6 +61,31 @@ const BookingSummary = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { villaInfo } = useVillaInfo();
+
+  // Get the image URL from either images array or image_url field  
+  const getPackageImageUrl = (pkg: Package) => {
+    // If pkg.images is an array and has items, use the first one
+    if (pkg.images && Array.isArray(pkg.images) && pkg.images.length > 0) {
+      return pkg.images[0];
+    }
+    
+    // Fallback to image_url field (for backward compatibility)
+    if (pkg.image_url) {
+      return pkg.image_url;
+    }
+    
+    // Default images based on package type
+    const typeImageMap: Record<string, string> = {
+      'Romance': '/images/packages/romantic-escape.jpg',
+      'Business': '/images/packages/business-elite.jpg', 
+      'Family': '/images/ui/placeholder.svg',
+      'Adventure': '/images/ui/placeholder.svg',
+      'Wellness': '/images/ui/placeholder.svg',
+      'Culture': '/images/ui/placeholder.svg'
+    };
+    
+    return typeImageMap[pkg.type] || '/images/ui/placeholder.svg';
+  };
   
   // Get URL parameters
   const bookingRef = searchParams.get('ref');
@@ -333,7 +358,7 @@ Total: $${bookingData?.pricing.totalPrice}
               {packageData && (
                 <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
                   <img 
-                    src={packageData.image_url} 
+                    src={getPackageImageUrl(packageData)} 
                     alt={packageData.name}
                     className="w-20 h-20 object-cover rounded-lg"
                   />

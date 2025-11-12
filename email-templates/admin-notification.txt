@@ -1,0 +1,76 @@
+🔔 NEW BOOKING ALERT - {{villa_name}}
+
+URGENT: New booking received requiring review
+
+BOOKING INFORMATION:
+====================
+Booking Reference: {{booking_reference}}
+Status: CONFIRMED & Guest Notified
+Timestamp: {{booking_timestamp}}
+
+GUEST DETAILS:
+==============
+Name: {{guest_name}}
+Email: {{guest_email}}
+Phone: {{guest_phone}}
+
+BOOKING DETAILS:
+================
+Check-in: {{check_in}}
+Check-out: {{check_out}}
+Nights: {{nights_count}}
+Room Type: {{room_name}}
+Total Guests: {{guests}}
+Adults: {{adults_count}}
+Children: {{children_count}}
+
+REVENUE: ${{total_amount}}
+Average per night: ${{avg_per_night}}
+
+{{#if special_requests}}
+SPECIAL REQUESTS:
+=================
+{{special_requests}}
+
+*** ATTENTION: Guest has special requests - please review and prepare accordingly ***
+{{/if}}
+
+NEXT ACTIONS REQUIRED:
+======================
+✓ Guest confirmation email sent successfully
+☐ Review room availability and preparation schedule
+☐ Add to housekeeping calendar for {{check_in}}
+☐ Update revenue dashboard with ${{total_amount}}
+☐ Contact guest if special arrangements needed
+
+SYSTEM INFORMATION:
+===================
+Source: Direct Website Booking
+Days until check-in: {{days_until_checkin}}
+Booking processed: {{booking_timestamp}}
+Guest notification: SENT
+
+QUICK STATS:
+============
+This booking generates ${{total_amount}} in revenue
+Check-in in {{days_until_checkin}} days
+{{nights_count}} nights at ${{avg_per_night}} per night
+
+CONTACT GUEST:
+==============
+Email: {{guest_email}}
+Phone: {{guest_phone}}
+
+ADMIN DASHBOARD:
+================
+View booking details: [Dashboard Link]
+Modify booking: [Edit Link]
+Contact guest: [Contact Link]
+
+---
+{{villa_name}} Admin System
+This is an automated booking notification.
+For system support: admin@villadaisycantik.com
+
+DO NOT REPLY to this email - use admin dashboard for booking management.
+© 2025 {{villa_name}} Admin System. All rights reserved.

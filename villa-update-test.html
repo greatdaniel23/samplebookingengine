@@ -61,7 +61,14 @@
     <div id="results"></div>
     
     <script>
-        const API_BASE = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api';
+        // Environment-aware API configuration
+        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+        const API_BASE = isProduction 
+            ? 'https://api.rumahdaisycantik.com' 
+            : 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api';
+        
+        console.log('🔧 Test Environment:', isProduction ? 'Production' : 'Development');
+        console.log('📡 API Base:', API_BASE);
         
         function addResult(title, success, data) {
             const resultsDiv = document.getElementById('results');
