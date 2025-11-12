@@ -1,0 +1,67 @@
+Dear {{guest_name}},
+
+🎉 BOOKING CONFIRMATION - {{villa_name}}
+
+Thank you for choosing {{villa_name}}! Your booking has been confirmed.
+
+BOOKING DETAILS:
+================
+Booking Reference: {{booking_reference}}
+Guest Name: {{guest_name}}
+Email: {{guest_email}}
+Phone: {{guest_phone}}
+
+CHECK-IN/OUT:
+=============
+Check-in: {{check_in}} (3:00 PM)
+Check-out: {{check_out}} (11:00 AM)
+Nights: {{nights_count}}
+
+ACCOMMODATION:
+==============
+Room Type: {{room_name}}
+Guests: {{guests}} guest(s)
+Adults: {{adults_count}}
+Children: {{children_count}}
+
+TOTAL AMOUNT: ${{total_amount}}
+
+{{#if special_requests}}
+SPECIAL REQUESTS:
+=================
+{{special_requests}}
+{{/if}}
+
+CONTACT INFORMATION:
+====================
+{{villa_name}}
+Email: info@villadaisycantik.com
+Phone: +62 123 456 7890
+Website: www.villadaisycantik.com
+Address: Luxury Villa District, Bali, Indonesia
+
+WHAT TO EXPECT:
+===============
+✓ Check-in time: 3:00 PM
+✓ Check-out time: 11:00 AM
+✓ Free WiFi throughout the property
+✓ Complimentary breakfast included
+✓ 24/7 concierge service
+
+IMPORTANT NOTES:
+================
+- Please bring valid ID for check-in
+- Late check-out may be available upon request
+- Contact us for any special arrangements
+- Smoking is not permitted inside the villa
+
+We look forward to hosting you at {{villa_name}}!
+
+If you have any questions, please contact us at info@villadaisycantik.com
+
+Best regards,
+The {{villa_name}} Team
+
+---
+This is an automated confirmation email. Please do not reply to this email.
+© 2025 {{villa_name}}. All rights reserved.

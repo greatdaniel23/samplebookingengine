@@ -3,8 +3,12 @@
  * Replaces localStorage with REST API calls
  */
 
-const API_BASE_URL = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api';
-const ADMIN_API_BASE_URL = 'http://localhost:8080/admin/api';
+import { API_BASE_URL, paths } from '../config/paths.ts';
+
+// Using centralized API configuration from paths.ts
+// Development: Uses Vite proxy to http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api
+// Production: Uses https://api.rumahdaisycantik.com
+const ADMIN_API_BASE_URL = `${API_BASE_URL}/admin`; // Relative to main API base
 
 class ApiService {
   // Rooms API
