@@ -1,6 +1,6 @@
-# Enhanced Database System Complete ✅
+# Database Status & Calendar Integration Update ✅
 
-The booking engine database has been successfully upgraded to an enhanced system with comprehensive features supporting calendar integration, platform synchronization, and international operations.
+This status file reflects the CURRENT practical database in use plus new calendar sync additions (external_blocks). Marketing-heavy legacy sections trimmed for clarity.
 
 ## 📊 Enhanced Database Summary
 
@@ -8,21 +8,18 @@ The booking engine database has been successfully upgraded to an enhanced system
 ### **System Version**: Enhanced v2.0
 ### **Last Updated**: November 11, 2025
 
-### **Core Tables** (5 tables):
-- ✅ **rooms** - Enhanced with SEO fields, detailed amenities, policies
-- ✅ **packages** - Complete packages with inclusions, terms, SEO optimization  
-- ✅ **bookings** - 30 international bookings from 15+ countries
-- ✅ **villa_info** - Complete property information with social media
-- ✅ **admin_users** - Administrative access with role management
+### Core Tables (From `database/schema.sql`)
+- ✅ rooms – base room inventory
+- ✅ bookings – booking records (status enum: pending, confirmed, cancelled)
+- ✅ admin_users – admin authentication
+- ✅ villa_info – villa meta information
 
-### **Advanced Features** (12 additional tables):
-- ✅ **calendar_settings** - iCal export and sync configuration
-- ✅ **platform_integrations** - Airbnb, Booking.com, VRBO sync
-- ✅ **payment_gateways** - Stripe, PayPal integration
-- ✅ **booking_analytics** - Revenue and occupancy tracking
-- ✅ **api_access_logs** - System monitoring and analytics
-- ✅ **seo_data** - Search engine optimization
-- ✅ And 6 more specialized tables for complete functionality
+Packages table: (not present in schema.sql) – future addition if package system persists.
+
+### New Calendar Import Table (Migration)
+- ✅ external_blocks – inbound external calendar ranges (Airbnb prototype). See `database/migrate_external_blocks.sql`.
+
+Not yet implemented tables previously listed (calendar_settings, platform_integrations, etc.) are roadmap items – removed from active status.
 
 ---
 
@@ -46,14 +43,12 @@ The booking engine database has been successfully upgraded to an enhanced system
 
 ---
 
-## 🌍 International Bookings Database
+## 🌍 Bookings Snapshot (Demo Data Example)
+If demo data seeded: ~30 mixed international bookings spanning upcoming months. Actual counts vary by environment.
 
-**Total Bookings**: 30 realistic international bookings
-- **Confirmed**: 27 bookings  
-- **Pending**: 3 bookings
-- **Countries**: 15+ countries represented
-- **Date Range**: November 2025 - May 2026
-- **Revenue**: $39,000+ in total bookings
+Status Model (Manual Confirmation):
+- New insert now defaults to pending (updated controller logic).
+- Admin sets confirmed after review; cancelled releases internal availability.
 
 ### **Featured International Guests**:
 1. **Emma Thompson** 🇬🇧 - Deluxe Suite (Nov 20-23, 2025) - $1,349
@@ -106,82 +101,53 @@ The booking engine database has been successfully upgraded to an enhanced system
 
 ---
 
-## 📅 Calendar Integration Features
-
-### **iCal Export System** ✅
-- **Endpoint**: `/api/ical.php` - Standard iCal format (RFC 5545)
-- **Integration**: Google Calendar, Outlook, Apple Calendar compatible
-- **Features**: All 30 bookings exported with complete guest details
-
-### **Platform Synchronization** ✅
-- **Airbnb**: Automatic calendar sync configured
-- **Booking.com**: Real-time availability updates  
-- **VRBO**: Bi-directional calendar synchronization
-- **Expedia**: Rate and availability management
+## 📅 Calendar Integration Update
+Outbound (Push): `/api/ical.php` – exports bookings (pending exported as TENTATIVE if allowed).
+Inbound (Pull): `/api/ical_import_airbnb.php` – imports Airbnb feed; writes to `external_blocks` for automatic blocking.
+Enforcement: Booking creation/update rejects overlaps with both internal bookings and external_blocks.
+Config: `api/config/calendar.php` controls pending export & override behavior.
 
 ---
 
-## 🌐 Enhanced Access Points
-
-- **phpMyAdmin**: http://localhost/phpmyadmin
-- **API Base**: http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api/
-- **iCal Export**: http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api/ical.php
-- **Frontend**: http://localhost:5173 (Vite dev server)
-
----
-
-## 🚀 Production Ready Features
-
-### **Immediate Capabilities**:
-1. ✅ **Calendar Sync** - Export bookings to any calendar system
-2. ✅ **International Operations** - Multi-country guest management
-3. ✅ **Package Bookings** - Complete package system with terms
-4. ✅ **Analytics Ready** - Revenue and occupancy tracking infrastructure
-5. ✅ **SEO Optimized** - All content optimized for search engines
-
-### **Next Steps**:
-1. **Start Frontend**: Run `npm run dev` to start the React application  
-2. **Platform Integration**: Connect Airbnb/Booking.com APIs
-3. **Payment Processing**: Enable Stripe/PayPal payment gateways
-4. **Production Deploy**: Move to live hosting environment
+## 🔗 Access Points (Local Dev Examples)
+- phpMyAdmin: http://localhost/phpmyadmin
+- API Base: http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api/
+- iCal Export: http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api/ical.php?action=calendar&format=ics
+- iCal Subscribe: http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api/ical.php?action=subscribe
 
 ---
 
-## 📁 Enhanced Database Files
+## ✅ Current Capabilities
+1. Automatic external block enforcement (Airbnb) – prevents double booking.
+2. Outbound iCal subscription feed.
+3. Manual admin confirmation workflow (pending → confirmed → cancelled).
+4. Basic room & villa info tables.
 
-### **Installation Scripts** (PowerShell Method):
-- `enhanced-install-complete.sql` - Core tables with initial data (5 tables)
-- `enhanced-install-part2.sql` - Advanced features (12 additional tables)  
-- `enhanced-dummy-data-complete.sql` - 30 international bookings
-- `enhanced-dummy-data-part2.sql` - Configuration and settings data
-- `migrate-to-enhanced.sql` - Migration from basic to enhanced
-- `enhanced-schema.sql` - Complete schema documentation
-
-### **Legacy Files** (preserved):
-- `install.sql` - Original basic installation
-- `schema.sql` - Basic schema  
-- `packages.sql` - Package system foundation
+## ▶ Roadmap Items (Not Active Yet)
+- Multi-source imports (Booking.com, VRBO).
+- Analytics tables (booking_analytics, revenue metrics).
+- Payment gateway integration.
+- Platform integration tables.
 
 ---
 
-## 🏗️ Enhanced Database Architecture
+## 📁 Key Database Files
+- `database/schema.sql` – Base schema (rooms, bookings, admin_users, villa_info).
+- `database/migrate_external_blocks.sql` – Adds `external_blocks` table.
+- `api/config/calendar.php` – Calendar behavior flags.
+- (Optional) `database/install.sql` – Legacy basic installer.
 
-### **Total Tables**: 17 comprehensive tables
+---
 
-**Core System** (5 tables):
-- `rooms`, `packages`, `bookings`, `villa_info`, `admin_users`
+## 🏗️ Active Schema Snapshot
+Tables presently in use:
+- rooms
+- bookings
+- admin_users
+- villa_info
+- external_blocks (new import layer)
 
-**Calendar Integration** (3 tables):  
-- `calendar_settings`, `calendar_subscriptions`, `availability_blocks`
-
-**Platform Integration** (3 tables):
-- `platform_integrations`, `platform_sync_history`, `payment_gateways`
-
-**System Management** (4 tables):
-- `system_config`, `booking_notifications`, `api_access_logs`, `seo_data`
-
-**Analytics & Reporting** (2 tables):
-- `booking_analytics`, `guest_preferences`
+Planned future tables will be documented when implemented.
 
 ---
 
@@ -189,14 +155,15 @@ The booking engine database has been successfully upgraded to an enhanced system
 
 | Component | Status | Records | Last Verified |
 |-----------|--------|---------|---------------|
-| **Database Installation** | ✅ Complete | 17 tables | Nov 11, 2025 |
-| **International Bookings** | ✅ Complete | 30 bookings | Nov 11, 2025 |
+| **Database Installation** | ✅ Base Complete | 4+1 tables | Nov 14, 2025 |
+| **International Bookings (Demo)** | ✅ Seeded (if loaded) | ~30 bookings | Nov 14, 2025 |
 | **Room System** | ✅ Enhanced | 5 rooms | Nov 11, 2025 |
-| **Package System** | ✅ Complete | 5 packages | Nov 11, 2025 |
-| **Calendar Integration** | ✅ Active | iCal export | Nov 11, 2025 |
-| **API Endpoints** | ✅ Working | All tested | Nov 11, 2025 |
-| **Platform Sync Ready** | ✅ Configured | 4 platforms | Nov 11, 2025 |
+| **Calendar Integration** | ✅ Active | Push + import blocks | Nov 14, 2025 |
+| **API Endpoints** | ✅ Working | Core tested | Nov 14, 2025 |
+| **External Blocks Enforcement** | ✅ Active | Airbnb source | Nov 14, 2025 |
 
-Your **Enhanced Booking Engine Database** is now fully operational with comprehensive international support! 🚀
+This reflects the real, lean operational schema rather than aspirational enhanced marketing version.
+
+Database operational with lean core + calendar sync safety. 🚀
 
 **For complete technical details, see**: `DATABASE_ENHANCED_STATUS.md`

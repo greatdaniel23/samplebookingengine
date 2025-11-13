@@ -1,8 +1,8 @@
 # System Checkpoint Documentation
-**Date**: November 12, 2025  
+**Date**: November 13, 2025  
 **Project**: Villa Booking Engine  
 **Database**: Enhanced v2.0 (17 tables)  
-**Status**: ✅ FULLY OPERATIONAL - All Critical Issues Resolved
+**Status**: 🔧 PRODUCTION DEPLOYED - Admin Dashboard URL Configuration Issues
 
 ---
 
@@ -12,6 +12,15 @@ This document evaluates the current system's capabilities for two critical funct
 
 1. **Customer Data Management** - Can the system handle customer bookings and store data?
 2. **Admin Management System** - Can administrators manage rooms, packages, pricing, etc.?
+
+## 🚨 **CURRENT PRODUCTION ISSUE (November 13, 2025)**
+
+### **Admin Dashboard URL Configuration Problem**
+- **Issue**: Admin dashboard calling wrong API URL `https://booking.rumahdaisycantik.com/api/villa.php` (404)
+- **Correct URL**: `https://api.rumahdaisycantik.com/villa.php` (working - Status 200)
+- **Root Cause**: Fallback URL logic in admin-dashboard.html bypassing config.js
+- **Status**: ⚠️ **CRITICAL** - Admin dashboard save functions not working on production
+- **Impact**: Business Details and Villa Info sections cannot save changes
 
 ---
 
@@ -671,3 +680,67 @@ All critical issues have been resolved and the system is operating at full capac
      - Guest confirmation email subject: "🎉 Booking Confirmation"
      - Admin notification subject: "🔔 NEW BOOKING ALERT"
      - Email body content: "🏨 Villa Daisy Cantik" displays correctly
+
+### **Admin Dashboard URL Configuration Issue Identified** ⚠️ (November 13, 2025)
+15. **Admin Dashboard Calling Wrong API URL on Production**
+   - **Issue**: Admin dashboard making API calls to `https://booking.rumahdaisycantik.com/api/villa.php` (404 error)
+   - **Correct URL**: `https://api.rumahdaisycantik.com/villa.php` (working - Status 200 OK)
+   - **Root Cause**: Fallback URL logic in admin-dashboard.html: `const apiUrl = window.getApiUrl ? window.getApiUrl('villa.php') : '/api/villa.php';`
+   - **Investigation**: 
+     - API endpoint is working: `https://api.rumahdaisycantik.com/villa.php` returns proper JSON response
+     - config.js is loaded correctly with `PRODUCTION_BASE_URL: 'https://api.rumahdaisycantik.com'`
+     - Problem is fallback URL `/api/villa.php` being used instead of config.js function
+     - Browser shows: "Request URL: https://booking.rumahdaisycantik.com/api/villa.php" (404 Not Found)
+   - **Solutions Implemented**:
+     - **Removed Fallback URLs**: Eliminated problematic fallback `/api/villa.php` in all villa API calls
+     - **Added Configuration Validation**: Added checks to ensure config.js loads before making API calls
+     - **Enhanced Error Handling**: Added clear error messages if config.js fails to load
+     - **Added Debug Logging**: Console logs show exactly which URL is being called
+   - **Files Updated**: 
+     - `admin-dashboard.html` - Fixed all villa.php API calls in Business Details and Villa Info sections
+     - Added configuration validation and debug logging
+   - **Status**: ⚠️ **NEEDS UPLOAD** - Updated admin-dashboard.html needs to be uploaded to production
+   - **Testing Required**: After upload, verify admin dashboard calls correct API URL
+
+---
+
+## 🌐 **PRODUCTION DEPLOYMENT STATUS (November 13, 2025)**
+
+### **Live Environment Status**
+- **Frontend**: https://booking.rumahdaisycantik.com ✅ **OPERATIONAL**
+- **API Backend**: https://api.rumahdaisycantik.com ✅ **OPERATIONAL**
+- **Database**: Production MySQL database ✅ **OPERATIONAL**
+- **Email Service**: PHPMailer with Gmail SMTP ✅ **OPERATIONAL**
+- **Admin Dashboard**: ⚠️ **NEEDS UPDATE** - URL configuration fix required
+
+### **API Endpoint Verification (November 13, 2025)**
+```bash
+✅ https://api.rumahdaisycantik.com/villa.php - Status: 200 OK
+   Response: {"success":true,"data":{"name":"Villa Daisy Cantik - ADMIN TEST"}}
+
+❌ https://api.rumahdaisycantik.com/api/villa.php - Status: 404 Not Found
+❌ https://booking.rumahdaisycantik.com/api/villa.php - Status: 404 Not Found
+```
+
+### **Configuration Verification**
+```javascript
+// Production config.js - ✅ CORRECT
+CONFIG.API.ENVIRONMENT: 'production'
+CONFIG.API.PRODUCTION_BASE_URL: 'https://api.rumahdaisycantik.com'
+getApiUrl('villa.php') should return: 'https://api.rumahdaisycantik.com/villa.php'
+```
+
+### **Immediate Action Required**
+1. **Upload Updated admin-dashboard.html** to production server
+2. **Clear browser cache** when testing admin dashboard
+3. **Verify API calls** use correct URLs via browser developer tools
+4. **Test admin functionality** - Business Details and Villa Info save operations
+
+### **System Components Status**
+- ✅ **Customer Booking Flow**: Fully operational
+- ✅ **Package Management**: All 14 package issues resolved  
+- ✅ **Email Notifications**: UTF-8 encoding fixed, emojis working
+- ✅ **Database Integration**: All CRUD operations functional
+- ⚠️ **Admin Dashboard**: URL configuration fix pending upload
+- ✅ **API Endpoints**: All endpoints responding correctly
+- ✅ **Production Infrastructure**: Hosting and domains properly configured

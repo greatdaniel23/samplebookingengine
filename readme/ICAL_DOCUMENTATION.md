@@ -1,58 +1,36 @@
-# 📅 iCAL INTEGRATION DOCUMENTATION
-**Villa Booking Engine - Complete iCal Implementation Guide**
+# 📅 iCal Integration (Simplified Practical Guide)
+**Villa Booking Engine – Calendar Sync Overview**
 
-**Last Updated**: November 12, 2025  
-**System Status**: ✅ **PRODUCTION READY** (95% Complete)  
-**Integration Status**: Fully operational with recent system improvements  
-**Achievement**: Part of comprehensive package system overhaul with 11 critical fixes applied
+**Last Updated**: November 14, 2025  
+**Focus**: Clear steps (push & pull), endpoints, formats, next actions.
 
 ---
 
-## 🎯 **iCAL SYSTEM OVERVIEW** ✅ **PRODUCTION READY**
+## 1. What is iCal / ICS?
+iCal (.ics) is a plain text file format listing events. Calendar apps (Google, Outlook, Apple) and booking platforms (Airbnb, Booking.com) periodically download or subscribe to an iCal URL to know which dates are booked or blocked.
 
-The Villa Booking Engine provides comprehensive iCal (Internet Calendar) integration that allows:
-- 📤 **Export Bookings**: Download .ics files for any calendar app (✅ **Tested & Functional**)
-- 🔗 **Live Calendar Sync**: Subscribe to real-time booking updates (✅ **Operational**)
-- 🌍 **Universal Compatibility**: Works with Google Calendar, Outlook, Apple Calendar, Airbnb, VRBO (✅ **Validated**)
-- 📊 **Advanced Filtering**: Export specific booking statuses, date ranges, rooms (✅ **Enhanced**)
-- 🔄 **Auto-Updates**: Subscribed calendars update automatically (✅ **Real-time Sync**)
-- 🔐 **Production Security**: Secure endpoints with proper CORS and error handling
+### 2. Two Directions (Push vs Pull)
+| Direction | What it does | Status |
+|-----------|--------------|--------|
+| A. Push (Our → External) | External platforms block dates from our bookings | Implemented |
+| B. Pull (External → Our) | We block dates that appear in external calendars | Airbnb prototype (import) |
 
-### ✨ **Core Capabilities** ✅ **ALL PRODUCTION READY**
-- **📤 Calendar Export**: Download bookings as standard .ics files (✅ **Tested with 30+ bookings**)
-- **🔗 Live Synchronization**: Real-time calendar subscription URLs (✅ **Validated endpoints**)
-- **🌐 Platform Integration**: Compatible with all major calendar and booking platforms (✅ **Universal support**)
-- **📱 Multi-Device Support**: Works on desktop, mobile, and web applications (✅ **Cross-platform tested**)
-- **🔄 Automatic Updates**: Live sync keeps calendars up-to-date (✅ **Real-time data flow**)
-- **🎯 Filtered Exports**: Export by booking status (all, confirmed, pending, etc.) (✅ **Advanced filtering**)
-- **🚀 Recent Integration**: Seamlessly integrated with enhanced booking system and package management
+Supported now (push): Google, Apple, Outlook, Airbnb, Booking.com, VRBO – any RFC 5545 compliant client. Incoming (pull/import): Airbnb implemented via import endpoint, others planned.
 
-### 🏢 Platform Compatibility ✅ **PRODUCTION VALIDATED**
-- **Google Calendar** - Full integration support (✅ **Tested and working**)
-- **Microsoft Outlook** - Web and desktop versions (✅ **Validated across versions**)
-- **Apple Calendar** - Mac, iPhone, iPad support (✅ **Cross-device compatibility**)
-- **Airbnb** - External calendar import (✅ **Booking platform sync**)
-- **Booking.com** - Calendar synchronization (✅ **Channel manager ready**)
-- **VRBO/Expedia** - Availability sync (✅ **Multi-platform support**)
-- **Any iCal-compatible application** (✅ **Universal RFC 5545 compliance**)
+Recent highlights:
+- Added Airbnb import proxy + importer (`ical_proxy.php`, `ical_import_airbnb.php`).
+- Added external blocks schema (`external_blocks.sql`).
+- Simplified production-only config for iCal endpoints.
 
-### 🎉 **Recent System Integration Achievements** (November 12, 2025)
-- ✅ **Package System Integration**: iCal exports now include package booking details
-- ✅ **Enhanced Data Integrity**: Calendar events reflect current booking system improvements
-- ✅ **Error-Free Operation**: Eliminated calendar generation errors with null safety patterns
-- ✅ **Database Consistency**: Perfect synchronization with enhanced booking system (17 tables)
-- ✅ **Real-time Updates**: Calendar changes reflect immediately with recent API improvements
-
-## API Endpoints ✅ **PRODUCTION READY**
-
-### Base URL (Corrected for Current System)
+## 3. Core Endpoints
+Base production path (dev example below uses local):
 ```
 http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api/ical.php
 ```
 
 ### Available Actions ✅ **ALL OPERATIONAL**
 
-#### 1. Get Subscription URLs ✅ **TESTED & WORKING**
+### 3.1 Get Subscription URLs (Push)
 ```http
 GET /ical.php?action=subscribe
 ```
@@ -76,17 +54,16 @@ GET /ical.php?action=subscribe
 }
 ```
 
-#### 2. Export Calendar (.ics format) ✅ **PRODUCTION VALIDATED**
+### 3.2 Export Calendar (.ics)
 ```http
 GET /ical.php?action=calendar&format=ics
 ```
 
-**Enhanced Parameters** (All Functional):
-- `status`: Filter by booking status (all, confirmed, pending, cancelled, checked_in, checked_out)
-- `from_date`: Start date filter (YYYY-MM-DD)
-- `to_date`: End date filter (YYYY-MM-DD)
-- `room_id`: Filter by specific room (optional)
-- `package_id`: Filter by package bookings (✅ **NEW - Package Integration**)
+Parameters:
+- `status` (all|confirmed|pending|cancelled|checked_in|checked_out)
+- `from_date` / `to_date` (YYYY-MM-DD)
+- `room_id` (optional)
+- `package_id` (optional)
 
 **Response Details:** 
 - Content-Type: `text/calendar; charset=utf-8`
@@ -95,7 +72,14 @@ GET /ical.php?action=calendar&format=ics
 - **Package Integration**: Calendar events include package booking details
 - **Enhanced Formatting**: Professional event descriptions with booking references
 
-#### 3. Get Calendar Data (JSON format) ✅ **ENHANCED**
+#### Manual Confirmation Model (No Payment Gateway)
+- New bookings are not auto-confirmed; they enter `pending` state and require admin approval.
+- To avoid double bookings during review, you can:
+  - Export both `confirmed` and `pending` bookings in the ICS so external platforms block immediately (pending emitted as `STATUS:TENTATIVE`).
+  - Or export only `confirmed` by adding `status=confirmed` to the URL if you prefer to block externally only after admin approval.
+- Platforms like Airbnb often block on any VEVENT range regardless of STATUS; verify behavior with your channels.
+
+### 3.3 Export Calendar (JSON)
 ```http
 GET /ical.php?action=calendar&format=json
 ```
@@ -122,9 +106,45 @@ GET /ical.php?action=calendar&format=json
 }
 ```
 
-## Implementation ✅ **PRODUCTION ARCHITECTURE**
+## 4. Airbnb Import (Pull)
+Prototype flow:
+1. User provides Airbnb iCal URL (format: `https://www.airbnb.com/calendar/ical/<id>.ics?s=<token>`)
+2. Parse events (VEVENT blocks)
+3. Store as blocking ranges in `external_blocks` (start_date inclusive, end_date exclusive)
 
-### Backend (PHP) ✅ **FULLY OPERATIONAL**
+Tools added:
+- `api/ical_proxy.php` – quick JSON parse (no persistence)
+- `api/ical_import_airbnb.php?source=<airbnb_url>` – imports / upserts blocks
+- `database/external_blocks.sql` – schema for external blocks
+- `airbnb-ical-test.html` – manual test UI
+
+Next step (not yet done): integrate `external_blocks` into availability checks when serving search or booking.
+
+Basic block overlap SQL:
+```sql
+SELECT 1 FROM external_blocks
+WHERE DATE(?) >= start_date AND DATE(?) < end_date
+AND source = 'airbnb'
+LIMIT 1;
+```
+Use this in booking validation.
+
+Data stored (per event): uid, summary, description, start_date, end_date, last_seen, raw_event JSON.
+
+Edge cases:
+- DTEND is exclusive (block last night = DTEND - 1 day)
+- Missing UID → fallback hash (sha1 of start+end+source)
+- Very long blocks → treat as continuous; do not expand to daily rows.
+
+Security: Strict regex limiting source URL to Airbnb pattern; consider tokens later.
+
+---
+## 5. Event Format (Outbound Push)
+
+Backend summary:
+- `iCalGenerator` builds RFC 5545 feed.
+- Each booking → VEVENT with STATUS + SUMMARY + DESCRIPTION.
+- Outbound feed intentionally minimal (no payment data).
 
 The iCal system consists of enhanced components:
 
@@ -134,7 +154,9 @@ The iCal system consists of enhanced components:
 4. **Enhanced Security** - CORS headers, input validation, and error boundaries (✅ **Production security**)
 5. **Package Integration** - Full support for package booking calendar events (✅ **Recent achievement**)
 
-### Frontend Integration ✅ **COMPREHENSIVE UI**
+Frontend summary:
+- Admin dashboard exposes quick actions & modal for subscription URLs.
+- Test page for Airbnb import demonstration.
 
 #### Admin Dashboard (Enhanced)
 - **Export Buttons**: Direct download of calendar files (✅ **One-click downloads**)
@@ -154,7 +176,7 @@ The iCal system consists of enhanced components:
 - ✅ **Enhanced UI/UX**: Professional calendar interface with responsive design
 - ✅ **Real-time Updates**: Calendar changes reflect immediately across all interfaces
 
-### JavaScript Service Usage ✅ **PRODUCTION PATTERNS**
+### 6. Example (Programmatic Fetch)
 
 ```typescript
 import { calendarService } from '../services/calendarService';
@@ -192,7 +214,7 @@ await calendarService.exportPackageCalendar(packageId);
 const validation = await calendarService.validateIntegration();
 ```
 
-### TypeScript Interfaces (Enhanced)
+Interfaces (simplified):
 
 ```typescript
 interface CalendarExportOptions {
@@ -213,9 +235,9 @@ interface CalendarResponse {
 }
 ```
 
-## Platform Integration Guides
+## 7. Platform Integration Quick Steps
 
-### 🗓️ Google Calendar
+### Google Calendar
 
 1. Open Google Calendar in your browser
 2. Click the "+" button next to "Other calendars"
@@ -226,7 +248,7 @@ interface CalendarResponse {
 
 **Pro Tip:** Set up email notifications in Google Calendar for booking reminders.
 
-### 📧 Microsoft Outlook
+### Outlook
 
 #### Web Version:
 1. Open Outlook Calendar online
@@ -242,7 +264,7 @@ interface CalendarResponse {
 4. Paste the **Standard Calendar URL**
 5. Click "OK"
 
-### 🍎 Apple Calendar
+### Apple Calendar
 
 #### Mac:
 1. Open Calendar app
@@ -258,7 +280,7 @@ interface CalendarResponse {
 4. Configure sync settings
 5. Save
 
-### 🏠 Airbnb Integration
+### Airbnb (Push)
 
 1. Log into your Airbnb host account
 2. Navigate to your listing
@@ -271,7 +293,7 @@ interface CalendarResponse {
 
 **Result:** Your villa bookings will automatically block dates in Airbnb, preventing double bookings.
 
-### 🌐 Booking.com Integration
+### Booking.com / VRBO / Others
 
 1. Log into Booking.com extranet
 2. Go to Property → Calendar & Pricing
@@ -289,9 +311,9 @@ interface CalendarResponse {
 5. Add the **Standard Calendar URL**
 6. Enable sync to prevent double bookings
 
-## iCal Format Details ✅ **PRODUCTION STANDARD**
+## 8. iCal Format Essentials
 
-### Enhanced Event Structure (RFC 5545 Compliant)
+Example VEVENT (simplified):
 Each booking generates a comprehensive iCal VEVENT with:
 
 ```ical
@@ -320,7 +342,7 @@ LAST-MODIFIED:20251112T103000Z
 END:VEVENT
 ```
 
-### Enhanced Field Mapping (Production Features):
+Field notes:
 - **UID**: Unique identifier with booking reference (BK-XXXXX@villa-daisy-cantik.com)
 - **DTSTART/DTEND**: ISO 8601 compliant check-in and check-out dates
 - **SUMMARY**: Enhanced format including package information for better visibility
@@ -338,16 +360,20 @@ END:VEVENT
 - **ORGANIZER**: Villa contact email for direct communication
 - **CREATED/LAST-MODIFIED**: Timestamp tracking for synchronization
 
-### Package Integration Enhancements ✅ **NEW FEATURES**
+Package notes:
+- Package details appended in DESCRIPTION when present.
+- SUMMARY kept short to avoid truncation in some calendar apps.
 - **Package Details**: Full package information included in event descriptions
 - **Pricing Breakdown**: Complete cost structure with package pricing
 - **Duration Tracking**: Package duration and nightly rate calculations
 - **Room Assignment**: Automatic room assignment based on package selection
 - **Enhanced Categories**: Package bookings tagged with PACKAGE category
 
-## Testing ✅ **COMPREHENSIVE VALIDATION**
+## 9. Testing Checklist
 
-### Test Page (Enhanced Interface)
+Test pages:
+- `ical-test.html` (export + subscribe)
+- `airbnb-ical-test.html` (import parse)
 Access the comprehensive test interface:
 ```
 http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/ical-test.html
@@ -362,7 +388,11 @@ http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/ical-test.h
 - **Filter Testing**: Test all filtering options (status, dates, rooms, packages) (✅ **Advanced filtering**)
 - **Real-time Validation**: Live testing with current database data (✅ **Production data testing**)
 
-### Production Testing Protocol ✅ **VALIDATED**
+Suggested test flow:
+1. Create booking → export calendar → verify in Google.
+2. Add subscription → modify booking → wait for refresh.
+3. Import Airbnb feed → verify rows in `external_blocks`.
+4. (Future) Attempt booking on blocked date → expect rejection.
 
 #### 1. **Export Test** (✅ **PASSED**)
 - Download .ics file with current 30+ bookings
@@ -388,14 +418,14 @@ http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/ical-test.h
 - Test VRBO availability sync (✅ **Platform ready**)
 - Confirm double-booking prevention across platforms
 
-### Performance Testing Results ✅ **PRODUCTION METRICS**
+Performance (approximate dev metrics): generation <500ms for moderate dataset.
 - **Calendar Generation**: <500ms for 30+ bookings
 - **API Response Time**: <200ms average
 - **Memory Usage**: Optimized for production loads
 - **Error Rate**: 0% with proper error handling
 - **Sync Reliability**: 100% success rate in testing
 
-## Troubleshooting
+## 10. Troubleshooting
 
 ### Common Issues
 
@@ -422,7 +452,7 @@ http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/ical-test.h
 3. **Verify data**: Ensure bookings exist in database
 4. **Test export**: Try downloading .ics file manually
 
-## Security Considerations ✅ **PRODUCTION SECURITY**
+## 11. Security & Privacy
 
 ### Public Access (Controlled & Secure)
 - iCal URLs are publicly accessible (by design for calendar sync)
@@ -454,7 +484,7 @@ http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/ical-test.h
 - ✅ **Audit Trail**: Calendar access can be logged for security monitoring
 - ✅ **Data Minimization**: Only essential booking information included in exports
 
-## Performance ✅ **PRODUCTION OPTIMIZED**
+## 12. Performance & Scalability (Summary)
 
 ### Current Optimization (Tested & Validated)
 - **Calendar generation**: Optimized for typical booking volumes (✅ **<500ms for 30+ bookings**)
@@ -485,7 +515,20 @@ http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/ical-test.h
 - ✅ **Error Recovery**: Fast failure handling without system impact
 - ✅ **Resource Management**: Proper cleanup of database connections and memory
 
-## Future Enhancements 🚀 **ROADMAP FOR SCALE**
+## 13. Roadmap
+Short term:
+- Integrate external_blocks into availability checks
+- Multi-source imports (Booking.com, VRBO)
+- Cron task for regular imports
+- Optional signed feed URLs
+
+Medium:
+- Merge internal + external into unified availability service
+- Webhook triggers for instant propagation
+
+Long term:
+- Channel manager abstraction layer
+- Analytics dashboard (feed health, sync latency)
 
 ### Planned Features (Next Phase)
 - **🔐 Enhanced Authentication**: Optional password protection for calendar URLs with token-based access
@@ -516,7 +559,13 @@ http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/ical-test.h
 ### Enterprise Readiness Score: **85%**
 The current iCal system has strong foundations for enterprise-level enhancements with minimal architectural changes required for scaling to larger operations.
 
-## Conclusion ✅ **PRODUCTION EXCELLENCE ACHIEVED**
+## 14. Summary
+Push (outbound) is stable and usable now.
+Pull (inbound) for Airbnb exists at prototype level (data captured; not yet applied to availability logic).
+Next value step: enforce external blocks at booking time + schedule automated refresh.
+
+---
+## 15. Related Docs
 
 The iCal integration provides a **professional, standards-compliant calendar system** that seamlessly connects your Villa Booking Engine with external platforms. This comprehensive solution prevents double bookings, provides real-time availability updates, and offers guests and platform partners accurate booking information with enhanced package support.
 
@@ -563,7 +612,4 @@ The iCal system is **production-ready and essential for modern villa management*
 
 ---
 
-*Last Updated: November 12, 2025*  
-*Status: ✅ **PRODUCTION READY** - iCal Integration Excellence*  
-*Achievement: Complete calendar system with enhanced package support and universal platform compatibility*  
-*Integration: Fully operational with 95% production-ready Villa Booking Engine*
+*This simplified version replaces previous marketing-heavy format for clarity.*

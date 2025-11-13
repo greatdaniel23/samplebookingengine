@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Deployment Checklist - Rumah Daisy Cantik</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .checklist-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .completed { border-color: #4CAF50; background: #f1f8e9; }
+        .pending { border-color: #ff9800; background: #fff3e0; }
+        .critical { border-color: #f44336; background: #ffebee; }
+        
+        .check-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #ddd;
+        }
+        .check-item.done { border-left-color: #4CAF50; }
+        .check-item.pending { border-left-color: #ff9800; }
+        .check-item.critical { border-left-color: #f44336; }
+        
+        .check-box {
+            margin-right: 15px;
+            font-size: 18px;
+        }
+        
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #1976D2; }
+        button.test { background: #4CAF50; }
+        button.test:hover { background: #45a049; }
+        
+        h1 { color: #333; text-align: center; }
+        h2 { color: #666; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h3 { color: #444; margin-top: 0; }
+        
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-done { background: #4CAF50; color: white; }
+        .status-pending { background: #ff9800; color: white; }
+        .status-critical { background: #f44336; color: white; }
+        
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            display: none;
+        }
+        .test-success { background: #e8f5e8; border: 1px solid #4CAF50; }
+        .test-error { background: #ffebee; border: 1px solid #f44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Production Deployment Checklist</h1>
+        <p><strong>Villa Booking Engine - Final Deployment Verification</strong></p>
+        <p><strong>Date:</strong> November 13, 2025</p>
+        
+        <!-- COMPLETED STEPS -->
+        <div class="checklist-section completed">
+            <h3>✅ COMPLETED STEPS</h3>
+            <div class="check-item done">
+                <span class="check-box">✅</span>
+                <div>
+                    <strong>Database Connection Fixed</strong><br>
+                    <small>Correct credentials configured in api/config/database.php</small>
+                </div>
+            </div>
+            <div class="check-item done">
+                <span class="check-box">✅</span>
+                <div>
+                    <strong>Database Import Complete</strong><br>
+                    <small>Manual database import with all tables and data</small>
+                </div>
+            </div>
+            <div class="check-item done">
+                <span class="check-box">✅</span>
+                <div>
+                    <strong>Frontend Built & Deployed</strong><br>
+                    <small>npm run build completed and dist files moved to hosting</small>
+                </div>
+            </div>
+            <div class="check-item done">
+                <span class="check-box">✅</span>
+                <div>
+                    <strong>API Deployed</strong><br>
+                    <small>API folder moved to api subdomain</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- CRITICAL TESTS -->
+        <div class="checklist-section critical">
+            <h3>🚨 CRITICAL TESTS REQUIRED</h3>
+            
+            <div class="check-item critical">
+                <span class="check-box">⚠️</span>
+                <div>
+                    <strong>Test Main Booking Application</strong><br>
+                    <small>Verify all pages load and functionality works</small><br>
+                    <button class="test" onclick="testBookingApp()">Test Booking App</button>
+                    <div id="booking-result" class="test-result"></div>
+                </div>
+            </div>
+            
+            <div class="check-item critical">
+                <span class="check-box">⚠️</span>
+                <div>
+                    <strong>Test All API Endpoints</strong><br>
+                    <small>Verify database connections and data retrieval</small><br>
+                    <button class="test" onclick="testAllAPIs()">Test All APIs</button>
+                    <div id="api-result" class="test-result"></div>
+                </div>
+            </div>
+            
+            <div class="check-item critical">
+                <span class="check-box">⚠️</span>
+                <div>
+                    <strong>Test Booking Submission</strong><br>
+                    <small>Make a test booking to verify complete flow</small><br>
+                    <button class="test" onclick="testBookingFlow()">Test Booking Flow</button>
+                    <div id="booking-flow-result" class="test-result"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- IMPORTANT SETUP -->
+        <div class="checklist-section pending">
+            <h3>📧 EMAIL SYSTEM SETUP</h3>
+            
+            <div class="check-item pending">
+                <span class="check-box">📧</span>
+                <div>
+                    <strong>Email Service Configuration</strong><br>
+                    <small>Ensure email-service.php is properly configured</small><br>
+                    <button onclick="testEmailService()">Test Email Service</button>
+                    <div id="email-result" class="test-result"></div>
+                </div>
+            </div>
+            
+            <div class="check-item pending">
+                <span class="check-box">📧</span>
+                <div>
+                    <strong>SMTP Configuration</strong><br>
+                    <small>Gmail SMTP settings for booking confirmations</small><br>
+                    <button onclick="checkEmailConfig()">Check Email Config</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILE STRUCTURE -->
+        <div class="checklist-section pending">
+            <h3>📁 FILE STRUCTURE VERIFICATION</h3>
+            
+            <div class="check-item pending">
+                <span class="check-box">📁</span>
+                <div>
+                    <strong>Image Directories</strong><br>
+                    <small>Verify /public/images/ folders exist and are writable</small><br>
+                    <button onclick="checkImageDirs()">Check Image Directories</button>
+                    <div id="image-dirs-result" class="test-result"></div>
+                </div>
+            </div>
+            
+            <div class="check-item pending">
+                <span class="check-box">📁</span>
+                <div>
+                    <strong>File Permissions</strong><br>
+                    <small>Ensure proper file permissions for uploads</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- FINAL VERIFICATION -->
+        <div class="checklist-section">
+            <h3>🎯 FINAL VERIFICATION</h3>
+            
+            <div class="check-item">
+                <span class="check-box">🎯</span>
+                <div>
+                    <strong>End-to-End User Journey</strong><br>
+                    <small>Complete customer booking experience test</small>
+                </div>
+            </div>
+            
+            <div class="check-item">
+                <span class="check-box">🎯</span>
+                <div>
+                    <strong>Admin Panel Access</strong><br>
+                    <small>Verify admin login and management functions</small>
+                </div>
+            </div>
+            
+            <div class="check-item">
+                <span class="check-box">🎯</span>
+                <div>
+                    <strong>Mobile Responsiveness</strong><br>
+                    <small>Test on mobile devices and tablets</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <div class="checklist-section">
+            <h3>🚀 QUICK ACTIONS</h3>
+            <button onclick="runAllTests()" style="background: #4CAF50; font-size: 16px; padding: 15px 30px;">🧪 Run All Tests</button>
+            <button onclick="window.open('https://booking.rumahdaisycantik.com', '_blank')">🏨 Open Booking App</button>
+            <button onclick="window.open('https://api.rumahdaisycantik.com/test-connection.html', '_blank')">🔧 Open API Tests</button>
+        </div>
+
+        <!-- CONTACT INFO -->
+        <div class="checklist-section">
+            <h3>📞 PRODUCTION URLS</h3>
+            <p><strong>Main Booking Site:</strong> <a href="https://booking.rumahdaisycantik.com" target="_blank">https://booking.rumahdaisycantik.com</a></p>
+            <p><strong>API Endpoint:</strong> <a href="https://api.rumahdaisycantik.com" target="_blank">https://api.rumahdaisycantik.com</a></p>
+            <p><strong>API Test Tool:</strong> <a href="https://api.rumahdaisycantik.com/test-connection.html" target="_blank">https://api.rumahdaisycantik.com/test-connection.html</a></p>
+        </div>
+    </div>
+
+    <script>
+        async function testBookingApp() {
+            const resultDiv = document.getElementById('booking-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'test-result';
+            resultDiv.textContent = 'Testing booking application...';
+            
+            try {
+                const response = await fetch('https://booking.rumahdaisycantik.com/');
+                if (response.ok) {
+                    resultDiv.className = 'test-result test-success';
+                    resultDiv.textContent = '✅ SUCCESS: Booking app loads correctly!\nStatus: ' + response.status + '\nReady for customers.';
+                } else {
+                    resultDiv.className = 'test-result test-error';
+                    resultDiv.textContent = '❌ ERROR: Booking app failed to load\nStatus: ' + response.status;
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result test-error';
+                resultDiv.textContent = '❌ ERROR: Cannot reach booking app\n' + error.message;
+            }
+        }
+        
+        async function testAllAPIs() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'test-result';
+            resultDiv.textContent = 'Testing all API endpoints...';
+            
+            const endpoints = ['villa', 'rooms', 'packages', 'bookings'];
+            let successCount = 0;
+            let results = [];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`https://api.rumahdaisycantik.com/${endpoint}.php`);
+                    if (response.ok) {
+                        successCount++;
+                        results.push(`✅ ${endpoint}.php - OK`);
+                    } else {
+                        results.push(`❌ ${endpoint}.php - ERROR (${response.status})`);
+                    }
+                } catch (error) {
+                    results.push(`❌ ${endpoint}.php - FAILED (${error.message})`);
+                }
+            }
+            
+            if (successCount === endpoints.length) {
+                resultDiv.className = 'test-result test-success';
+                resultDiv.textContent = `✅ ALL APIs WORKING (${successCount}/${endpoints.length})\n\n` + results.join('\n');
+            } else {
+                resultDiv.className = 'test-result test-error';
+                resultDiv.textContent = `⚠️ SOME ISSUES (${successCount}/${endpoints.length})\n\n` + results.join('\n');
+            }
+        }
+        
+        async function testBookingFlow() {
+            const resultDiv = document.getElementById('booking-flow-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'test-result';
+            resultDiv.textContent = 'Testing booking flow...';
+            
+            // This would require a more complex test - for now, just check if booking app loads
+            try {
+                const response = await fetch('https://booking.rumahdaisycantik.com/');
+                if (response.ok) {
+                    resultDiv.className = 'test-result test-success';
+                    resultDiv.textContent = '✅ Booking app accessible\n\nMANUAL TEST REQUIRED:\n1. Go to booking app\n2. Select room/package\n3. Fill booking form\n4. Submit booking\n5. Check email confirmation';
+                } else {
+                    resultDiv.className = 'test-result test-error';
+                    resultDiv.textContent = '❌ Cannot access booking app for testing';
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result test-error';
+                resultDiv.textContent = '❌ ERROR: ' + error.message;
+            }
+        }
+        
+        async function testEmailService() {
+            const resultDiv = document.getElementById('email-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'test-result';
+            resultDiv.textContent = 'Testing email service...';
+            
+            try {
+                // Try to reach the email service
+                const response = await fetch('https://booking.rumahdaisycantik.com/email-service.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'test' })
+                });
+                
+                if (response.ok) {
+                    resultDiv.className = 'test-result test-success';
+                    resultDiv.textContent = '✅ Email service accessible\nStatus: ' + response.status + '\n\nTest email functionality by making a booking.';
+                } else {
+                    resultDiv.className = 'test-result test-error';
+                    resultDiv.textContent = '❌ Email service error\nStatus: ' + response.status + '\n\nCheck if email-service.php exists on booking domain.';
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result test-error';
+                resultDiv.textContent = '❌ Cannot reach email service\n' + error.message + '\n\nMake sure email-service.php is deployed to booking domain.';
+            }
+        }
+        
+        function checkEmailConfig() {
+            alert('MANUAL CHECK REQUIRED:\n\n1. Verify email-service.php exists on booking domain\n2. Check Gmail SMTP credentials\n3. Test by making a booking\n4. Verify confirmation emails are sent');
+        }
+        
+        async function checkImageDirs() {
+            const resultDiv = document.getElementById('image-dirs-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'test-result';
+            resultDiv.textContent = 'Checking image directories...';
+            
+            // Basic check - try to access an image path
+            try {
+                const response = await fetch('https://booking.rumahdaisycantik.com/public/images/');
+                resultDiv.className = 'test-result test-success';
+                resultDiv.textContent = '✅ Image directory accessible\n\nMANUAL VERIFICATION NEEDED:\n- Check /public/images/packages/\n- Check /public/images/rooms/\n- Check /public/images/hero/\n- Ensure folders are writable (755 permissions)';
+            } catch (error) {
+                resultDiv.className = 'test-result test-error';
+                resultDiv.textContent = '⚠️ Cannot verify image directories\n\nMANUAL CHECK REQUIRED:\nEnsure these folders exist and are writable:\n- /public/images/packages/\n- /public/images/rooms/\n- /public/images/hero/';
+            }
+        }
+        
+        async function runAllTests() {
+            await testBookingApp();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testAllAPIs();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testEmailService();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await checkImageDirs();
+        }
+    </script>
+</body>
+</html>

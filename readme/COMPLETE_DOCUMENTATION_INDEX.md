@@ -7,7 +7,11 @@
 
 This comprehensive documentation covers all path target points, system integrations, and technical specifications for the Villa Booking Engine. Use this index to navigate to specific documentation areas.
 
-**Latest Updates (November 12, 2025)**:
+**Latest Updates (November 14, 2025)**:
+- ✅ **Calendar System Foundation Complete** - Unified calendar dashboard with external blocks integration
+- ✅ **External Blocks API** - New endpoint for managing external calendar data (Airbnb/VRBO sync)
+- ✅ **CalendarDashboard Component** - React component for unified booking/external block visualization
+- ✅ **Enhanced Calendar Service** - Merged internal bookings + external blocks with color coding
 - ✅ Package filtering system resolved - Admin changes now sync instantly with customer interface
 - ✅ Complete constants documentation with 200+ constants across 30+ categories  
 - ✅ Hook architecture cleanup - Removed duplicate usePackages files
@@ -70,6 +74,7 @@ This comprehensive documentation covers all path target points, system integrati
 | Document | Purpose | Status |
 |----------|---------|--------|
 | **`CALENDAR_DOCUMENTATION.md`** | Calendar system guide | ✅ Complete |
+| **`CALENDAR_DB_STRATEGY.md`** | Database-backed calendar strategy | ✅ NEW - Complete |
 | **`ICAL_DOCUMENTATION.md`** | iCal integration guide | ✅ Comprehensive |
 | **`ical-test.html`** | iCal testing interface | ✅ Available |
 
@@ -106,6 +111,7 @@ This comprehensive documentation covers all path target points, system integrati
 
 // Component Paths
 src/components/CalendarIntegration.tsx    → Calendar export UI
+src/components/CalendarDashboard.tsx      → ✨ NEW - Unified calendar with external blocks
 src/components/BookingSteps.tsx           → Booking process
 src/components/RoomCard.tsx               → Room display
 src/components/PackageCard.tsx            → Package display with filtering
@@ -131,6 +137,7 @@ GET  /api/villa.php                       → Villa information
 # Calendar Integration
 GET  /api/ical.php?action=calendar        → iCal export
 GET  /api/ical.php?action=subscribe       → Subscription URLs
+GET  /api/external_blocks.php             → ✨ NEW - External calendar blocks data
 
 # Admin APIs
 POST /api/admin/auth.php                  → Admin authentication
@@ -165,13 +172,16 @@ database/clear-dummy-data.sql             → Production cleanup
 ### **Frontend Calendar Integration**
 ```typescript
 // Calendar Components
-src/components/CalendarIntegration.tsx    → Main calendar UI
-src/services/calendarService.ts           → Calendar API service
+src/components/CalendarIntegration.tsx    → Main calendar UI (export/subscription)
+src/components/CalendarDashboard.tsx      → ✨ NEW - Unified calendar dashboard
+src/services/calendarService.ts           → Enhanced calendar API service
 
 // Calendar Features  
 exportCalendar()                          → Download .ics files
 getSubscriptionUrls()                     → Get sync URLs
 getCalendarData()                         → JSON calendar data
+fetchUnifiedCalendar()                    → ✨ NEW - Merged bookings + external blocks
+buildCalendarDateMap()                    → ✨ NEW - Date-based visualization helper
 ```
 
 ### **Backend Calendar APIs**
@@ -180,6 +190,8 @@ getCalendarData()                         → JSON calendar data
 /api/ical.php?action=calendar&format=ics → Download calendar
 /api/ical.php?action=subscribe            → Get subscription URLs
 /api/ical.php?action=calendar&format=json → JSON calendar data
+/api/external_blocks.php?source=airbnb   → ✨ NEW - External blocks by source
+/api/external_blocks.php?from=2025-01-01&to=2025-12-31 → ✨ NEW - Date range filtering
 
 # Platform Integration URLs
 webcal://localhost/.../ical.php          → Apple Calendar sync
@@ -240,14 +252,16 @@ CDN:       https://cdn.villadaisycantik.com/images/
 ## 📊 **SYSTEM STATUS SUMMARY**
 
 ### **✅ Production Ready Components**
-- **Database Structure**: 100% Complete
+- **Database Structure**: 100% Complete + external_blocks table
 - **Room System**: 5 room types with real pricing
 - **Package System**: 5 packages with realistic pricing + ACTIVE filtering system
-- **API Endpoints**: All functional and tested
+- **API Endpoints**: All functional and tested + external blocks endpoint
 - **Calendar Export**: iCal integration complete
-- **Frontend Components**: React UI fully developed
+- **Calendar Dashboard**: ✨ NEW - Unified booking/external block visualization
+- **Frontend Components**: React UI fully developed + calendar dashboard
 - **Package Filtering**: Admin-to-customer sync working perfectly
 - **Hook Architecture**: Clean single-file pattern (no conflicts)
+- **External Block Integration**: Database-backed calendar strategy implemented
 
 ### **⚠️ Demo/Development Components**
 - **Villa Profile**: Villa Daisy Cantik demo (needs customization)
@@ -263,7 +277,12 @@ CDN:       https://cdn.villadaisycantik.com/images/
 - **Constants System**: Fully documented (200+ constants)
 - **Missing**: Only real images and production customization
 
-### **🔧 Recent System Improvements (Nov 12, 2025)**
+### **🔧 Recent System Improvements (Nov 14, 2025)**
+- ✅ **Calendar System Foundation Complete**: Unified calendar dashboard with external blocks integration
+- ✅ **External Blocks API**: New endpoint for external calendar management (`api/external_blocks.php`)
+- ✅ **CalendarDashboard Component**: React component for visualizing bookings + external blocks
+- ✅ **Enhanced Calendar Service**: Merged fetch capabilities with color coding and date mapping
+- ✅ **Database Strategy Implementation**: Complete external_blocks table with overlap enforcement
 - ✅ **Package Filtering Resolved**: Admin status changes now instantly reflect in customer interface
 - ✅ **Package Image Display Resolved**: Package cards now show images correctly on step 1 booking page
 - ✅ **Hook Architecture Cleanup**: Removed duplicate usePackages.ts file causing import conflicts  
@@ -344,7 +363,7 @@ rsync -av dist/ user@server:/var/www/html/
 - ✅ Package image display bug resolved - package cards now show images correctly on step 1 booking page
 - ✅ Enhanced API and admin dashboard with proper image handling capabilities
 
-**Last Updated**: November 12, 2025  
+**Last Updated**: November 14, 2025  
 **Environment**: Local XAMPP Development  
-**Database**: booking_engine with comprehensive dummy data  
-**Status**: ✅ All critical systems operational with recent package filtering improvements
+**Database**: booking_engine with comprehensive dummy data + external_blocks table  
+**Status**: ✅ All critical systems operational + calendar foundation complete

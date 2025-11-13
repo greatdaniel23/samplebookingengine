@@ -50,12 +50,34 @@
 <body>
     <div id="admin-root"></div>
 
-    <!-- Removed local/debug configuration logging (production hardening) -->
+    <script>
+        // Debug configuration loading
+        console.log('🔧 Admin Dashboard Configuration Check:');
+        console.log('CONFIG exists:', typeof CONFIG !== 'undefined');
+        console.log('getApiUrl exists:', typeof getApiUrl === 'function');
+        console.log('getApiBaseUrl exists:', typeof getApiBaseUrl === 'function');
+        
+        if (typeof getApiUrl === 'function') {
+            console.log('✅ Villa API URL will be:', getApiUrl('villa.php'));
+        } else {
+            console.error('❌ getApiUrl function missing - config.js not loaded properly');
+        }
+        
+        if (typeof CONFIG !== 'undefined') {
+            console.log('Environment:', CONFIG.API.ENVIRONMENT);
+            console.log('Production Base URL:', CONFIG.API.PRODUCTION_BASE_URL);
+        }
+    </script>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
         
-        // Configuration initialized by config.js (production-only)
+        // Initialize configuration and log current settings
+        if (typeof logConfig === 'function') {
+            logConfig();
+        }
+        
+        // API configuration now handled by config.js functions
 
         // Simple auth check
         function useAuth() {
@@ -373,7 +395,7 @@
                     }
                 } catch (error) {
                     console.error('Error loading bookings:', error);
-                    alert('Error loading bookings. Server error: ' + error.message);
+                    alert('Error loading bookings. Please check if XAMPP is running. Error: ' + error.message);
                 } finally {
                     setLoading(false);
                 }
@@ -1111,7 +1133,7 @@
                     }
                 } catch (error) {
                     console.error('Error loading rooms:', error);
-                    alert('Error loading rooms. Server error: ' + error.message);
+                    alert('Error loading rooms. Please check if XAMPP is running. Error: ' + error.message);
                 } finally {
                     setLoading(false);
                 }
@@ -1234,7 +1256,7 @@
                     resetForm();
                 } catch (error) {
                     console.error('Error saving room:', error);
-                    alert('Error saving room. Server error.');
+                    alert('Error saving room. Please check if XAMPP is running.');
                 }
             };
 
@@ -1258,7 +1280,7 @@
                         }
                     } catch (error) {
                         console.error('Error deleting room:', error);
-                        alert('Error deleting room. Server error.');
+                        alert('Error deleting room. Please check if XAMPP is running.');
                     }
                 }
             };
@@ -1287,7 +1309,7 @@
                     }
                 } catch (error) {
                     console.error('Error updating room availability:', error);
-                    alert('Error updating room availability. Server error.');
+                    alert('Error updating room availability. Please check if XAMPP is running.');
                 }
             };
 
@@ -1594,7 +1616,7 @@
                     }
                 } catch (error) {
                     console.error('Error loading packages:', error);
-                    alert('Error loading packages. Server error: ' + error.message);
+                    alert('Error loading packages. Please check if XAMPP is running. Error: ' + error.message);
                 } finally {
                     setLoading(false);
                 }
@@ -1736,7 +1758,7 @@
                     resetForm();
                 } catch (error) {
                     console.error('Error saving package:', error);
-                    alert('Error saving package. Server error.');
+                    alert('Error saving package. Please check if XAMPP is running.');
                 }
             };
 
@@ -1760,7 +1782,7 @@
                         }
                     } catch (error) {
                         console.error('Error deleting package:', error);
-                        alert('Error deleting package. Server error.');
+                        alert('Error deleting package. Please check if XAMPP is running.');
                     }
                 }
             };
@@ -1789,7 +1811,7 @@
                     }
                 } catch (error) {
                     console.error('Error updating package status:', error);
-                    alert('Error updating package status. Server error.');
+                    alert('Error updating package status. Please check if XAMPP is running.');
                 }
             };
 

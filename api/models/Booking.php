@@ -100,6 +100,34 @@ class Booking {
         return $result['booking_count'] == 0;
     }
 
+    /**
+     * Check if requested range overlaps any external blocks (e.g., Airbnb)
+     * External blocks apply at property level, not per-room.
+     */
+    public function isBlockedByExternal($check_in, $check_out, $sources = ['airbnb']) {
+        // Build IN clause safely
+        $placeholders = implode(',', array_fill(0, count($sources), '?'));
+        $query = "SELECT 1 FROM external_blocks 
+                  WHERE source IN ($placeholders)
+                    AND ? < end_date 
+                    AND ? > start_date 
+                  LIMIT 1";
+
+        $stmt = $this->conn->prepare($query);
+        // Bind sources
+        $i = 1;
+        foreach ($sources as $src) {
+            $stmt->bindValue($i, $src, PDO::PARAM_STR);
+            $i++;
+        }
+        // Bind dates
+        $stmt->bindValue($i, $check_in, PDO::PARAM_STR);
+        $stmt->bindValue($i + 1, $check_out, PDO::PARAM_STR);
+        $stmt->execute();
+
+        return (bool)$stmt->fetchColumn();
+    }
+
     public function update($id, $data) {
         $query = "UPDATE " . $this->table . " 
                   SET room_id = :room_id, first_name = :first_name, last_name = :last_name, 
