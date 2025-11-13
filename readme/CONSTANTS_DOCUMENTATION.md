@@ -8,6 +8,30 @@ This document catalogs all constants used throughout the booking engine applicat
 
 ## 📂 Configuration Constants
 
+### NEW: Calendar Configuration (`api/config/calendar.php`)
+```php
+return [
+  'include_pending_in_feed' => true,      // Export pending bookings as TENTATIVE events
+  'allow_external_override' => false,     // If true, admin can force booking over external block
+  'external_sources' => ['airbnb'],       // Imported calendar sources
+  'external_retention_months' => 18       // Purge horizon for old external blocks (future job)
+];
+```
+Purpose: Central flags for iCal feed behavior & external block enforcement.
+Usage:
+```php
+$calendarCfg = require __DIR__.'/config/calendar.php';
+if (!$calendarCfg['allow_external_override'] && $bookingModel->isBlockedByExternal($from,$to)) {
+    errorResponse('Dates blocked by external calendar',409);
+}
+```
+Documentation References:
+- `CALENDAR_DB_STRATEGY.md` (Automatic external blocking principle)
+- `ICAL_DOCUMENTATION.md` (Pending vs confirmed export guidance)
+Future Extension:
+- Add `external_sources` entries (e.g. 'booking_com','vrbo') when import endpoints created.
+- Add `feed_cache_ttl_minutes` for ICS caching.
+
 ### 1. API Configuration (`src/config/paths.ts`)
 
 #### Base URLs
@@ -111,7 +135,7 @@ const typeColors = {
 
 ### 4. Calendar Service Constants (`src/services/calendarService.ts`)
 
-#### Export Options
+#### Export Options (Client Side)
 ```typescript
 interface iCalExportOptions {
   status?: 'all' | 'confirmed' | 'pending' | 'cancelled' | 'checked_in' | 'checked_out';
@@ -121,8 +145,12 @@ interface iCalExportOptions {
 }
 ```
 - **Purpose**: Calendar export configuration
-- **Usage**: iCal generation, booking status filtering
+- **Usage**: iCal generation request building & booking status filtering
 - **Dependencies**: Used in `CalendarIntegration.tsx`, admin dashboard
+
+Interaction With Server Flags:
+- Client passes `status=confirmed` to suppress pending if business chooses strict external feed.
+- If omitted, server respects `include_pending_in_feed` to decide whether pending appear.
 
 ## 🎨 UI Component Constants
 

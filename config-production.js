@@ -1,12 +1,20 @@
-// Configuration file for the booking engine - PRODUCTION VERSION ONLY
-// All calls are forced to production API; local/staging logic removed per deployment hardening request.
+// Configuration file for the booking engine - PRODUCTION VERSION
+// This file contains environment-specific settings for https://booking.rumahdaisycantik.com
 
 const CONFIG = {
     // API Configuration
     API: {
-        // Production URL (only active endpoint)
+        // Local development URL (XAMPP)
+        LOCAL_BASE_URL: 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api',
+        
+        // Production URL
         PRODUCTION_BASE_URL: 'https://api.rumahdaisycantik.com',
-        // Environment fixed to production
+        
+        // Staging URL (for testing)
+        STAGING_BASE_URL: 'https://staging.rumahdaisycantik.com/api',
+        
+        // Current environment - PRODUCTION SETTING
+        // Options: 'local', 'staging', 'production'
         ENVIRONMENT: 'production'
     },
     
@@ -75,8 +83,15 @@ const CONFIG = {
 
 // Function to get the current API base URL based on environment
 function getApiBaseUrl() {
-    // Always return production base URL (no environment switching)
-    return CONFIG.API.PRODUCTION_BASE_URL;
+    switch (CONFIG.API.ENVIRONMENT.toLowerCase()) {
+        case 'production':
+            return CONFIG.API.PRODUCTION_BASE_URL;
+        case 'staging':
+            return CONFIG.API.STAGING_BASE_URL;
+        case 'local':
+        default:
+            return CONFIG.API.LOCAL_BASE_URL;
+    }
 }
 
 // Function to get full API endpoint URL
@@ -94,12 +109,21 @@ function getBusinessConfig() {
 
 // Function to log configuration info (for debugging)
 function logConfig() {
-    // Debug disabled in production; function retained for compatibility but does nothing.
-    return;
+    if (CONFIG.APP.DEBUG) {
+        console.log('🔧 Configuration Info:');
+        console.log('Environment:', CONFIG.API.ENVIRONMENT);
+        console.log('API Base URL:', getApiBaseUrl());
+        console.log('App Version:', CONFIG.APP.VERSION);
+        console.log('Villa:', CONFIG.VILLA.NAME);
+    }
 }
 
 // Initialize configuration on load
-// Removed DOMContentLoaded logging (production hardening)
+document.addEventListener('DOMContentLoaded', function() {
+    logConfig();
+    console.log(`🏨 ${CONFIG.VILLA.NAME} - Booking System Loaded`);
+    console.log(`🌐 Environment: ${CONFIG.API.ENVIRONMENT.toUpperCase()}`);
+});
 
 // Export configuration for use in other files
 if (typeof module !== 'undefined' && module.exports) {

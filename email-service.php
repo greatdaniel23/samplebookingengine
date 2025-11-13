@@ -13,9 +13,20 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require 'PHPMailer/src/Exception.php';
-require 'PHPMailer/src/PHPMailer.php';
-require 'PHPMailer/src/SMTP.php';
+// Dynamic PHPMailer path resolution for production compatibility
+$phpmailer_base = __DIR__ . '/PHPMailer/src/';
+
+// Try different possible locations
+if (!file_exists($phpmailer_base . 'PHPMailer.php')) {
+    $phpmailer_base = __DIR__ . '/../PHPMailer/src/';
+}
+if (!file_exists($phpmailer_base . 'PHPMailer.php')) {
+    $phpmailer_base = dirname(__DIR__) . '/PHPMailer/src/';
+}
+
+require_once $phpmailer_base . 'Exception.php';
+require_once $phpmailer_base . 'PHPMailer.php';
+require_once $phpmailer_base . 'SMTP.php';
 
 class VillaEmailService {
     
@@ -350,6 +361,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'admin_notification':
             $result = $emailService->sendAdminNotification($input['booking_data']);
             echo json_encode($result);
+            break;
+            
+        case 'send_booking_confirmation':
+            // Send both guest confirmation and admin notification
+            $guestResult = $emailService->sendBookingConfirmation($input['booking_data']);
+            $adminResult = $emailService->sendAdminNotification($input['booking_data']);
+            
+            echo json_encode([
+                'guest_email' => $guestResult,
+                'admin_email' => $adminResult,
+                'booking_data' => $input['booking_data']
+            ]);
             break;
             
         case 'test_booking':

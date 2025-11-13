@@ -1,5 +1,6 @@
 # 🗺️ PATH TARGET POINTS DOCUMENTATION
 **Villa Booking Engine - Complete Path Reference Guide**
+**Updated:** November 13, 2025 | **Production Status:** ✅ Deployed
 
 ---
 
@@ -17,8 +18,21 @@ frontend-booking-engine-1/
 │   ├── database/                   # Database scripts
 │   └── public/                     # Static assets
 │
+├── � Email System (PHPMailer)
+│   ├── email-service.php           # Email service endpoint
+│   ├── PHPMailer/                  # PHPMailer library
+│   │   └── src/                    # PHPMailer source files
+│   │       ├── PHPMailer.php       # Main PHPMailer class
+│   │       ├── SMTP.php            # SMTP functionality
+│   │       └── Exception.php       # Exception handling
+│   └── email-templates/            # Professional email templates
+│       ├── booking-confirmation.html
+│       ├── booking-confirmation.txt
+│       ├── admin-notification.html
+│       └── admin-notification.txt
+│
 ├── 🗄️ Database (MySQL)
-│   └── booking_engine              # Main database
+│   └── u987654321_booking          # Production database
 │
 └── 📄 Documentation
     ├── Database docs               # DB status and structure
@@ -178,10 +192,17 @@ GET /api/admin/reports.php?type=revenue&period=month
 
 ### **Connection Configuration**
 ```php
-// api/config/database.php
-Host: localhost (XAMPP) / Production MySQL Server
+// api/config/database.php - Production Ready
+Host: localhost
+Database: u987654321_booking  // Production database name
+User: u987654321_user         // Production database user
+Password: Kanibal123!!!        // Production database password
+
+// Development (Local XAMPP)
+Host: localhost
 Database: booking_engine
-User: root (local) / secure_user (production)
+User: root
+Password: (empty)
 ```
 
 ### **Table Structure**
@@ -189,9 +210,9 @@ User: root (local) / secure_user (production)
 |-------|---------|---------|--------|
 | `rooms` | 5 | Room types and pricing | ✅ Production Ready |
 | `packages` | 5 | Package offerings | ✅ Production Ready |
-| `bookings` | 20 | Customer bookings | ⚠️ Dummy Data |
-| `villa_info` | 1 | Property information | ⚠️ Demo Profile |
-| `admin_users` | 4 | Admin accounts | ⚠️ Dummy Accounts |
+| `bookings` | 20 | Customer bookings | ✅ Realistic Dummy Data |
+| `villa_info` | 1 | Property information | ✅ Professional Demo Profile |
+| `admin_users` | 4 | Admin accounts | ✅ Secure Demo Accounts |
 
 ### **Database Connection Points**
 ```php
@@ -213,21 +234,65 @@ $rooms = $apiService->getRooms();
 ```
 public/
 ├── images/
-│   ├── rooms/           # Room photos (empty - needs upload)
-│   ├── packages/        # Package images (empty - needs upload)
+│   ├── rooms/           # Room photos (create directories on production)
+│   ├── packages/        # Package images (create directories on production)
 │   ├── amenities/       # Amenity icons
+│   ├── hero/           # Villa hero images (existing: DSC02126.JPG)
 │   └── ui/             # UI elements
 ├── robots.txt          # SEO configuration
 └── favicon.ico         # Site icon
 ```
 
+### **Email System Files**
+```
+📧 Email Service Structure:
+├── email-service.php           # Main email service endpoint
+├── PHPMailer/                  # PHPMailer library (REQUIRED)
+│   └── src/                    # PHPMailer source files
+│       ├── PHPMailer.php       # 🔥 CRITICAL: Main PHPMailer class
+│       ├── SMTP.php            # 🔥 CRITICAL: SMTP functionality  
+│       └── Exception.php       # 🔥 CRITICAL: Exception handling
+└── email-templates/            # Professional email templates (OPTIONAL)
+    ├── booking-confirmation.html    # Guest confirmation template
+    ├── booking-confirmation.txt     # Plain text version
+    ├── admin-notification.html      # Admin alert template
+    └── admin-notification.txt       # Plain text version
+
+📍 Production Deployment Requirements:
+- Upload email-service.php to: https://booking.rumahdaisycantik.com/
+- Upload PHPMailer/ folder to: https://booking.rumahdaisycantik.com/PHPMailer/
+- Upload email-templates/ to: https://booking.rumahdaisycantik.com/email-templates/
+```
+
 ### **Configuration Files**
 ```
 ├── config.js           # Environment configuration
-├── .env.development    # Development variables
-├── .env.production     # Production variables (create)
+├── .env.development    # Development variables (localhost API)
+├── .env.production     # Production variables (api.rumahdaisycantik.com)
 ├── vite.config.ts      # Build configuration
-└── package.json        # Dependencies
+├── package.json        # Dependencies
+└── api/config/database.php  # Database configuration (production ready)
+```
+
+### **Production Deployment Files**
+```
+🚀 Files uploaded to production:
+📂 booking.rumahdaisycantik.com/
+├── dist/               # Built frontend application
+├── email-service.php   # Email service endpoint (⚠️ NEEDS UPLOAD)
+├── PHPMailer/          # PHPMailer library (⚠️ NEEDS UPLOAD)
+│   └── src/
+│       ├── PHPMailer.php
+│       ├── SMTP.php
+│       └── Exception.php
+└── email-templates/    # Email templates (OPTIONAL)
+
+📂 api.rumahdaisycantik.com/
+├── api/                # Complete API folder
+├── config/             # Database configuration
+├── controllers/        # Business logic
+├── models/             # Data models
+└── utils/              # Helper functions
 ```
 
 ### **Database Scripts**
@@ -279,11 +344,20 @@ POST /api/payments/paypal.php
 
 ### **Email Services**
 ```bash
-# Booking confirmation emails
-POST /api/notify.php
+# Email service endpoint
+POST /email-service.php
 {
-  "type": "booking_confirmation",
-  "booking_id": 123
+  "action": "send_booking_confirmation",
+  "booking_data": { ... }
+}
+
+# Production URL
+POST https://booking.rumahdaisycantik.com/email-service.php
+
+# Test email functionality
+POST /email-service.php
+{
+  "action": "test_booking"
 }
 ```
 
@@ -357,10 +431,11 @@ buildAdminUrl: (path: string) => `${ADMIN_BASE}/${path}`
 - API: `http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api/`
 - Database: `localhost:3306/booking_engine`
 
-### **Production (Example)**
-- Frontend: `https://www.villadaisycantik.com/`
+### **Production (Current)**
+- Frontend: `https://booking.rumahdaisycantik.com/`
 - API: `https://api.rumahdaisycantik.com/`
-- Database: `production-server:3306/booking_engine`
+- Database: `localhost:3306/u987654321_booking`
+- Email Service: `https://booking.rumahdaisycantik.com/email-service.php`
 
 ---
 

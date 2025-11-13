@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Airbnb iCal Test</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-4xl mx-auto py-8 px-4">
+    <h1 class="text-2xl font-bold mb-4">Airbnb iCal Feed Test</h1>
+    <p class="text-sm text-gray-600 mb-6">Use this tool to validate an Airbnb iCal export URL. The request goes through a server-side proxy that parses events into JSON. Only Airbnb calendar URLs matching the security pattern are accepted.</p>
+
+    <div class="bg-white rounded shadow p-6 mb-6 space-y-4">
+      <label class="block text-sm font-medium text-gray-700">Airbnb iCal URL</label>
+      <input id="icalUrl" type="url" class="w-full border rounded px-3 py-2" placeholder="https://www.airbnb.com/calendar/ical/... .ics?s=..." />
+      <button id="testBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Test Feed</button>
+      <p id="status" class="text-sm mt-2"></p>
+    </div>
+
+    <div id="results" class="space-y-4"></div>
+  </div>
+
+<script>
+  async function testFeed() {
+    const urlInput = document.getElementById('icalUrl');
+    const statusEl = document.getElementById('status');
+    const resultsEl = document.getElementById('results');
+    const source = urlInput.value.trim();
+    resultsEl.innerHTML = '';
+    if (!source) {
+      statusEl.textContent = 'Enter a URL first.';
+      statusEl.className = 'text-red-600 text-sm';
+      return;
+    }
+    statusEl.textContent = 'Fetching & parsing...';
+    statusEl.className = 'text-blue-600 text-sm';
+    try {
+      const resp = await fetch(`api/ical_proxy.php?source=${encodeURIComponent(source)}`);
+      const data = await resp.json();
+      if (!data.success) {
+        statusEl.textContent = 'Error: ' + (data.error || 'Unknown');
+        statusEl.className = 'text-red-600 text-sm';
+        return;
+      }
+      statusEl.textContent = `Success: ${data.event_count} events parsed.`;
+      statusEl.className = 'text-green-600 text-sm';
+      // Render events
+      const fragment = document.createDocumentFragment();
+      data.events.forEach(ev => {
+        const card = document.createElement('div');
+        card.className = 'bg-white border rounded p-4 shadow-sm';
+        card.innerHTML = `
+          <div class='flex justify-between mb-2'>
+            <h2 class='font-semibold text-gray-800 text-sm'>${ev.summary || 'No Summary'}</h2>
+            <span class='text-xs text-gray-500'>${ev.uid || ''}</span>
+          </div>
+          <p class='text-xs text-gray-600'><span class='font-medium'>Start:</span> ${ev.start || 'N/A'} | <span class='font-medium'>End:</span> ${ev.end || 'N/A'}</p>
+          ${ev.description ? `<details class='mt-2 text-xs'><summary class='cursor-pointer text-blue-600'>Description</summary><pre class='mt-2 whitespace-pre-wrap text-gray-700'>${ev.description}</pre></details>` : ''}
+        `;
+        fragment.appendChild(card);
+      });
+      resultsEl.appendChild(fragment);
+      if (data.event_count === 0) {
+        const warn = document.createElement('div');
+        warn.className = 'text-yellow-700 bg-yellow-50 border border-yellow-200 rounded p-4 text-sm';
+        warn.textContent = 'No events found. Ensure the Airbnb calendar has upcoming bookings or blocks.';
+        resultsEl.appendChild(warn);
+      }
+    } catch (e) {
+      statusEl.textContent = 'Request failed: ' + e.message;
+      statusEl.className = 'text-red-600 text-sm';
+    }
+  }
+  document.getElementById('testBtn').addEventListener('click', testFeed);
+</script>
+</body>
+</html>

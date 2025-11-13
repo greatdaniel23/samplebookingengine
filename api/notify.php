@@ -1,4 +1,9 @@
 <?php
+/**
+ * Villa Booking Engine - Email Notification Service
+ * Handles booking confirmation emails using the centralized email service
+ */
+
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
@@ -9,168 +14,193 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Email configuration - Update these settings
-$SMTP_HOST = 'smtp.gmail.com';  // Your SMTP server
-$SMTP_PORT = 587;
-$SMTP_USERNAME = 'your-email@gmail.com';  // Your email
-$SMTP_PASSWORD = 'your-app-password';     // Your app password
-$FROM_EMAIL = 'your-email@gmail.com';
-$FROM_NAME = 'Villa Booking System';
-$TO_EMAIL = 'bookings@rumahdaisycantik.com';  // Where booking notifications go
-
 function sendBookingNotification($bookingData) {
-    global $SMTP_HOST, $SMTP_PORT, $SMTP_USERNAME, $SMTP_PASSWORD, $FROM_EMAIL, $FROM_NAME, $TO_EMAIL;
-    
     try {
-        // Create email content
-        $subject = "New Booking Confirmation - " . $bookingData['reference'];
+        // Determine email service URL based on environment
+        $email_service_url = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/email-service.php';
         
-        $message = "
-        <html>
-        <head>
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background-color: #2c5aa0; color: white; padding: 20px; text-align: center; }
-                .content { padding: 20px; background-color: #f9f9f9; }
-                .booking-details { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
-                .detail-row { display: flex; justify-content: space-between; margin: 8px 0; }
-                .label { font-weight: bold; color: #2c5aa0; }
-                .value { color: #333; }
-                .total { background-color: #e8f4f8; padding: 10px; font-size: 18px; font-weight: bold; }
-            </style>
-        </head>
-        <body>
-            <div class='container'>
-                <div class='header'>
-                    <h2>New Booking Received!</h2>
-                    <p>Booking Reference: " . $bookingData['reference'] . "</p>
-                </div>
-                
-                <div class='content'>
-                    <h3>Booking Details</h3>
-                    <div class='booking-details'>
-                        <div class='detail-row'>
-                            <span class='label'>Guest Name:</span>
-                            <span class='value'>" . $bookingData['first_name'] . " " . $bookingData['last_name'] . "</span>
-                        </div>
-                        <div class='detail-row'>
-                            <span class='label'>Email:</span>
-                            <span class='value'>" . $bookingData['email'] . "</span>
-                        </div>
-                        <div class='detail-row'>
-                            <span class='label'>Phone:</span>
-                            <span class='value'>" . $bookingData['phone'] . "</span>
-                        </div>
-                        <div class='detail-row'>
-                            <span class='label'>Check-in:</span>
-                            <span class='value'>" . $bookingData['check_in'] . "</span>
-                        </div>
-                        <div class='detail-row'>
-                            <span class='label'>Check-out:</span>
-                            <span class='value'>" . $bookingData['check_out'] . "</span>
-                        </div>
-                        <div class='detail-row'>
-                            <span class='label'>Guests:</span>
-                            <span class='value'>" . $bookingData['guests'] . "</span>
-                        </div>
-                        <div class='detail-row'>
-                            <span class='label'>Room/Package:</span>
-                            <span class='value'>" . $bookingData['room_id'] . "</span>
-                        </div>
-                        " . (!empty($bookingData['special_requests']) ? "
-                        <div class='detail-row'>
-                            <span class='label'>Special Requests:</span>
-                            <span class='value'>" . $bookingData['special_requests'] . "</span>
-                        </div>
-                        " : "") . "
-                        <div class='detail-row total'>
-                            <span class='label'>Total Amount:</span>
-                            <span class='value'>$" . number_format($bookingData['total_price'], 2) . "</span>
-                        </div>
-                    </div>
-                    
-                    <h3>Next Steps</h3>
-                    <p>1. Contact the guest to confirm payment arrangements</p>
-                    <p>2. Send payment instructions if needed</p>
-                    <p>3. Update booking status in admin dashboard</p>
-                    <p>4. Prepare for guest arrival</p>
-                    
-                    <p style='margin-top: 20px; font-size: 12px; color: #666;'>
-                        This booking was created automatically through your villa booking system.
-                        <br>Booking ID: " . $bookingData['id'] . "
-                        <br>Created: " . date('Y-m-d H:i:s') . "
-                    </p>
-                </div>
-            </div>
-        </body>
-        </html>";
-
-        // Headers
-        $headers = "MIME-Version: 1.0" . "\r\n";
-        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-        $headers .= "From: $FROM_NAME <$FROM_EMAIL>" . "\r\n";
-        $headers .= "Reply-To: $FROM_EMAIL" . "\r\n";
-
-        // Send email using PHP mail() function
-        $success = mail($TO_EMAIL, $subject, $message, $headers);
+        // In production, uncomment this line:
+        // $email_service_url = 'https://booking.rumahdaisycantik.com/email-service.php';
         
-        if ($success) {
-            return ['success' => true, 'message' => 'Booking notification sent successfully'];
+        // Prepare email data in the format expected by email-service.php
+        $email_data = [
+            'action' => 'send_booking_confirmation',
+            'booking_data' => [
+                'booking_reference' => $bookingData['reference'] ?? 'BK-' . date('Ymd') . '-' . rand(1000, 9999),
+                'guest_name' => trim(($bookingData['first_name'] ?? '') . ' ' . ($bookingData['last_name'] ?? '')),
+                'guest_email' => $bookingData['email'] ?? '',
+                'check_in' => $bookingData['check_in'] ?? '',
+                'check_out' => $bookingData['check_out'] ?? '',
+                'room_type' => $bookingData['room_id'] ?? 'Standard Room',
+                'package' => $bookingData['package_name'] ?? 'No Package Selected',
+                'guests' => $bookingData['guests'] ?? 1,
+                'total_amount' => $bookingData['total_price'] ?? 0,
+                'special_requests' => $bookingData['special_requests'] ?? 'None',
+                'phone' => $bookingData['phone'] ?? '',
+                'booking_date' => date('Y-m-d H:i:s'),
+                'nights' => calculateNights($bookingData['check_in'], $bookingData['check_out'])
+            ]
+        ];
+        
+        // Make HTTP request to email service
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => [
+                    'Content-Type: application/json',
+                    'Accept: application/json'
+                ],
+                'content' => json_encode($email_data),
+                'timeout' => 30
+            ]
+        ]);
+        
+        $response = file_get_contents($email_service_url, false, $context);
+        
+        if ($response === false) {
+            return [
+                'success' => false, 
+                'message' => 'Failed to connect to email service',
+                'debug' => 'Could not reach: ' . $email_service_url
+            ];
+        }
+        
+        $result = json_decode($response, true);
+        
+        if (!$result) {
+            return [
+                'success' => false, 
+                'message' => 'Invalid response from email service',
+                'debug' => 'Response: ' . substr($response, 0, 200)
+            ];
+        }
+        
+        // Check if both guest and admin emails were sent successfully
+        $guest_success = isset($result['guest_email']['success']) && $result['guest_email']['success'];
+        $admin_success = isset($result['admin_email']['success']) && $result['admin_email']['success'];
+        
+        if ($guest_success && $admin_success) {
+            return [
+                'success' => true, 
+                'message' => 'Both guest confirmation and admin notification emails sent successfully',
+                'guest_email' => $result['guest_email'],
+                'admin_email' => $result['admin_email']
+            ];
+        } else if ($guest_success) {
+            return [
+                'success' => true, 
+                'message' => 'Guest confirmation sent, admin notification failed',
+                'guest_email' => $result['guest_email'],
+                'admin_email' => $result['admin_email'] ?? ['success' => false]
+            ];
         } else {
-            return ['success' => false, 'message' => 'Failed to send booking notification'];
+            return [
+                'success' => false, 
+                'message' => 'Email sending failed',
+                'guest_email' => $result['guest_email'] ?? ['success' => false],
+                'admin_email' => $result['admin_email'] ?? ['success' => false],
+                'debug' => $result
+            ];
         }
         
     } catch (Exception $e) {
-        return ['success' => false, 'message' => 'Email error: ' . $e->getMessage()];
+        return [
+            'success' => false, 
+            'message' => 'Email service error: ' . $e->getMessage(),
+            'debug' => [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]
+        ];
+    }
+}
+
+function calculateNights($check_in, $check_out) {
+    try {
+        $checkin_date = new DateTime($check_in);
+        $checkout_date = new DateTime($check_out);
+        $interval = $checkin_date->diff($checkout_date);
+        return $interval->days;
+    } catch (Exception $e) {
+        return 1; // Default to 1 night if calculation fails
     }
 }
 
 // Handle POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
+        // Get and validate input
         $input = json_decode(file_get_contents('php://input'), true);
         
         if (!$input) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Invalid JSON data']);
+            echo json_encode([
+                'success' => false, 
+                'error' => 'Invalid JSON data received'
+            ]);
             exit;
         }
         
+        // Log the received data for debugging
+        error_log('Notify.php received data: ' . json_encode($input));
+        
         // Validate required fields
         $required_fields = ['first_name', 'last_name', 'email', 'check_in', 'check_out', 'total_price'];
+        $missing_fields = [];
+        
         foreach ($required_fields as $field) {
-            if (!isset($input[$field]) || empty($input[$field])) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'error' => "Missing required field: $field"]);
-                exit;
+            if (!isset($input[$field]) || (is_string($input[$field]) && trim($input[$field]) === '')) {
+                $missing_fields[] = $field;
             }
+        }
+        
+        if (!empty($missing_fields)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false, 
+                'error' => 'Missing required fields: ' . implode(', ', $missing_fields),
+                'received_data' => array_keys($input)
+            ]);
+            exit;
         }
         
         // Send notification email
         $result = sendBookingNotification($input);
         
-        if ($result['success']) {
-            echo json_encode([
-                'success' => true, 
-                'message' => 'Booking notification sent successfully',
-                'email_sent' => true
-            ]);
-        } else {
-            // Don't fail the booking if email fails
-            echo json_encode([
-                'success' => true, 
-                'message' => 'Booking saved but email notification failed: ' . $result['message'],
-                'email_sent' => false
-            ]);
-        }
+        // Always return success to not block booking, but include email status
+        echo json_encode([
+            'success' => true, 
+            'message' => $result['message'],
+            'email_sent' => $result['success'],
+            'email_details' => $result,
+            'booking_data' => [
+                'reference' => $input['reference'] ?? 'Generated',
+                'guest' => trim(($input['first_name'] ?? '') . ' ' . ($input['last_name'] ?? '')),
+                'email' => $input['email'] ?? ''
+            ]
+        ]);
         
     } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Server error: ' . $e->getMessage()]);
+        // Log the error but don't fail the booking
+        error_log('Notify.php error: ' . $e->getMessage());
+        
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Booking saved but email notification failed: ' . $e->getMessage(),
+            'email_sent' => false,
+            'error_details' => [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]
+        ]);
     }
 } else {
     http_response_code(405);
-    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    echo json_encode([
+        'success' => false, 
+        'error' => 'Method not allowed. POST required.'
+    ]);
 }
 ?>

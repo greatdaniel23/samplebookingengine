@@ -26,9 +26,14 @@ class BookingController {
             errorResponse('Missing required user information');
         }
 
-        // Check availability
+        // Check internal availability (pending + confirmed block; cancelled ignored)
         if (!$this->booking->checkAvailability($input['roomId'], $input['from'], $input['to'])) {
             errorResponse('Room is not available for the selected dates', 409);
+        }
+
+        // Check external imported calendar blocks (e.g., Airbnb)
+        if ($this->booking->isBlockedByExternal($input['from'], $input['to'])) {
+            errorResponse('Dates blocked by external calendar (Airbnb sync)', 409);
         }
 
         // Prepare booking data
@@ -42,7 +47,8 @@ class BookingController {
             'check_out' => $input['to'],
             'guests' => intval($input['guests']),
             'total_amount' => floatval($input['total']),
-            'status' => 'confirmed'
+            // Manual confirmation model: start as pending; admin approves to confirm
+            'status' => 'pending'
         ];
 
         // Create booking
@@ -127,6 +133,11 @@ class BookingController {
                 
                 if (!$this->booking->checkAvailabilityExcept($bookingData['room_id'], $bookingData['check_in'], $bookingData['check_out'], $id)) {
                     errorResponse('Room is not available for the selected dates', 409);
+                    return;
+                }
+                // Also re-check external blocks when dates change
+                if ($this->booking->isBlockedByExternal($bookingData['check_in'], $bookingData['check_out'])) {
+                    errorResponse('Dates blocked by external calendar (Airbnb sync)', 409);
                     return;
                 }
             }

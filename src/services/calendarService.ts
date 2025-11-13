@@ -1,6 +1,27 @@
 // Calendar sync and iCal integration service
 import { paths } from '../config/paths';
 
+// Unified calendar item types (internal bookings + external blocks)
+export interface BookingRange {
+  id: number;
+  check_in: string; // ISO date (YYYY-MM-DD)
+  check_out: string; // ISO date (YYYY-MM-DD)
+  status: string; // pending|confirmed|cancelled|checked_in|checked_out
+  type: 'booking';
+}
+
+export interface ExternalBlockRange {
+  id: number;
+  start_date: string; // ISO date
+  end_date: string;   // ISO date
+  source: string;
+  summary?: string;
+  description?: string;
+  type: 'external';
+}
+
+export type CalendarItem = BookingRange | ExternalBlockRange;
+
 export interface CalendarUrls {
   success: boolean;
   subscribe_url: string;
@@ -25,6 +46,96 @@ class CalendarService {
 
   constructor() {
     this.apiBase = paths.buildApiUrl('');
+  }
+
+  /** Fetch raw bookings (no server-side date filtering yet) */
+  async fetchBookings(): Promise<BookingRange[]> {
+    try {
+      const res = await fetch(`${this.apiBase}bookings.php`);
+      const json = await res.json();
+      if (!json.success) return [];
+      return (json.data || []).map((b: any) => ({
+        id: Number(b.id),
+        check_in: b.check_in,
+        check_out: b.check_out,
+        status: b.status || 'confirmed',
+        type: 'booking' as const
+      }));
+    } catch (e) {
+      console.error('Failed to fetch bookings', e);
+      return [];
+    }
+  }
+
+  /** Fetch external calendar blocks */
+  async fetchExternalBlocks(params: { source?: string; from?: string; to?: string } = {}): Promise<ExternalBlockRange[]> {
+    try {
+      const qs = new URLSearchParams();
+      if (params.source) qs.append('source', params.source);
+      if (params.from) qs.append('from', params.from);
+      if (params.to) qs.append('to', params.to);
+      const res = await fetch(`${this.apiBase}external_blocks.php?${qs.toString()}`);
+      const json = await res.json();
+      if (!json.success) return [];
+      return (json.data || []).map((e: any) => ({
+        id: Number(e.id),
+        start_date: e.start_date,
+        end_date: e.end_date,
+        source: e.source,
+        summary: e.summary,
+        description: e.description,
+        type: 'external' as const
+      }));
+    } catch (e) {
+      console.error('Failed to fetch external blocks', e);
+      return [];
+    }
+  }
+
+  /** Merge bookings + external blocks into unified list */
+  async fetchUnifiedCalendar(options: { source?: string; from?: string; to?: string } = {}): Promise<CalendarItem[]> {
+    const [bookings, external] = await Promise.all([
+      this.fetchBookings(),
+      this.fetchExternalBlocks(options)
+    ]);
+    return [...bookings, ...external];
+  }
+
+  /** Color mapping for unified items */
+  colorFor(item: CalendarItem): string {
+    if (item.type === 'external') return '#dc2626'; // red
+    switch (item.status) {
+      case 'pending': return '#f59e0b';
+      case 'confirmed': return '#16a34a';
+      case 'checked_in': return '#0d9488';
+      case 'checked_out': return '#3b82f6';
+      case 'cancelled': return '#6b7280';
+      default: return '#2563eb';
+    }
+  }
+
+  /** Build date -> items map (end exclusive for ranges) */
+  buildDateRangeMap(items: CalendarItem[]): Record<string, CalendarItem[]> {
+    const map: Record<string, CalendarItem[]> = {};
+    items.forEach(item => {
+      let startStr: string;
+      let endStr: string;
+      if (item.type === 'booking') {
+        startStr = item.check_in;
+        endStr = item.check_out;
+      } else {
+        startStr = item.start_date;
+        endStr = item.end_date;
+      }
+      const start = new Date(startStr + 'T00:00:00');
+      const end = new Date(endStr + 'T00:00:00');
+      for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+        const key = d.toISOString().slice(0, 10);
+        if (!map[key]) map[key] = [];
+        map[key].push(item);
+      }
+    });
+    return map;
   }
 
   /**
@@ -267,3 +378,8 @@ export const getCalendarSubscriptionUrls = () => {
 export const copyCalendarUrlToClipboard = (url: string) => {
   return calendarService.copyToClipboard(url);
 };
+
+// Unified helpers re-export for components
+export const fetchUnifiedCalendar = (opts?: { source?: string; from?: string; to?: string }) => calendarService.fetchUnifiedCalendar(opts || {});
+export const calendarColorFor = (item: CalendarItem) => calendarService.colorFor(item);
+export const buildCalendarDateMap = (items: CalendarItem[]) => calendarService.buildDateRangeMap(items);
