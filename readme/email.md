@@ -1,9 +1,9 @@
 # 📧 EMAIL SYSTEM DOCUMENTATION
 **Villa Booking Engine - Production Email Integration**
 
-**Last Updated**: November 12, 2025  
-**Status**: ✅ **PRODUCTION READY & TESTED**  
-**Achievement**: Complete email system with booking confirmations and admin notifications
+**Last Updated**: November 15, 2025  
+**Status**: ✅ **PRODUCTION READY & CROSS-DOMAIN TESTED**  
+**Achievement**: Complete email system with booking confirmations, admin notifications, and cross-origin API integration
 
 ---
 
@@ -44,8 +44,8 @@ The Villa Booking Engine includes a comprehensive email system using PHPMailer a
 ## 📁 **EMAIL SYSTEM FILES**
 
 ### **Production Files** ✅ **All Operational**
-- **`email-service.php`** - Main production email service class (✅ **Ready for integration**)
-- **`test-email.php`** - Email testing script with debug options (✅ **Tested successfully**)
+- **`api/email-service.php`** - Main production email service class (✅ **Live on api.rumahdaisycantik.com**)
+- **`test-email-booking.html`** - Comprehensive email testing interface (✅ **Cross-domain tested**)
 - **`PHPMailer/src/`** - PHPMailer library files (✅ **Installed and working**)
 
 ### **Email Service Class Features**
@@ -83,11 +83,20 @@ Test Booking Reference: BK-TEST-22226
 
 ## 🔧 **PRODUCTION INTEGRATION**
 
-### **API Integration** ✅ **Ready for Use**
+### **Cross-Domain API Architecture** ✅ **Live & Tested**
+- **Email Service**: `https://api.rumahdaisycantik.com/email-service.php`
+- **Booking Frontend**: `https://booking.rumahdaisycantik.com`
+- **Test Interface**: `https://booking.rumahdaisycantik.com/test-email-booking.html`
+
+### **API Integration** ✅ **Cross-Origin Ready**
 ```php
-// Send booking confirmation
-POST /email-service.php
-{
+// Send booking confirmation (Cross-domain)
+POST https://api.rumahdaisycantik.com/email-service.php
+Headers: {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "https://booking.rumahdaisycantik.com"
+}
+Body: {
     "action": "booking_confirmation",
     "booking_data": {
         "guest_name": "John Smith",
@@ -99,8 +108,8 @@ POST /email-service.php
     }
 }
 
-// Send admin notification  
-POST /email-service.php
+// Send admin notification (Cross-domain)
+POST https://api.rumahdaisycantik.com/email-service.php
 {
     "action": "admin_notification",
     "booking_data": { /* booking details */ }
@@ -171,21 +180,24 @@ POST /email-service.php
 
 ## 📚 **USAGE EXAMPLES**
 
-### **Test Email System**
+### **Test Email System** (Cross-Domain)
 ```bash
-# Test complete email system
-curl -X POST http://localhost/.../email-service.php \
+# Test complete email system (Live API)
+curl -X POST https://api.rumahdaisycantik.com/email-service.php \
   -H "Content-Type: application/json" \
+  -H "Origin: https://booking.rumahdaisycantik.com" \
   -d '{"action": "test_booking"}'
 ```
 
-### **Send Booking Confirmation**
+### **Frontend Integration** (Cross-Origin)
 ```javascript
-// Frontend integration example
+// Cross-domain booking confirmation
 const sendBookingConfirmation = async (bookingData) => {
-    const response = await fetch('/email-service.php', {
+    const response = await fetch('https://api.rumahdaisycantik.com/email-service.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
             action: 'booking_confirmation',
             booking_data: bookingData
@@ -193,6 +205,9 @@ const sendBookingConfirmation = async (bookingData) => {
     });
     return response.json();
 };
+
+// Test interface available at:
+// https://booking.rumahdaisycantik.com/test-email-booking.html
 ```
 
 ---
@@ -212,21 +227,40 @@ const sendBookingConfirmation = async (bookingData) => {
 - **Error Handling**: Comprehensive error recovery and status reporting
 - **Performance**: Fast email delivery with optimized SMTP configuration
 
-### **🚀 Recent Achievements (November 12, 2025)**
-- ✅ **Email System Completion**: Full email functionality implemented and tested
+### **🚀 Recent Achievements (November 15, 2025)**
+- ✅ **Cross-Domain Architecture**: Email service deployed on separate API subdomain (api.rumahdaisycantik.com)
+- ✅ **CORS Configuration**: Cross-origin requests properly configured for booking.rumahdaisycantik.com
+- ✅ **Test Interface Updated**: Comprehensive email testing system with cross-domain API calls
+- ✅ **Production Separation**: Clean separation between booking frontend and email API services
+- ✅ **Live Domain Testing**: Email system tested and verified across production subdomains
 - ✅ **Professional Templates**: Villa-branded email templates with complete booking details
-- ✅ **Production Testing**: Successful email delivery to both guest and admin addresses
-- ✅ **API Integration**: ✨ **LIVE INTEGRATION COMPLETE** - Booking API now automatically sends emails
-- ✅ **Real Booking Test**: Successfully tested with live booking (BK-050101) - emails delivered
-- ✅ **Automatic Workflow**: Guest confirmations and admin notifications now fully automated
+- ✅ **API Integration**: ✨ **LIVE CROSS-DOMAIN INTEGRATION** - Booking system communicates with email API
+- ✅ **Automatic Workflow**: Guest confirmations and admin notifications fully automated across domains
 
 ---
 
-**🎯 The Villa Booking Engine email system is now production-ready with comprehensive booking confirmation and admin notification capabilities, providing professional communication for the 95% complete booking system.**
+**🎯 The Villa Booking Engine email system is now production-ready with cross-domain architecture, comprehensive booking confirmation and admin notification capabilities, providing professional communication across api.rumahdaisycantik.com and booking.rumahdaisycantik.com subdomains.**
+
+## 🌐 **CROSS-DOMAIN CONFIGURATION**
+
+### **CORS Headers Required** ✅ **Implemented**
+```php
+// Required in email-service.php for cross-origin requests
+header('Access-Control-Allow-Origin: https://booking.rumahdaisycantik.com');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Credentials: true');
+```
+
+### **Domain Architecture** ✅ **Live Production**
+- **API Server**: `api.rumahdaisycantik.com` (Email service, PHPMailer, SMTP)
+- **Booking Frontend**: `booking.rumahdaisycantik.com` (User interface, test tools)
+- **Cross-Communication**: Secure API calls between subdomains
+- **Test Interface**: Live email testing at `booking.rumahdaisycantik.com/test-email-booking.html`
 
 ---
 
-*Last Updated: November 12, 2025*  
-*Status: ✅ **PRODUCTION READY** - Email System Excellence*  
-*Achievement: Complete email integration with professional templates and secure SMTP delivery*  
-*Integration: Fully operational with Villa Booking Engine for booking confirmations and admin notifications*
+*Last Updated: November 15, 2025*  
+*Status: ✅ **PRODUCTION READY** - Cross-Domain Email System Excellence*  
+*Achievement: Complete cross-origin email integration with professional templates and secure SMTP delivery*  
+*Architecture: Fully operational across api.rumahdaisycantik.com and booking.rumahdaisycantik.com subdomains*

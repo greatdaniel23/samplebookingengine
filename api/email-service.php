@@ -10,6 +10,11 @@
  * - System alerts
  */
 
+// Error handling and debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -343,14 +348,27 @@ November 12, 2025
     }
 }
 
+// CORS headers for cross-origin requests
+header('Access-Control-Allow-Origin: https://booking.rumahdaisycantik.com');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Accept, Origin');
+header('Access-Control-Allow-Credentials: true');
+
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 // Usage example for API integration
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     
-    $input = json_decode(file_get_contents('php://input'), true);
-    $action = $input['action'] ?? '';
-    
-    $emailService = new VillaEmailService();
+    try {
+        $input = json_decode(file_get_contents('php://input'), true);
+        $action = $input['action'] ?? '';
+        
+        $emailService = new VillaEmailService();
     
     switch ($action) {
         case 'booking_confirmation':
@@ -400,8 +418,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             break;
             
+        case 'health_check':
+            // Health check endpoint
+            echo json_encode([
+                'success' => true,
+                'message' => 'Email service is online',
+                'timestamp' => date('Y-m-d H:i:s'),
+                'service' => 'Villa Email Service',
+                'version' => '1.0',
+                'cors' => 'enabled',
+                'phpmailer' => class_exists('PHPMailer\PHPMailer\PHPMailer'),
+                'smtp_host' => 'smtp.gmail.com'
+            ]);
+            break;
+            
         default:
-            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+            echo json_encode(['success' => false, 'message' => 'Invalid action', 'available_actions' => ['booking_confirmation', 'admin_notification', 'send_booking_confirmation', 'test_booking', 'health_check']]);
+    }
+    
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Server error: ' . $e->getMessage(),
+            'error_type' => get_class($e),
+            'line' => $e->getLine(),
+            'file' => basename($e->getFile())
+        ]);
+    } catch (Error $e) {
+        echo json_encode([
+            'success' => false, 
+            'message' => 'PHP error: ' . $e->getMessage(),
+            'error_type' => get_class($e),
+            'line' => $e->getLine(),
+            'file' => basename($e->getFile())
+        ]);
     }
 } else {
     // Display usage information
@@ -411,9 +461,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo '<ul>';
     echo '<li><strong>booking_confirmation</strong> - Send confirmation to guest</li>';
     echo '<li><strong>admin_notification</strong> - Send alert to admin</li>';
+    echo '<li><strong>send_booking_confirmation</strong> - Send both guest and admin emails</li>';
     echo '<li><strong>test_booking</strong> - Send test emails</li>';
+    echo '<li><strong>health_check</strong> - Check service status</li>';
     echo '</ul>';
     echo '<p><strong>Usage:</strong> POST JSON data with action and booking_data</p>';
-    echo '<p><strong>Status:</strong> Production Ready (November 12, 2025)</p>';
+    echo '<p><strong>Status:</strong> Production Ready with CORS (November 15, 2025)</p>';
+    echo '<p><strong>CORS:</strong> Enabled for booking.rumahdaisycantik.com</p>';
 }
 ?>

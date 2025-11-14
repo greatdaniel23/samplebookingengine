@@ -23,7 +23,7 @@ class Database {
     
     public function __construct() {
         // Production Configuration for rumahdaisycantik.com hosting
-        // URGENT: Replace these placeholder values with your ACTUAL Hostinger database credentials
+        // ✅ CONFIGURED: Production database credentials updated for Hostinger
         
         // Method 1: Environment variables (if .env file exists) - DISABLED, using direct config
         // $this->host = $_ENV['DB_HOST'] ?? 'localhost';
@@ -38,19 +38,18 @@ class Database {
         if ($isLocalhost) {
             // XAMPP Local Development Configuration
             $this->host = 'localhost';
-            $this->db_name = 'villa_booking';      // Local XAMPP database name
+            $this->db_name = 'booking_engine';     // Consistent with project database name
             $this->username = 'root';              // XAMPP default username
             $this->password = '';                  // XAMPP default password (empty)
         } else {
-            // Production Hostinger Configuration
-            $this->host = 'localhost';
-            $this->db_name = 'u987654321_booking';  // Actual database name from cPanel
-            $this->username = 'u987654321_user';    // Actual database username from cPanel
-            $this->password = 'Kanibal123!!!';      // Actual database password from cPanel
+            // Production Hostinger Configuration - CORRECTED CREDENTIALS
+            $this->host = 'localhost';             // Hostinger shared hosting
+            $this->db_name = 'u289291769_booking'; // Database name from cPanel
+            $this->username = 'u289291769_booking'; // Database admin username from cPanel  
+            $this->password = 'Kanibal123!!!';     // Database password from cPanel
         }
         
-        // Debug info (remove after fixing)
-        error_log("DB Config - Host: " . $this->host . ", DB: " . $this->db_name . ", User: " . $this->username);
+        // Configuration complete - ready for production deployment
     }
 
     public function getConnection() {
