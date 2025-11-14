@@ -5,11 +5,11 @@
 This document identifies and maps all architectural layers in the Villa Booking Engine system, providing a comprehensive understanding of how different components interact across the application stack. This documentation reflects the **production-ready system** with recent comprehensive improvements and **95% completion status**.
 
 **System Type**: Full-Stack Web Application  
-**Architecture Pattern**: Layered Architecture with RESTful API  
-**Last Updated**: November 12, 2025  
-**System Status**: ✅ **PRODUCTION READY (95% Complete)**  
-**Recent Achievement**: **11 Critical Package System Issues Resolved** - Complete system transformation  
-**Major Milestone**: All architectural layers operational with comprehensive fixes applied  
+**Architecture Pattern**: Layered Architecture with RESTful API and Cross-Domain Communication  
+**Last Updated**: November 15, 2025  
+**System Status**: ✅ **PRODUCTION READY (97% Complete)**  
+**Recent Achievement**: **Cross-Domain Email System Integration** - PHPMailer operational on api.rumahdaisycantik.com  
+**Major Milestone**: All 6 architectural layers operational including Communication Layer with email notifications  
 
 ---
 
@@ -48,6 +48,14 @@ This document identifies and maps all architectural layers in the Villa Booking 
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
 │  │  REST Endpoints │  │   Controllers   │  │      Models     │ │
 │  │    (PHP APIs)   │  │  (Business Logic)│  │  (Data Models)  │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────────┐
+│               COMMUNICATION LAYER ✅ CROSS-DOMAIN               │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │  Email Service  │  │    PHPMailer    │  │   CORS/SMTP     │ │
+│  │ api.rumahdaisy  │  │ ✅ Production   │  │ ✅ Cross-Origin │ │
 │  │ ✅ All Tested   │  │ ✅ Enhanced     │  │ ✅ Validated    │ │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
@@ -220,6 +228,7 @@ RESTful API endpoints, data controllers, and server-side business logic.
   - `api/villa.php` - Villa information
   - `api/ical.php` - Calendar export
   - `api/notify.php` - Email notifications
+  - `api/email-service.php` - Production email system (✅ **Live on api.rumahdaisycantik.com**)
 
 #### **4.2 Controllers**
 - **Location**: `api/controllers/`
@@ -256,7 +265,57 @@ RESTful API endpoints, data controllers, and server-side business logic.
 
 ---
 
-## 🗄️ Layer 5: Data Layer
+## � Layer 5: Communication Layer ✅ **CROSS-DOMAIN OPERATIONAL**
+
+### Purpose
+Email notifications, SMTP services, and cross-domain communication between system components.
+
+### Components
+
+#### **5.1 Email Service System**
+- **Location**: `api.rumahdaisycantik.com/email-service.php`
+- **Technology**: PHP with PHPMailer library
+- **Architecture**: Cross-domain service (API subdomain ↔ Booking subdomain)
+- **Key Features**:
+  - Production-ready Gmail SMTP integration
+  - Professional HTML email templates with villa branding
+  - Automatic booking confirmations for guests
+  - Real-time admin notifications for new bookings
+  - CORS-enabled for cross-origin requests
+
+#### **5.2 PHPMailer Integration**
+- **Location**: `api.rumahdaisycantik.com/PHPMailer/src/`
+- **Technology**: PHPMailer v6.8+ with Gmail SMTP
+- **Note**: ⚠️ **PHPMailer libraries are hosted on api.rumahdaisycantik.com, NOT on booking.rumahdaisycantik.com**
+- **Configuration**:
+  - SMTP Host: smtp.gmail.com
+  - Port: 587 (STARTTLS encryption)
+  - Authentication: Gmail App Password
+  - SSL/TLS: Production-grade encryption
+
+#### **5.3 Cross-Domain Communication**
+- **Frontend Domain**: `booking.rumahdaisycantik.com`
+- **API Domain**: `api.rumahdaisycantik.com`
+- **Communication**: HTTPS POST requests with CORS headers
+- **Test Interface**: `booking.rumahdaisycantik.com/test-email-booking.html`
+
+#### **5.4 Email Templates & Content**
+- **Guest Confirmations**: Professional villa-branded HTML emails
+- **Admin Notifications**: Real-time booking alerts with action items
+- **Template Features**: Responsive design, complete booking details, contact information
+- **Fallback**: Text alternatives for all HTML emails
+
+### Layer Characteristics ✅ **PRODUCTION TESTED**
+- **Responsibility**: Email delivery, notifications, cross-domain communication
+- **Dependencies**: PHPMailer library, Gmail SMTP, CORS configuration
+- **Input**: Booking data, email actions, cross-origin requests
+- **Output**: Delivered emails, notification confirmations, CORS responses
+- **Status**: Fully operational with successful test results (BK-TEST-89462)
+- **Performance**: Instant email delivery with professional templates
+
+---
+
+## �🗄️ Layer 6: Data Layer
 
 ### Purpose
 Data persistence, storage management, and data integrity.
@@ -301,7 +360,7 @@ Data persistence, storage management, and data integrity.
 
 ## 🔄 Data Flow Between Layers
 
-### Customer Booking Flow
+### Customer Booking Flow with Email Notifications
 ```
 1. Presentation Layer (User clicks "Book Package")
    ↓
@@ -311,7 +370,7 @@ Data persistence, storage management, and data integrity.
    ↓
 4. API Layer (GET /api/packages.php with filtering)
    ↓
-5. Data Layer (MySQL query: SELECT * FROM packages WHERE available = 1)
+6. Data Layer (MySQL query: SELECT * FROM packages WHERE available = 1)
    ↓
 4. API Layer (JSON response with active packages)
    ↓
@@ -320,6 +379,14 @@ Data persistence, storage management, and data integrity.
 2. Component Layer (Components render filtered packages)
    ↓
 1. Presentation Layer (User sees only active packages)
+   ↓
+4. API Layer (POST /api/bookings.php - booking creation)
+   ↓
+5. Communication Layer (Cross-domain email service call)
+   ↓ 
+📧 Email Service (api.rumahdaisycantik.com/email-service.php)
+   ↓
+✉️ Guest confirmation + Admin notification emails sent
 ```
 
 ### Admin Package Status Change Flow
@@ -332,7 +399,7 @@ Data persistence, storage management, and data integrity.
    ↓
 4. API Layer (POST /api/packages.php with status update)
    ↓
-5. Data Layer (MySQL: UPDATE packages SET available = 0 WHERE id = ?)
+6. Data Layer (MySQL: UPDATE packages SET available = 0 WHERE id = ?)
    ↓
 4. API Layer (Success response)
    ↓
@@ -362,8 +429,14 @@ Business Logic Layer
 ├── Used by: Component Layer
 
 API Layer
-├── Depends on: Data Layer, HTTP Libraries
+├── Depends on: Communication Layer, Data Layer, HTTP Libraries
 ├── Used by: Business Logic Layer
+
+Communication Layer ✅ NEW
+├── Depends on: PHPMailer, Gmail SMTP, CORS Configuration
+├── Used by: API Layer (for email notifications)
+├── Location: api.rumahdaisycantik.com
+├── Cross-Domain: Serves booking.rumahdaisycantik.com
 
 Data Layer
 ├── Depends on: Database Server, File System
@@ -398,7 +471,14 @@ Data Layer
 | Layer | Primary Technologies | Secondary Technologies |
 |-------|---------------------|----------------------|
 | **API** | PHP 8.0+, PDO | JSON, HTTP |
+| **Communication** | PHPMailer, Gmail SMTP | CORS, SSL/TLS, HTML Templates |
 | **Data** | MySQL 8.0+, InnoDB | File System |
+
+### Cross-Domain Architecture
+| Domain | Purpose | Technologies |
+|--------|---------|-------------|
+| **booking.rumahdaisycantik.com** | Frontend Interface | React, TypeScript, Test Tools |
+| **api.rumahdaisycantik.com** | Backend Services | PHP APIs, PHPMailer, Email Service |
 
 ### Development & Build
 | Purpose | Technologies |

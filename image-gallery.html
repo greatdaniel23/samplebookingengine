@@ -362,9 +362,28 @@
         let lazyLoadObserver;
         let loadedImagesCache = new Set();
 
+        // Cross-domain image URL configuration
+        function getImageBaseUrl() {
+            const hostname = window.location.hostname;
+            
+            // Production: Images are served from root /images path
+            if (hostname === 'booking.rumahdaisycantik.com') {
+                return 'https://booking.rumahdaisycantik.com/images';
+            }
+            
+            // Development: Use local XAMPP
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/public/images';
+            }
+            
+            // Fallback: Use relative path
+            return './public/images';
+        }
+
         // Generate full image inventory
         function generateImageList() {
             allImages = [];
+            const imageBaseUrl = getImageBaseUrl();
             
             Object.entries(imageInventory).forEach(([category, files]) => {
                 files.forEach(fileInfo => {
@@ -380,7 +399,7 @@
                         name: filename,
                         category,
                         url: `images/${category}/${filename}`,
-                        fullUrl: `http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/public/images/${category}/${filename}`,
+                        fullUrl: `${imageBaseUrl}/${category}/${filename}`,
                         type,
                         size: fileSize,
                         id: `${category}-${filename}`.replace(/[^a-zA-Z0-9]/g, '-')
