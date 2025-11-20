@@ -64,7 +64,7 @@ const AdminCalendar: React.FC = () => {
       const data = await res.json();
       if (data.success) setSubscription(data);
     } catch (e) {
-      console.warn('Subscribe URL load failed', e);
+      
     }
   };
 

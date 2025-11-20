@@ -41,7 +41,7 @@ const PackageDetails = () => {
       }
       return [];
     } catch (error) {
-      console.warn('Failed to parse inclusions data:', data, error);
+      
       return [];
     }
   };
@@ -162,7 +162,8 @@ const PackageDetails = () => {
               <img 
                 src={getPackageImageUrl()} 
                 alt={pkg.name}
-                className="w-full h-[400px] object-cover"
+                className="w-full h-48 sm:h-64 md:h-80 lg:h-[400px] object-cover"
+                {...{fetchpriority: 'high'}}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = '/images/ui/placeholder.svg';

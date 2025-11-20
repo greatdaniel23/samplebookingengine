@@ -111,7 +111,7 @@ const AdminApiDiagnostics: React.FC = () => {
       }
     };
 
-    console.log('🔍 Admin API Diagnostics Started');
+    
   };
 
   const stopMonitoring = () => {
@@ -127,13 +127,13 @@ const AdminApiDiagnostics: React.FC = () => {
       window.fetch = originalFetch.current;
     }
 
-    console.log('🔍 Admin API Diagnostics Stopped');
+    
   };
 
   const clearLogs = () => {
     setLogs([]);
     setNetworkRequests([]);
-    console.log('🧹 Diagnostics cleared');
+    
   };
 
   const exportDiagnostics = () => {
@@ -159,17 +159,17 @@ const AdminApiDiagnostics: React.FC = () => {
   };
 
   const testApiEndpoints = () => {
-    console.log('🧪 Testing API endpoints...');
+    
     
     // Test production API
     fetch('https://api.rumahdaisycantik.com/rooms.php')
-      .then(response => console.log('✅ Production API test:', response.status))
-      .catch(error => console.error('❌ Production API test failed:', error));
+      .then(response => response.json())
+      .catch(error => console.error('Production API error:', error));
       
     // Test what the admin panel might call
     fetch('/api/rooms.php')
-      .then(response => console.warn('⚠️ Relative API call result:', response.status))
-      .catch(error => console.log('ℹ️ Relative API call failed (expected):', error.message));
+      .then(response => response.json())
+      .catch(error => console.error('Relative API error:', error));
   };
 
   const localhostCalls = networkRequests.filter(req => req.type === 'localhost').length;

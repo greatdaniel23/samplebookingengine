@@ -57,7 +57,7 @@ interface BookingSummaryData {
 }
 
 const BookingSummary = () => {
-  console.log('📄 [BookingSummary] Component loaded');
+  
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { villaInfo } = useVillaInfo();
@@ -74,7 +74,7 @@ const BookingSummary = () => {
       }
       return [];
     } catch (error) {
-      console.warn('Failed to parse inclusions data:', data, error);
+      
       return [];
     }
   };
@@ -109,12 +109,7 @@ const BookingSummary = () => {
   const packageId = searchParams.get('package');
   const roomId = searchParams.get('room');
   
-  console.log('📄 [BookingSummary] URL params:', {
-    bookingRef,
-    packageId,
-    roomId,
-    allParams: Object.fromEntries(searchParams.entries())
-  });
+  
 
   // Dynamic contact information helpers
   const getContactPhone = () => {
@@ -134,7 +129,7 @@ const BookingSummary = () => {
   const [isUsingFallbackData, setIsUsingFallbackData] = useState(false);
 
   const loadSummaryData = useCallback(async () => {
-    console.log('📄 [BookingSummary] loadSummaryData started');
+    
     try {
       setLoading(true);
       setError(null);
@@ -162,7 +157,7 @@ const BookingSummary = () => {
         }
         
         bookingApiData = result.data;
-        console.log('📄 [BookingSummary] Successfully loaded booking from API:', bookingApiData);
+        
         
       } catch (apiError) {
         console.error('📄 [BookingSummary] Failed to load booking from API:', apiError);
@@ -177,7 +172,7 @@ const BookingSummary = () => {
         }
         
         isUsingFallbackData = true;
-        console.warn('📄 [BookingSummary] Using URL parameters as fallback data');
+        
       }
 
       // Get dates from API or URL parameters
@@ -223,7 +218,7 @@ const BookingSummary = () => {
         createdAt: bookingApiData?.created_at || new Date().toISOString()
       };
 
-      console.log('📄 [BookingSummary] Setting booking data:', bookingData);
+      
       setBookingData(bookingData);
       setIsUsingFallbackData(isUsingFallbackData);
 
@@ -235,7 +230,7 @@ const BookingSummary = () => {
         try {
           const pkgResponse = await packageService.getPackageById(actualPackageId);
           setPackageData(pkgResponse.data);
-          console.log('📄 [BookingSummary] Loaded package data:', pkgResponse.data);
+          
         } catch (pkgError) {
           console.error('📄 [BookingSummary] Failed to load package data:', pkgError);
           // Don't fail the entire component if package data fails
@@ -246,7 +241,7 @@ const BookingSummary = () => {
         try {
           const roomResponse = await ApiService.getRoom(actualRoomId);
           setRoomData(roomResponse);
-          console.log('📄 [BookingSummary] Loaded room data:', roomResponse);
+          
         } catch (roomError) {
           console.error('📄 [BookingSummary] Failed to load room data:', roomError);
           // Don't fail the entire component if room data fails
@@ -257,7 +252,7 @@ const BookingSummary = () => {
       console.error('Error loading summary data:', err);
       setError('Failed to load booking summary');
     } finally {
-      console.log('📄 [BookingSummary] loadSummaryData completed, setting loading to false');
+      
       setLoading(false);
     }
   }, [bookingRef, packageId, roomId, searchParams]);
@@ -297,7 +292,7 @@ Total: $${bookingData?.pricing.totalPrice}
       try {
         await navigator.share(shareData);
       } catch (err) {
-        console.log('Error sharing:', err);
+        
       }
     } else {
       // Fallback - copy to clipboard
@@ -307,12 +302,12 @@ Total: $${bookingData?.pricing.totalPrice}
   };
 
   if (loading) {
-    console.log('📄 [BookingSummary] Rendering loading state');
+    
     return <BookingSkeleton />;
   }
 
   if (error || !bookingData) {
-    console.log('📄 [BookingSummary] Rendering error state - error:', error, 'bookingData:', bookingData);
+    
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <div className="max-w-md mx-auto">
@@ -329,7 +324,7 @@ Total: $${bookingData?.pricing.totalPrice}
     );
   }
 
-  console.log('📄 [BookingSummary] Rendering main content');
+  
   return (
     <div className="bg-gradient-to-br from-white to-hotel-cream min-h-screen">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">

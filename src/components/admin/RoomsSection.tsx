@@ -41,36 +41,36 @@ const RoomsSection: React.FC = () => {
     try {
       setLoading(true);
       const apiUrl = paths.buildApiUrl('rooms.php');
-      console.log('🔍 Fetching rooms from:', apiUrl);
+      
       
       const response = await fetch(apiUrl);
-      console.log('📡 Rooms API Response:', response.status, response.statusText);
+      
       
       if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       
       const data = await response.json();
-      console.log('📊 Rooms Raw Data:', data);
-      console.log('📊 Rooms Data Type:', typeof data);
-      console.log('📊 Rooms Is Array:', Array.isArray(data));
-      console.log('📊 Rooms Length:', Array.isArray(data) ? data.length : 'Not an array');
+      
+      
+      
+      
       
       // Handle wrapped response format: {success: true, data: Array}
       let roomsArray = [];
       if (data && data.success && Array.isArray(data.data)) {
         roomsArray = data.data;
-        console.log('📊 Extracted from wrapper - Rooms Length:', roomsArray.length);
+        
       } else if (Array.isArray(data)) {
         roomsArray = data;
-        console.log('📊 Direct array - Rooms Length:', roomsArray.length);
+        
       }
       
       if (roomsArray.length > 0) {
-        console.log('📊 First Room Sample:', roomsArray[0]);
-        console.log('📊 First Room Keys:', Object.keys(roomsArray[0]));
+        
+        
       }
       
       setRooms(roomsArray);
-      console.log('✅ Rooms set to state:', roomsArray.length, 'items');
+      
     } catch (error) {
       console.error('Error fetching rooms:', error);
       setRooms([]);

@@ -8,15 +8,15 @@ interface AdminGuardProps {
 export const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
   // Initialize with immediate auth check - FORCE strict authentication
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
-    console.log('=== AdminGuard: COMPONENT CREATION ===');
-    console.log('AdminGuard: Timestamp:', new Date().toISOString());
+    
+    
     const adminLoggedIn = sessionStorage.getItem('adminLoggedIn');
-    console.log('AdminGuard: Raw sessionStorage value:', JSON.stringify(adminLoggedIn));
-    console.log('AdminGuard: Type of value:', typeof adminLoggedIn);
-    console.log('AdminGuard: Strict equality check (=== "true"):', adminLoggedIn === 'true');
+    
+    
+    
     const result = adminLoggedIn === 'true' ? true : false;
-    console.log('AdminGuard: Initial authentication result:', result);
-    console.log('=== END COMPONENT CREATION ===');
+    
+    
     return result;
   });
   const navigate = useNavigate();
@@ -26,18 +26,18 @@ export const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
       const adminLoggedIn = sessionStorage.getItem('adminLoggedIn');
       
       // Debug logging
-      console.log('AdminGuard: useEffect auth check...');
-      console.log('AdminGuard: adminLoggedIn =', adminLoggedIn);
+      
+      
       
       if (adminLoggedIn === 'true') {
-        console.log('AdminGuard: User is authenticated, allowing access');
+        
         setIsAuthenticated(true);
       } else {
-        console.log('AdminGuard: User is NOT authenticated, redirecting to login');
+        
         setIsAuthenticated(false);
         // Add small delay to ensure navigation works properly
         setTimeout(() => {
-          console.log('AdminGuard: Executing redirect to /admin/login');
+          
           navigate('/admin/login', { replace: true });
         }, 100);
       }
@@ -53,14 +53,14 @@ export const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
   }, [navigate, isAuthenticated]);
 
   // Block access by default - only allow if explicitly authenticated
-  console.log('=== AdminGuard: RENDER DECISION ===');
-  console.log('AdminGuard: isAuthenticated =', isAuthenticated);
-  console.log('AdminGuard: typeof isAuthenticated =', typeof isAuthenticated);
-  console.log('AdminGuard: isAuthenticated === true?', isAuthenticated === true);
+  
+  
+  
+  
   
   if (isAuthenticated !== true) {
-    console.log('AdminGuard: 🚫 BLOCKING ACCESS - Rendering denial screen');
-    console.log('=== END RENDER DECISION ===');
+    
+    
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -82,7 +82,7 @@ export const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
     );
   }
 
-  console.log('AdminGuard: ✅ ACCESS GRANTED - Rendering admin children');
-  console.log('=== END RENDER DECISION ===');
+  
+  
   return <>{children}</>;
 };

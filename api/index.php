@@ -6,10 +6,16 @@
 require_once __DIR__ . '/controllers/BookingController.php';
 require_once __DIR__ . '/controllers/RoomController.php';
 require_once __DIR__ . '/controllers/PackageController.php';
+require_once __DIR__ . '/controllers/VillaController.php';
+require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/utils/helpers.php';
 
 // Enable CORS
 enableCORS();
+
+// Initialize database connection
+$database = new Database();
+$db = $database->getConnection();
 
 // Get the request method and URI
 $method = $_SERVER['REQUEST_METHOD'];
@@ -19,7 +25,17 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
 
 // Remove base path (adjust this based on your setup)
-$base_path = '/fontend-bookingengine-100/frontend-booking-engine-1/api';
+// Auto-detect if we're in a subfolder or root
+$isLocalhost = $_SERVER['HTTP_HOST'] === 'localhost' || strpos($_SERVER['HTTP_HOST'], '127.0.0.1') !== false;
+
+if ($isLocalhost) {
+    // Local development: usually in subfolder
+    $base_path = '/fontend-bookingengine-100/frontend-booking-engine-1/api';
+} else {
+    // Production: api.rumahdaisycantik.com/ - files are at root level
+    $base_path = '';
+}
+
 $path = str_replace($base_path, '', $path);
 
 // Remove leading slash
@@ -85,6 +101,17 @@ try {
                 $params['id'] = $id;
             }
             $controller->handleRequest($method, $params);
+            break;
+
+        case 'villa':
+            $controller = new VillaController($db);
+            if ($method === 'GET') {
+                $controller->get();
+            } else if ($method === 'POST' || $method === 'PUT') {
+                $controller->update();
+            } else {
+                errorResponse('Method not allowed', 405);
+            }
             break;
 
         case 'test':

@@ -46,7 +46,7 @@ const AmenitiesSection: React.FC = () => {
       
       // Use simplified amenities endpoint (backend now defaults to 'amenities' when no explicit endpoint provided)
       const apiUrl = paths.buildApiUrl('amenities.php');
-      console.log('Fetching amenities from:', apiUrl);
+      
       
       const response = await fetch(apiUrl);
       if (!response.ok) {

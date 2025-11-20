@@ -196,10 +196,181 @@ Each package includes:
 
 ---
 
-## 🚀 **Visit http://localhost:8080/packages to see it in action!**
+## 🐛 **KNOWN ISSUES & BUGS (November 20, 2025):**
 
-Your hotel booking engine now rivals professional hospitality systems with advanced package management capabilities! 🎉
+### 🚨 **Critical Issues Identified:**
+
+#### **1. Image Edit Functionality Missing** ✅ **FIXED**
+- **Issue**: Package image editing was not working in admin panel
+- **Impact**: Could not update package images after creation
+- **Status**: ✅ **IMPLEMENTED - NOVEMBER 20, 2025**
+- **Solution Applied**: 
+  - ✅ Added complete image upload interface in package edit modal
+  - ✅ Implemented image preview grid with delete functionality
+  - ✅ Added drag & drop file input with validation
+  - ✅ Images now properly handled in packageFormData.images
+- **Location**: `src/components/admin/PackagesSection.tsx` lines ~760-820
+- **Features**: Upload multiple images, preview grid, individual delete, file validation
+
+#### **2. Package-Room Connection Missing** ✅ **FIXED**
+- **Issue**: Packages were not properly connected to specific rooms
+- **Impact**: Packages could not be room-specific, affecting pricing accuracy  
+- **Status**: ✅ **IMPLEMENTED - NOVEMBER 20, 2025**
+- **Solution Applied**:
+  - ✅ Added `base_room_id` column to database packages table
+  - ✅ Updated API `packages.php` PUT/POST handlers to save base_room_id
+  - ✅ Frontend now sends base_room_id in package updates
+  - ✅ Database migration script created for deployment
+  - ✅ Existing UI already had room selection dropdowns
+- **Files Updated**: 
+  - Database: `add-room-connection-to-packages.sql`
+  - API: `packages.php` - INSERT/UPDATE queries
+  - Frontend: `PackagesSection.tsx` - updateData includes base_room_id
+- **Result**: Packages now properly linked to specific rooms for availability/pricing
+
+#### **3. Homepage API Failures (November 20, 2025)**
+- **Issue**: All API endpoints returning 500 Internal Server Error
+- **APIs Affected**: `rooms.php`, `packages.php`, `villa.php`, `bookings.php`
+- **Status**: ✅ Fixed - API routing and database connections corrected
+- **Solution**: Fixed index.php routing, added missing controllers, corrected production paths
 
 ---
 
-*Package System Deployed: November 9, 2025*
+### 🔧 **Required Fixes:**
+
+#### **Priority 1: Image Management** ✅ **COMPLETED NOVEMBER 20, 2025**
+```
+Implementation Details:
+✅ Location: src/components/admin/PackagesSection.tsx (lines ~760-820)
+✅ Added complete image upload interface with drag & drop
+✅ Implemented multi-image preview grid with delete functionality  
+✅ Added file validation (PNG, JPG up to 10MB)
+✅ Integrated with packageFormData.images array
+✅ Professional UI with visual feedback and error handling
+
+Technical Changes:
+- Import: Added ImageManager component import
+- UI: Complete file upload interface with preview grid
+- Logic: Image array management with add/remove functionality
+- Validation: File type and size validation
+- UX: Drag & drop with hover states and loading indicators
+```
+
+#### **Priority 2: Room Integration** ✅ **COMPLETED NOVEMBER 20, 2025**
+```
+Implementation Details:
+✅ Database: Created add-room-connection-to-packages.sql migration
+✅ Backend: Updated packages.php PUT/POST to handle base_room_id
+✅ Frontend: Enhanced API calls to include base_room_id field
+✅ Migration: Ready-to-deploy SQL script with sample data
+
+Technical Changes:
+Database Schema:
+- ALTER TABLE packages ADD COLUMN base_room_id VARCHAR(50)
+- Added index for performance: idx_base_room_id
+- Sample room assignments for existing packages
+
+API Enhancement (packages.php):
+- Updated INSERT query to include base_room_id field
+- Updated UPDATE query to handle base_room_id parameter
+- Added proper parameter binding for room connections
+
+Frontend Integration:
+- Modified updateData to include base_room_id: packageFormData.base_room_id
+- Removed outdated comment about missing schema
+- Room selection UI was already present and working
+```
+
+#### **Priority 3: Business Logic Enhancement**
+```
+- Package availability based on room inventory
+- Room-specific package pricing
+- Package-room compatibility validation
+- Dynamic package availability calculation
+```
+
+---
+
+### 📋 **Development Roadmap:**
+
+#### **Phase 1: Image System** ✅ **COMPLETED**
+- [x] Add image upload to package edit modal
+- [x] Implement image preview in admin interface
+- [x] Add image drag & drop interface
+- [x] Add image validation and error handling
+
+#### **Phase 2: Room Connection** ✅ **COMPLETED**  
+- [x] Add database column `base_room_id` to packages table
+- [x] Update API packages.php to handle base_room_id in PUT/POST
+- [x] Frontend already has room selection interface
+- [x] Added room connection field to update calls
+
+#### **Phase 3: Enhanced Business Logic** 🔄 **FOUNDATION READY**
+- [x] Package-room connection established (base_room_id implemented)
+- [ ] Package availability depends on room inventory (API logic needed)
+- [ ] Room-specific package pricing calculations (business rules needed)
+- [ ] Package recommendation system (algorithm needed)
+- [ ] Seasonal package automation (scheduling system needed)
+
+**Note**: Phase 1 & 2 completion provides the foundation for Phase 3 features.
+
+---
+
+---
+
+## 🎉 **UPDATES COMPLETED - NOVEMBER 20, 2025:**
+
+### ✅ **Major Improvements Implemented:**
+
+#### **1. Complete Image Management System**
+- **Added**: Full image upload interface in package edit modal
+- **Features**: Multi-image upload, preview grid, individual delete, file validation
+- **UI**: Professional drag & drop interface with visual feedback
+- **Integration**: Properly saves images in packageFormData.images array
+
+#### **2. Package-Room Connection System**
+- **Database**: Added `base_room_id` column to packages table  
+- **API**: Updated `packages.php` to handle room connections in CREATE/UPDATE
+- **Frontend**: Enhanced to send room ID in all package operations
+- **Migration**: Created deployment script `add-room-connection-to-packages.sql`
+
+#### **3. Enhanced Business Logic**
+- Packages now linked to specific room inventory
+- Room-based availability checking foundation laid
+- Proper data persistence for room relationships
+- Foundation for room-specific pricing calculations
+
+---
+
+### 🔧 **Deployment Instructions:**
+
+#### **Step 1: Database Update**
+```sql
+-- Run this in production database:
+SOURCE database/add-room-connection-to-packages.sql;
+```
+
+#### **Step 2: API Deployment**  
+- Upload updated `api/packages.php` to production server
+- Verify API endpoints return base_room_id in responses
+
+#### **Step 3: Frontend Deployment**
+- Build completed successfully ✅
+- Deploy `dist/` folder contents to production
+- Package admin now has full image and room management
+
+---
+
+## 🚀 **Visit your admin panel to test the new functionality!**
+
+**New Features Available Now:**
+- ✅ **Image Upload**: Add/remove package images in admin
+- ✅ **Room Selection**: Link packages to specific rooms  
+- ✅ **Data Persistence**: All changes properly saved to database
+- ✅ **Enhanced UI**: Professional image management interface
+
+---
+
+*Package System Deployed: November 9, 2025*  
+*Critical Issues Fixed: November 20, 2025*
+*Status: Fully Functional with Image & Room Management*

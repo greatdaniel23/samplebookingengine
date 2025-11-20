@@ -24,6 +24,8 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      // Disallow console usage; build also strips them, enforcing at lint level.
+      "no-console": ["error", { allow: ["error"] }],
     },
   },
 );
