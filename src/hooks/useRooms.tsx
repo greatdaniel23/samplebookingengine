@@ -11,7 +11,7 @@ export const useRooms = () => {
     const fetchRooms = async () => {
       try {
         const data = await ApiService.getRooms();
-        console.log('Fetched rooms data:', data); // Debug log
+         // Debug log
         if (Array.isArray(data)) {
           setRooms(data);
         } else {

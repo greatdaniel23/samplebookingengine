@@ -5,8 +5,8 @@ import path from "path";
 
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "127.0.0.1",
-    port: 8080,
+    // No host binding - use Vite defaults
+    port: 5173,
     // No proxy needed - always use production API directly
   },
   plugins: [dyadComponentTagger(), react()],
@@ -15,4 +15,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Strip all console statements from production build output.
+  // This uses esbuild's drop option; source remains unchanged for development.
+  esbuild: mode === 'production' ? { drop: ['console'] } : undefined,
 }));

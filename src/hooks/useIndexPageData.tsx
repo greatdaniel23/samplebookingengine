@@ -12,13 +12,13 @@ export const useIndexPageData = () => {
   // Individual hook calls
   const { rooms, loading: roomsLoading, error: roomsError } = useRooms();
   const { packages, loading: packagesLoading, error: packagesError } = usePackages();
-  const { villaInfo, loading: villaLoading, error: villaError, refetch } = useVillaInfo();
+  const { villaInfo, loading: villaLoading, error: villaError } = useVillaInfo();
 
   // Normalize villa data to ensure compatibility between VillaInfo and Villa types
   const normalizeVillaData = (data: any): Villa | null => {
     if (!data) {
-      console.warn('🚨 No villa data from API - cannot display villa information');
-      console.log('API Error:', villaError);
+      
+      
       return null;
     }
     
@@ -72,11 +72,11 @@ export const useIndexPageData = () => {
   // Safe data with null/undefined protection
   const safeRooms = useMemo((): Room[] => {
     if (!rooms) {
-      console.warn('Rooms is null/undefined, returning empty array');
+      
       return [];
     }
     if (!Array.isArray(rooms)) {
-      console.warn('Rooms is not an array:', typeof rooms, rooms);
+      
       return [];
     }
     return rooms;
@@ -84,11 +84,11 @@ export const useIndexPageData = () => {
 
   const safePackages = useMemo((): Package[] => {
     if (!packages) {
-      console.warn('Packages is null/undefined, returning empty array');
+      
       return [];
     }
     if (!Array.isArray(packages)) {
-      console.warn('Packages is not an array:', typeof packages, packages);
+      
       return [];
     }
     return packages;
@@ -110,8 +110,5 @@ export const useIndexPageData = () => {
     // States
     isLoading,
     error,
-    
-    // Actions
-    refetch,
   };
 };

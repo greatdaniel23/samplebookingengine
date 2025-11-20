@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { paths } from '@/config/paths';
+import { ImageManager } from '@/components/ImageManager';
 
 const PackagesSection: React.FC = () => {
   const [packages, setPackages] = useState<any[]>([]);
@@ -43,6 +44,18 @@ const PackagesSection: React.FC = () => {
     fetchPackages();
     fetchRooms();
   }, []);
+
+  // Cleanup blob URLs on component unmount
+  useEffect(() => {
+    return () => {
+      // Clean up any blob URLs when component unmounts
+      packageFormData.images.forEach(image => {
+        if (image && image.startsWith('blob:')) {
+          URL.revokeObjectURL(image);
+        }
+      });
+    };
+  }, [packageFormData.images]);
 
   const fetchRooms = async () => {
     try {
@@ -137,7 +150,7 @@ const PackagesSection: React.FC = () => {
         min_nights: packageFormData.duration_days,    // duration_days -> min_nights
         max_guests: packageFormData.max_guests,
         is_active: packageFormData.available ? 1 : 0, // available -> is_active
-        // Note: base_room_id not yet in database schema, will be added in future update
+        base_room_id: packageFormData.base_room_id || null, // Room connection
         // Handle JSON fields properly - send valid JSON arrays or null
         includes: Array.isArray(packageFormData.inclusions) && packageFormData.inclusions.length > 0 
           ? JSON.stringify(packageFormData.inclusions) 
@@ -156,7 +169,7 @@ const PackagesSection: React.FC = () => {
         max_nights: 30
       };
 
-      console.log('Updating package with data:', updateData);
+      
       
       const response = await fetch(paths.buildApiUrl('packages.php'), {
         method: 'PUT',
@@ -173,7 +186,7 @@ const PackagesSection: React.FC = () => {
       }
       
       const result = await response.json();
-      console.log('Update API Response:', result);
+      
       
       if (result.success) {
         alert('Sales tool updated successfully!');
@@ -762,6 +775,133 @@ const PackagesSection: React.FC = () => {
                 <p className="text-xs text-gray-500 mt-1">
                   🎯 <strong>Sales Strategy:</strong> Highlight the complete experience - what room features they get + what additional services are included + why this bundle is valuable
                 </p>
+              </div>
+
+              {/* Package Images */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Package Images</label>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-600 mb-2">
+                      📸 Upload images to showcase this package. Images help customers visualize the experience.
+                    </p>
+                  </div>
+                  
+                  {/* Current Images */}
+                  {packageFormData.images.length > 0 && (
+                    <div className="mb-4">
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Current Images:</h5>
+                      <div className="grid grid-cols-3 gap-2">
+                        {packageFormData.images.map((image, index) => (
+                          <div key={index} className="relative group">
+                            <img 
+                              src={image} 
+                              alt={`Package image ${index + 1}`}
+                              className="w-full h-20 object-cover rounded border"
+                              onError={(e) => {
+                                // Handle broken images
+                                const target = e.target as HTMLImageElement;
+                                target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiAxNkM5Ljc5ID16IDggMTQuMjEgOCAxMlMxLjc5IDggMTIgOFMxNiA5Ljc5IDE2IDEyUzE0LjIxIDE2IDEyIDE2Wk0xMiA2QzguNjkgNiA2IDguNjkgNiAxMkM2IDE1LjMxIDguNjkgMTggMTIgMThDMTUuMzEgMTggMTggMTUuMzEgMTggMTJDMTggOC42OSAxNS4zMSA2IDEyIDZaTTEwIDEyQzEwIDEwLjkgMTAuOSAxMCAxMiAxMEMxMy4xIDEwIDE0IDEwLjkgMTQgMTJDMTQgMTMuMSAxMy4xIDE0IDEyIDE0QzEwLjkgMTQgMTAgMTMuMSAxMCAxMloiIGZpbGw9IiM2QjcyODAiLz4KPHN2Zz4K';
+                                target.title = 'Failed to load image';
+                              }}
+                              onLoad={() => {
+                                // Revoke any blob URLs after successful load to prevent memory leaks
+                                if (image.startsWith('blob:')) {
+                                  // Note: We don't revoke here as the image is still being used
+                                  // Cleanup will happen when the image is removed or component unmounts
+                                }
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                // Clean up blob URL if it exists
+                                const imageToRemove = packageFormData.images[index];
+                                if (imageToRemove && imageToRemove.startsWith('blob:')) {
+                                  URL.revokeObjectURL(imageToRemove);
+                                }
+                                
+                                const newImages = packageFormData.images.filter((_, i) => i !== index);
+                                setPackageFormData({...packageFormData, images: newImages});
+                              }}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Image Upload */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                    <input
+                      type="file"
+                      id="package-images"
+                      multiple
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const files = e.target.files;
+                        if (files) {
+                          // Validate files before processing
+                          const validFiles = Array.from(files).filter(file => {
+                            // Check file type
+                            if (!file.type.startsWith('image/')) {
+                              alert(`File "${file.name}" is not an image. Only image files are allowed.`);
+                              return false;
+                            }
+                            // Check file size (max 10MB)
+                            if (file.size > 10 * 1024 * 1024) {
+                              alert(`File "${file.name}" is too large. Maximum file size is 10MB.`);
+                              return false;
+                            }
+                            return true;
+                          });
+
+                          if (validFiles.length === 0) {
+                            e.target.value = ''; // Reset input
+                            return;
+                          }
+
+                          // Convert valid files to data URLs for safe preview
+                          const filePromises = validFiles.map(file => {
+                            return new Promise<string>((resolve, reject) => {
+                              const reader = new FileReader();
+                              reader.onload = (e) => resolve(e.target?.result as string);
+                              reader.onerror = reject;
+                              reader.readAsDataURL(file);
+                            });
+                          });
+                          
+                          try {
+                            const dataUrls = await Promise.all(filePromises);
+                            setPackageFormData({
+                              ...packageFormData, 
+                              images: [...packageFormData.images, ...dataUrls]
+                            });
+                            // Reset the input after successful processing
+                            e.target.value = '';
+                          } catch (error) {
+                            console.error('Error reading files:', error);
+                            alert('Error reading selected files. Please try again.');
+                            e.target.value = ''; // Reset input on error
+                          }
+                        }
+                      }}
+                      className="hidden"
+                    />
+                    <label htmlFor="package-images" className="cursor-pointer">
+                      <div className="flex flex-col items-center">
+                        <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-sm text-gray-600">Click to upload images</span>
+                        <span className="text-xs text-gray-500">PNG, JPG up to 10MB</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
               </div>
 
               {/* Value Proposition Preview */}

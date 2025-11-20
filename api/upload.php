@@ -30,11 +30,11 @@ try {
 }
 
 // --- Configuration ---
-// Use absolute paths for reliability
-$docRoot = $_SERVER['DOCUMENT_ROOT'];
-$uploadDirName = 'images/uploads';
-$uploadPath = $docRoot . '/' . $uploadDirName;
-$uploadUrlBase = '/' . $uploadDirName;
+// Save to project directory for hosting deployment
+$projectDir = dirname(__DIR__); // Go up one level from /api to project root
+$uploadDirName = 'public/images/uploads';
+$uploadPath = $projectDir . '/' . $uploadDirName;
+$uploadUrlBase = '/images/uploads';
 
 // --- Validation ---
 if (empty($_POST['room_id'])) {

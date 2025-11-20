@@ -161,7 +161,7 @@ class CalendarService {
       link.click();
       document.body.removeChild(link);
       
-      console.log('📅 Calendar exported successfully');
+      
     } catch (error) {
       console.error('❌ Calendar export failed:', error);
       throw new Error('Failed to export calendar');

@@ -6,7 +6,7 @@
 import { API_BASE_URL, paths } from '../config/paths.ts';
 
 // Using centralized API configuration from paths.ts
-// Development: Uses Vite proxy to http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api
+// Production-ready API configuration
 // Production: Uses https://api.rumahdaisycantik.com
 const ADMIN_API_BASE_URL = `${API_BASE_URL}/admin`; // Relative to main API base
 

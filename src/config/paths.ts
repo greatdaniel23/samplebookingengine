@@ -29,27 +29,42 @@ const env: AppPaths['env'] = import.meta.env.PROD ? 'production' : 'development'
 // you can set VITE_PUBLIC_BASE in a .env file. Fallback to '/' if not provided.
 const PUBLIC_BASE = import.meta.env.VITE_PUBLIC_BASE || '/';
 
-// For local development under XAMPP the Apache document root might expose the project
-// at http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/
-// Adjust API_BASE if the PHP API lives in that same folder under /api.
-// ALWAYS use production API - no local development API
-const DEFAULT_LOCAL_API = 'https://api.rumahdaisycantik.com'; // Force production API in development too
-const DEFAULT_PRODUCTION_API = 'https://api.rumahdaisycantik.com';
+// PRODUCTION-ONLY CONFIGURATION
+// All API calls are routed directly to production server
+const PRODUCTION_API = 'https://api.rumahdaisycantik.com';
 
-// Always use production API URL regardless of environment
-const API_BASE = import.meta.env.VITE_API_BASE || DEFAULT_PRODUCTION_API;
+// Always use production API URL - no local development
+let API_BASE = import.meta.env.VITE_API_BASE || PRODUCTION_API;
+
+// DISABLED: Domain detection for relative API switching
+// The following code was causing API calls to use /api/* paths which require server proxy
+// if (typeof window !== 'undefined') {
+//   const hostLower = window.location.host.toLowerCase();
+//   const bookingLike = /(^|\.)booking\.rumahdaisycantik\.com$/i.test(hostLower);
+//   const forceRelative = import.meta.env.VITE_FORCE_RELATIVE_API === 'true';
+//   if (bookingLike || forceRelative) {
+//     // Use relative path; server (Nginx/Apache) should proxy /api/* -> https://api.rumahdaisycantik.com/
+//     API_BASE = '/api';
+//   }
+// }
+
+// Force full API URL to ensure proper subdomain usage
+API_BASE = import.meta.env.VITE_API_BASE || PRODUCTION_API;
 
 // Optional admin panel route root (could be protected by auth in future)
 const ADMIN_BASE = import.meta.env.VITE_ADMIN_BASE || '/admin';
 
-// HOST determination (use window.location if available in browser context)
-let host = 'http://localhost:5173'; // Vite default fallback
+// HOST determination - production-ready only
+let host = 'https://booking.rumahdaisycantik.com';
 if (typeof window !== 'undefined') {
   host = window.location.origin;
 }
 
 // Helper to safely build API URLs
-const buildApiUrl = (path: string) => `${API_BASE.replace(/\/$/, '')}${path.startsWith('/') ? path : '/' + path}`;
+const buildApiUrl = (path: string) => {
+  const base = API_BASE.replace(/\/$/, '');
+  return `${base}${path.startsWith('/') ? path : '/' + path}`;
+};
 
 export const paths: AppPaths = {
   env,
@@ -69,13 +84,7 @@ export const paths: AppPaths = {
 };
 
 // Debug logging for production troubleshooting
-if (typeof window !== 'undefined' && env === 'production') {
-  console.log('🔧 Production API Configuration:');
-  console.log('   Environment:', env);
-  console.log('   VITE_API_BASE:', import.meta.env.VITE_API_BASE);
-  console.log('   API_BASE resolved to:', API_BASE);
-  console.log('   Current domain:', window.location.origin);
-}
+// Removed production console info logging to avoid exposing API base.
 
 // Convenience re-exports for common usage
 export const API_BASE_URL = paths.apiBase;

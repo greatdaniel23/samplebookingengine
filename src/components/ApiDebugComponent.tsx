@@ -20,7 +20,7 @@ const ApiDebugComponent = () => {
     };
     
     setApiConfig(config);
-    console.log('🔍 Current React API Configuration:', config);
+    
   }, []);
 
   if (!apiConfig) return <div>Loading API config...</div>;

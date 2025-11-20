@@ -12,19 +12,19 @@ const ApiDebug = () => {
         <h2>Quick Tests</h2>
         <button 
           onClick={() => {
-            console.log('Testing API call...');
+            
             import('../config/paths').then(({ paths }) => {
-              console.log('paths.apiBase:', paths.apiBase);
-              console.log('paths.buildApiUrl("rooms.php"):', paths.buildApiUrl('rooms.php'));
+              
+              
               
               fetch(paths.buildApiUrl('rooms.php'))
                 .then(response => {
-                  console.log('API Response:', response.status, response.statusText);
-                  console.log('API URL used:', paths.buildApiUrl('rooms.php'));
+                  
+                  
                 })
                 .catch(error => {
                   console.error('API Error:', error);
-                  console.log('API URL attempted:', paths.buildApiUrl('rooms.php'));
+                  
                 });
             });
           }}
@@ -35,8 +35,8 @@ const ApiDebug = () => {
         
         <button 
           onClick={() => {
-            console.log('Current window location:', window.location.href);
-            console.log('All environment variables:', import.meta.env);
+            
+            
           }}
           style={{ padding: '10px 20px', margin: '5px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
         >

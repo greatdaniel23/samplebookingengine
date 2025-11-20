@@ -50,8 +50,10 @@ export const useVillaInfo = () => {
   const fetchVillaInfo = async () => {
     try {
       setLoading(true);
-      console.log('🏨 Fetching villa info from:', `${API_BASE_URL}/villa.php`);
-      const response = await fetch(`${API_BASE_URL}/villa.php`);
+      
+      const response = await fetch(`${API_BASE_URL}/villa.php`, {
+        cache: 'no-cache'
+      });
       
       // Check if response is ok
       if (!response.ok) {
@@ -67,12 +69,16 @@ export const useVillaInfo = () => {
       }
       
       const data = await response.json();
-      console.log('🏨 Villa API response:', data);
+      
+      
+      
+      
       
       if (data.success) {
-        console.log('✅ Villa data loaded successfully:', data.data);
+        
         setVillaInfo(data.data);
         setError(null);
+        
       } else {
         console.error('❌ Villa API returned error:', data.error);
         setError(data.error || 'Failed to fetch villa information');

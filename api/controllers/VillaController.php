@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../models/VillaInfo.php';
+
 class VillaController {
     private $villaInfo;
 

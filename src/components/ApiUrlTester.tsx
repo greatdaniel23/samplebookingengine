@@ -30,9 +30,9 @@ const ApiUrlTester: React.FC = () => {
 
   const testApiCall = async (endpoint: string) => {
     try {
-      console.log('Testing API call to:', endpoint);
+      
       const response = await fetch(endpoint);
-      console.log('API Response:', response.status, response.statusText);
+      
       return `${response.status} ${response.statusText}`;
     } catch (error) {
       console.error('API Error:', error);

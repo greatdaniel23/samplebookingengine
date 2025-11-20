@@ -157,8 +157,8 @@ function handlePost($db) {
         $stmt = $db->prepare("
             INSERT INTO packages (name, description, package_type, base_price, max_guests, min_nights, max_nights,
                                 discount_percentage, is_active, includes, exclusions, images, valid_from, valid_until, 
-                                terms_conditions, available, featured) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                terms_conditions, available, featured, base_room_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
         $includes = isset($input['inclusions']) ? json_encode($input['inclusions']) : 
@@ -184,7 +184,8 @@ function handlePost($db) {
             $input['valid_until'] ?? null,
             $input['terms_conditions'] ?? $input['terms'] ?? null,
             $input['available'] ?? 1,
-            $input['featured'] ?? 0
+            $input['featured'] ?? 0,
+            $input['base_room_id'] ?? null
         ]);
         
         $lastInsertId = $db->lastInsertId();
@@ -233,7 +234,7 @@ function handlePut($db) {
                 max_guests = ?, is_active = ?, includes = ?, exclusions = ?, 
                 min_nights = ?, max_nights = ?, discount_percentage = ?,
                 images = ?, valid_from = ?, valid_until = ?, 
-                terms_conditions = ?, updated_at = CURRENT_TIMESTAMP
+                terms_conditions = ?, base_room_id = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         ");
         
@@ -319,6 +320,7 @@ function handlePut($db) {
         $validFrom = (!empty($input['valid_from'])) ? $input['valid_from'] : null;
         $validUntil = (!empty($input['valid_until'])) ? $input['valid_until'] : null;
         $termsConditions = $input['terms_conditions'] ?? null;
+        $baseRoomId = $input['base_room_id'] ?? null;
         
         error_log("PUT Update Data: " . json_encode([
             'package_type' => $packageType,
@@ -327,7 +329,8 @@ function handlePut($db) {
             'includes' => $includes,
             'exclusions' => $exclusions,
             'images' => $images,
-            'min_nights' => $minNights
+            'min_nights' => $minNights,
+            'base_room_id' => $baseRoomId
         ]));
         
         // Prepare parameters array
@@ -347,6 +350,7 @@ function handlePut($db) {
             $validFrom,
             $validUntil,
             $termsConditions,
+            $baseRoomId,
             $input['id']
         ];
         

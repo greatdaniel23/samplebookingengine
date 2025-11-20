@@ -3,16 +3,26 @@ import { Link } from 'react-router-dom';
 import { useVillaInfo } from '@/hooks/useVillaInfo';
 
 const Footer = () => {
-  const { villaInfo } = useVillaInfo();
+  const { villaInfo, loading, refetch } = useVillaInfo();
+  
+  // Debug: Log current villa info
+  
+  
+  
+  // Debug function to force refresh
+  const handleRefresh = () => {
+    
+    refetch?.();
+  };
 
   // Create address display with fallback
   const getAddress = () => {
-    if (!villaInfo) return "123 Luxury Avenue";
-    return villaInfo.address || "123 Luxury Avenue";
+    if (!villaInfo) return "Jl. Pantai Indah No. 123";
+    return villaInfo.address || "Jl. Pantai Indah No. 123";
   };
 
   const getLocation = () => {
-    if (!villaInfo) return "Aspen, Colorado";
+    if (!villaInfo) return "Bali, Indonesia";
     
     // Use city, state, country if available, otherwise use location field
     if (villaInfo.city && villaInfo.state && villaInfo.country) {
@@ -22,17 +32,17 @@ const Footer = () => {
     } else if (villaInfo.location) {
       return villaInfo.location;
     }
-    return "Aspen, Colorado";
+    return "Bali, Indonesia";
   };
 
   const getPhone = () => {
-    if (!villaInfo) return "+1 (555) 123-4567";
-    return villaInfo.phone || "+1 (555) 123-4567";
+    if (!villaInfo) return "+62 361 123456";
+    return villaInfo.phone || "+62 361 123456";
   };
 
   const getEmail = () => {
-    if (!villaInfo) return "info@sereneretreat.com";
-    return villaInfo.email || "info@sereneretreat.com";
+    if (!villaInfo) return "info@villadaisycantik.com";
+    return villaInfo.email || "info@villadaisycantik.com";
   };
 
   return (
@@ -47,6 +57,8 @@ const Footer = () => {
               <p>{getLocation()}</p>
               <p>Phone: {getPhone()}</p>
               <p>Email: {getEmail()}</p>
+              {/* Debug refresh button */}
+              
             </div>
           </div>
 
@@ -60,9 +72,7 @@ const Footer = () => {
               <Link to="/packages" className="block text-hotel-cream hover:text-hotel-gold transition-colors">
                 Packages
               </Link>
-              <a href="#amenities" className="block text-hotel-cream hover:text-hotel-gold transition-colors">
-                Amenities
-              </a>
+              
               <a href="#gallery" className="block text-hotel-cream hover:text-hotel-gold transition-colors">
                 Gallery
               </a>
@@ -73,26 +83,16 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">About</h3>
             <p className="text-hotel-cream text-sm leading-relaxed">
-              Experience unparalleled luxury and comfort at our prestigious mountain retreat. 
-              Perfect for creating unforgettable memories in the heart of nature.
+              {villaInfo?.description || 'Experience unparalleled luxury and comfort at our prestigious retreat. Perfect for creating unforgettable memories.'}
             </p>
             
-            {/* Hidden Admin Link - only visible to those who know */}
-            <div className="mt-6">
-              <Link 
-                to="/admin/login" 
-                className="text-xs text-gray-500 hover:text-hotel-gold transition-colors opacity-30 hover:opacity-100"
-                title="Staff Access"
-              >
-                Staff Portal
-              </Link>
-            </div>
+            
           </div>
         </div>
 
         <div className="border-t border-gray-600 mt-8 pt-8 text-center">
           <p className="text-hotel-cream text-sm">
-            © 2024 Serene Mountain Retreat. All rights reserved.
+            © {new Date().getFullYear()} {villaInfo?.name || 'Villa Daisy Cantik'}. All rights reserved.
           </p>
         </div>
       </div>

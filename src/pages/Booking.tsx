@@ -41,7 +41,7 @@ const BookingPage = () => {
       }
       return [];
     } catch (error) {
-      console.warn('Failed to parse inclusions data:', data, error);
+      
       return [];
     }
   };
@@ -115,17 +115,17 @@ const BookingPage = () => {
   useEffect(() => {
     // Connectivity probe
     (async () => {
-      console.log('🌐 [Booking] Connectivity Probe:');
-      console.log('   Frontend Origin:', window.location.origin);
-      console.log('   API Base:', paths.apiBase);
-      console.log('   Bookings Endpoint:', paths.api.bookings);
+      
+      
+      
+      
       try {
         const ping = await fetch(paths.api.bookings, { method: 'GET' });
         setApiReachable(ping.ok);
-        console.log('✅ [Booking] API reachability:', ping.ok);
+        
       } catch (e) {
         setApiReachable(false);
-        console.warn('❌ [Booking] API unreachable:', e);
+        
       }
     })();
 
@@ -142,7 +142,7 @@ const BookingPage = () => {
           showError(`Failed to sync ${failed.length} booking(s). Will retry later.`);
         }
       } catch (e) {
-        console.warn('Offline sync error:', e);
+        
       }
     })();
   }, []);
@@ -255,13 +255,13 @@ const BookingPage = () => {
       };
 
       // Try to save to database via API
-      console.log('🚀 [Booking] === STARTING API CALL ===');
-      console.log('🌐 [Booking] Frontend origin:', window.location.origin);
-      console.log('🎯 [Booking] Target API URL:', paths.api.bookings);
-      console.log('📦 [Booking] POST data:', JSON.stringify(apiBookingData, null, 2));
-      console.log('🔧 [Booking] buildApiUrl test:', paths.buildApiUrl('bookings'));
       
-      console.log('📤 [Booking] Making fetch request...');
+      
+      
+      
+      
+      
+      
       const response = await fetch(paths.api.bookings, {
         method: 'POST',
         headers: {
@@ -270,18 +270,18 @@ const BookingPage = () => {
         body: JSON.stringify(apiBookingData)
       });
       
-      console.log('📥 [Booking] Response received!');
-      console.log('📊 [Booking] Response status:', response.status, response.statusText);
-      console.log('✅ [Booking] Response ok:', response.ok);
-      console.log('📋 [Booking] Response headers:', [...response.headers.entries()]);
+      
+      
+      
+      
       
       const contentType = response.headers.get('Content-Type');
-      console.log('📄 [Booking] Content-Type:', contentType);
+      
 
       let rawBody: any = null;
       try {
         rawBody = await response.text();
-        console.log('📝 [Booking] Raw response body:', rawBody);
+        
       } catch (e) {
         console.error('❌ [Booking] Failed reading raw body:', e);
         throw new Error('Failed to read response body');
@@ -290,10 +290,10 @@ const BookingPage = () => {
       let parsed: any = null;
       try {
         parsed = rawBody ? JSON.parse(rawBody) : null;
-        console.log('🔍 [Booking] Parsed JSON:', JSON.stringify(parsed, null, 2));
+        
       } catch (e) {
         console.error('❌ [Booking] JSON parse failed:', e);
-        console.log('📝 [Booking] Raw body that failed to parse:', rawBody);
+        
         throw new Error('Invalid JSON response from API');
       }
 
@@ -303,7 +303,7 @@ const BookingPage = () => {
       }
 
       // Flexible success detection (avoid false offline fallbacks)
-      console.log('🔍 [Booking] === RESPONSE ANALYSIS (Flexible) ===');
+      
       const bookingNode = parsed?.data?.booking || parsed?.booking || parsed?.data;
       const dbBookingIdFlexible = bookingNode?.id || bookingNode?.bookingId || parsed?.id || parsed?.bookingId;
       const dbReferenceFlexible = bookingNode?.reference || parsed?.reference;
@@ -311,24 +311,24 @@ const BookingPage = () => {
       const nestedSuccess = parsed?.data?.success === true || bookingNode?.success === true;
       const hasId = !!dbBookingIdFlexible;
       const structureSummary = { topLevelSuccess, nestedSuccess, hasId, derivedId: dbBookingIdFlexible, derivedReference: dbReferenceFlexible };
-      console.log('🔍 [Booking] Success shape summary:', structureSummary);
+      
 
       const successSatisfied = (topLevelSuccess || nestedSuccess) && hasId;
       if (!successSatisfied) {
-        console.warn('⚠️ [Booking] Treating as failure due to missing success/id indicators. Parsed:', parsed);
+        
         throw new Error('Unrecognized success structure');
       }
 
       const dbBookingId = Number(dbBookingIdFlexible);
       const dbReference = dbReferenceFlexible || `BK-${dbBookingId}`;
       
-      console.log('🎉 [Booking] SUCCESS - Booking saved to database!');
-      console.log('📝 [Booking] Booking ID:', dbBookingId);
-      console.log('📝 [Booking] Booking Reference:', dbReference);
+      
+      
+      
 
       // Send email notification
       try {
-        console.log('📧 [Booking] Sending email notification...');
+        
         const notificationResponse = await fetch(paths.buildApiUrl('notify.php'), {
           method: 'POST',
           headers: {
@@ -343,12 +343,12 @@ const BookingPage = () => {
         
         const notificationResult = await notificationResponse.json();
         if (notificationResult.success) {
-          console.log('📧 [Booking] Email notification sent successfully');
+          
         } else {
-          console.warn('⚠️ [Booking] Email notification failed:', notificationResult.message);
+          
         }
       } catch (emailError) {
-        console.warn('⚠️ [Booking] Email notification error:', emailError);
+        
         // Don't fail the booking if email fails
       }
 
@@ -387,8 +387,8 @@ const BookingPage = () => {
       }
 
       // Navigate immediately to summary page
-      console.log('🔄 [Booking] Navigating to summary with params (online):', summaryParams.toString());
-      console.log('🔄 [Booking] Full URL (online):', `/summary?${summaryParams.toString()}`);
+      
+      
       navigate(`/summary?${summaryParams.toString()}`);
 
       const localBooking: Booking = {
@@ -406,8 +406,8 @@ const BookingPage = () => {
     } catch (error: any) {
       console.error('❌ [Booking] Database save failed, initiating offline fallback:', error);
       const reason = error?.message || 'Unknown error';
-      console.log('🛟 [Booking] Offline fallback reason:', reason);
-      console.log('🛟 [Booking] API reachable state:', apiReachable);
+      
+      
       if (apiReachable === false) {
         showError('API unreachable. Booking saved offline.');
       }
@@ -429,7 +429,7 @@ const BookingPage = () => {
       
       // Try to send email notification even if database failed
       try {
-        console.log('📧 [Booking] Attempting to send email notification for offline booking...');
+        
         const emailBookingData = {
           room_id: room?.id || selectedPackage?.id || '',
           first_name: bookingData.guestInfo.firstName,
@@ -456,10 +456,10 @@ const BookingPage = () => {
         
         const notificationResult = await notificationResponse.json();
         if (notificationResult.success) {
-          console.log('📧 [Booking] Email notification sent successfully for offline booking');
+          
         }
       } catch (emailError) {
-        console.warn('⚠️ [Booking] Email notification also failed for offline booking:', emailError);
+        
       }
       
       setBookingDetails({ id: bookingId, reference });
@@ -497,8 +497,8 @@ const BookingPage = () => {
       }
 
       // Navigate immediately to summary page
-      console.log('🔄 [Booking] Navigating to summary with params (offline):', summaryParams.toString());
-      console.log('🔄 [Booking] Full URL (offline):', `/summary?${summaryParams.toString()}`);
+      
+      
       navigate(`/summary?${summaryParams.toString()}`);
     }
   };

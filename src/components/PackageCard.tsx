@@ -46,7 +46,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
       // Default to empty array
       return [];
     } catch (error) {
-      console.warn('Failed to parse inclusions data:', data, error);
+      
       return [];
     }
   };

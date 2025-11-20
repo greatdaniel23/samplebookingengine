@@ -30,36 +30,36 @@ const BookingsSection: React.FC = () => {
     try {
       setLoading(true);
       const apiUrl = paths.buildApiUrl('bookings.php');
-      console.log('🔍 Fetching bookings from:', apiUrl);
+      
       
       const response = await fetch(apiUrl);
-      console.log('📡 Bookings API Response:', response.status, response.statusText);
+      
       
       if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       
       const data = await response.json();
-      console.log('📊 Bookings Raw Data:', data);
-      console.log('📊 Bookings Data Type:', typeof data);
-      console.log('📊 Bookings Is Array:', Array.isArray(data));
-      console.log('📊 Bookings Length:', Array.isArray(data) ? data.length : 'Not an array');
+      
+      
+      
+      
       
       // Handle wrapped response format: {success: true, data: Array}
       let bookingsArray = [];
       if (data && data.success && Array.isArray(data.data)) {
         bookingsArray = data.data;
-        console.log('📊 Extracted from wrapper - Bookings Length:', bookingsArray.length);
+        
       } else if (Array.isArray(data)) {
         bookingsArray = data;
-        console.log('📊 Direct array - Bookings Length:', bookingsArray.length);
+        
       }
       
       if (bookingsArray.length > 0) {
-        console.log('📊 First Booking Sample:', bookingsArray[0]);
-        console.log('📊 First Booking Keys:', Object.keys(bookingsArray[0]));
+        
+        
       }
       
       setBookings(bookingsArray);
-      console.log('✅ Bookings set to state:', bookingsArray.length, 'items');
+      
       
     } catch (error) {
       console.error('❌ Error fetching bookings:', error);
@@ -705,3 +705,4 @@ const BookingsSection: React.FC = () => {
 };
 
 export default BookingsSection;
+

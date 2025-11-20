@@ -7,6 +7,7 @@ import RoomsSection from '@/components/admin/RoomsSection';
 import PropertySection from '@/components/admin/PropertySection';
 import PackagesSection from '@/components/admin/PackagesSection';
 import AmenitiesSection from '@/components/admin/AmenitiesSection';
+import HomepageContentManager from '@/components/admin/HomepageContentManager';
 
 const AdminPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -42,9 +43,14 @@ const AdminPanel: React.FC = () => {
               label="Dashboard Overview"
             />
             <SidebarButton
+              active={activeTab === 'homepage'}
+              onClick={() => setActiveTab('homepage')}
+              label="Homepage Content"
+            />
+            <SidebarButton
               active={activeTab === 'bookings'}
               onClick={() => setActiveTab('bookings')}
-              label="Bookings Management"
+              label="Booking Management"
             />
             <SidebarButton
               active={activeTab === 'rooms'}
@@ -64,7 +70,7 @@ const AdminPanel: React.FC = () => {
             <SidebarButton
               active={activeTab === 'property'}
               onClick={() => setActiveTab('property')}
-              label="Property Management"
+              label="Villa & Homepage Content"
             />
             <SidebarButton
               active={activeTab === 'analytics'}
@@ -139,6 +145,7 @@ const AdminPanel: React.FC = () => {
         <main className="flex-1 overflow-auto">
           <div className="p-6">
             {activeTab === 'overview' && <OverviewSection />}
+            {activeTab === 'homepage' && <HomepageContentManager />}
             {activeTab === 'bookings' && <BookingsSection />}
             {activeTab === 'rooms' && <RoomsSection />}
             {activeTab === 'packages' && <PackagesSection />}
@@ -234,7 +241,7 @@ const OverviewSection: React.FC = () => {
           throw new Error(`Bookings API error: ${bookingsResponse.status}`);
         }
         const bookingsData = await bookingsResponse.json();
-        console.log('📊 Dashboard Bookings Raw Data:', bookingsData);
+        
         
         // Fetch rooms data
         const roomsResponse = await fetch(paths.buildApiUrl('rooms.php'));
@@ -242,7 +249,7 @@ const OverviewSection: React.FC = () => {
           throw new Error(`Rooms API error: ${roomsResponse.status}`);
         }
         const roomsData = await roomsResponse.json();
-        console.log('📊 Dashboard Rooms Raw Data:', roomsData);
+        
         
         // Fetch packages data
         const packagesResponse = await fetch(paths.buildApiUrl('packages.php'));
@@ -250,7 +257,7 @@ const OverviewSection: React.FC = () => {
           throw new Error(`Packages API error: ${packagesResponse.status}`);
         }
         const packagesData = await packagesResponse.json();
-        console.log('📊 Dashboard Packages Raw Data:', packagesData);
+        
         
         // Extract data from wrapped format: {success: true, data: Array}
         const bookings = (bookingsData && bookingsData.success && Array.isArray(bookingsData.data)) 
@@ -265,11 +272,7 @@ const OverviewSection: React.FC = () => {
           ? packagesData.data 
           : Array.isArray(packagesData) ? packagesData : [];
           
-        console.log('📊 Dashboard Extracted Arrays:', {
-          bookings: bookings.length,
-          rooms: rooms.length, 
-          packages: packages.length
-        });
+        
         
         // Update statistics
         setStats({
@@ -603,7 +606,7 @@ const AnalyticsSection: React.FC = () => {
   const fetchAnalyticsData = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching analytics data...');
+      
       
       // Fetch bookings data for analytics
       const bookingsResponse = await fetch(paths.buildApiUrl('bookings.php'));
@@ -619,7 +622,7 @@ const AnalyticsSection: React.FC = () => {
       const rooms = (roomsData && roomsData.success && Array.isArray(roomsData.data)) 
         ? roomsData.data : [];
         
-      console.log('📊 Analytics Raw Data:', { bookings: bookings.length, rooms: rooms.length });
+      
       
       // Calculate analytics
       const totalBookings = bookings.length;
