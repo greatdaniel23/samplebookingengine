@@ -466,6 +466,118 @@ $password = '';
 - ✅ **Package Management**: PASSED - Create, read, update, delete all working
 
 ## 🚀 Production Readiness
+---
+
+## 🌟 Amenities & Sales Tool System (NEW)
+
+### Endpoints
+| Endpoint | Description |
+|----------|-------------|
+| `GET /amenities.php/amenities` | List all active amenities (filters: `?category=&featured=1`) |
+| `GET /amenities.php/room-amenities/{room_id}` | Room feature list (highlight flags) |
+| `GET /amenities.php/package-amenities/{package_id}` | Package perk list |
+| `GET /amenities.php/sales-tool/{package_id}` | Combined sales presentation (room + package amenities) |
+
+### Sales Tool Response Structure
+```json
+{
+  "success": true,
+  "sales_tool": {
+    "package_info": { "id": 1, "name": "Romantic Getaway", ... },
+    "sales_presentation": {
+      "room_features": [ {"id":8,"name":"Balcony"} ],
+      "package_perks": [ {"id":16,"name":"Spa Treatment"} ],
+      "total_value_items": 9,
+      "highlighted_features": [ ... ],
+      "highlighted_perks": [ ... ]
+    },
+    "business_logic": {
+      "concept": "Sales Tool - combines room inventory with service perks",
+      "inventory_source": "Room availability controls package availability",
+      "marketing_angle": "Bundle presentation for customer attraction"
+    },
+    "room_context": {
+      "room_determined": true,
+      "room_id": "deluxe-suite"
+    }
+  }
+}
+```
+
+### Design Notes
+- No hard-coded fallback room; room_features only appear if context established (existing booking room).
+- Junction tables (`room_amenities`, `package_amenities`) prevent duplication & allow highlight flags.
+- Future: Add `package_rooms` for explicit base room mapping.
+
+### Planned Enhancements
+- Caching of sales tool responses (`salesTool:package:{id}`) with invalidation on amenity CRUD or booking creation.
+- Distinguish static amenities vs consumable perks (new `perks` table).
+- Add query parameter `?include=room_features,package_perks` for selective payload.
+
+---
+
+## 🔐 Security & Validation Enhancements (Checklist)
+- Replace production credentials in `config/database.php` with environment variables (.env) before deployment.
+- Implement rate limiting on `bookings.php` and `upload.php` to prevent abuse.
+- Enforce date sanity: `check_in < check_out` (add to bookings endpoint; currently implicit reliance on client).
+- Add numeric range validation for `duration_days`, `max_guests`, and `price` in `packages.php` PUT path.
+- Introduce HTTP 409 responses for concurrency conflicts when inventory locking added.
+
+---
+
+## 🔄 Concurrency & Inventory Roadmap
+When `total_inventory` and `reserved_inventory` columns are added to `rooms`:
+```sql
+START TRANSACTION;
+SELECT total_inventory, reserved_inventory FROM rooms WHERE id = ? FOR UPDATE;
+-- if reserved_inventory < total_inventory THEN proceed
+INSERT INTO bookings (...);
+UPDATE rooms SET reserved_inventory = reserved_inventory + 1 WHERE id = ?;
+COMMIT;
+```
+Failure path: rollback and return `{ "success": false, "error": "Inventory exhausted" }` with HTTP 409.
+
+---
+
+## 🩺 Health & Observability (Planned)
+Add endpoint `api-health-check.php` returning DB connectivity & timestamp:
+```json
+{ "success": true, "db": "ok", "timestamp": "2025-11-17T00:00:00Z" }
+```
+Future metrics: cache hits, average booking creation time, error rate last 15 minutes.
+
+---
+
+## 🧪 Testing Strategy Summary
+| Layer | Tests | Status |
+|-------|-------|--------|
+| Unit | Amenity parsing, JSON decode fallback | Pending |
+| Integration | Booking creation + email send | Partial (manual) |
+| Load | High-frequency availability checks | Pending |
+| Migration | Legacy amenity text -> junction mapping | Planned |
+
+---
+
+## 📝 Migration Plan (Legacy → Normalized Amenities)
+1. Parse legacy `rooms.amenities` JSON arrays -> map names to amenity IDs.
+2. Insert mappings into `room_amenities` with `is_highlighted` default heuristic (e.g. top 3).
+3. Dual-read period: frontend uses new tables but falls back if empty.
+4. Audit usage & remove legacy columns after 14-day stable period.
+5. Document removal in CHANGELOG.
+
+---
+
+## 📌 Engineering Backlog
+| Item | Priority | Notes |
+|------|----------|-------|
+| Add inventory columns + locking | High | Prevent oversell race |
+| Package-room explicit mapping   | High | Needed for sales tool base room |
+| Health check endpoint           | Medium | Basic operational insight |
+| Sales tool caching layer        | Medium | Performance for marketing pages |
+| Rate limiting middleware        | Medium | Abuse prevention |
+| Perks table separation          | Low | Future feature granularity |
+| Legacy amenity column removal   | Low | After migration done |
+
 **Status**: ✅ **FULLY OPERATIONAL**
 
 All API endpoints have been tested and validated. The system is ready for production deployment with:

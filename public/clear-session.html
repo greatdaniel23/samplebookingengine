@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Session Storage</title>
+</head>
+<body>
+    <h1>Session Storage Cleaner</h1>
+    <p>Current sessionStorage.adminLoggedIn: <span id="current-value"></span></p>
+    <button onclick="clearStorage()">Clear All Session Storage</button>
+    <button onclick="checkValue()">Check Current Value</button>
+    <button onclick="setAuthenticated()">Set Authenticated</button>
+    
+    <script>
+        function checkValue() {
+            const value = sessionStorage.getItem('adminLoggedIn');
+            document.getElementById('current-value').textContent = value || 'null';
+            console.log('adminLoggedIn:', value);
+        }
+        
+        function clearStorage() {
+            sessionStorage.clear();
+            console.log('Session storage cleared');
+            checkValue();
+            alert('Session storage cleared! Now try accessing /admin');
+        }
+        
+        function setAuthenticated() {
+            sessionStorage.setItem('adminLoggedIn', 'true');
+            console.log('Set adminLoggedIn to true');
+            checkValue();
+            alert('Set authenticated! Now try accessing /admin');
+        }
+        
+        // Check on load
+        checkValue();
+    </script>
+</body>
+</html>

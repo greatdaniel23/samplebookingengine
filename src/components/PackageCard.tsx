@@ -28,6 +28,31 @@ export const PackageCard: React.FC<PackageCardProps> = ({
   className = ''
 }) => {
   const navigate = useNavigate();
+
+  // Helper function to safely parse inclusions data
+  const parseInclusions = (data: any): string[] => {
+    try {
+      // If it's already an array, return it
+      if (Array.isArray(data)) {
+        return data;
+      }
+      
+      // If it's a string, try to parse as JSON
+      if (typeof data === 'string' && data.trim().length > 0) {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+      
+      // Default to empty array
+      return [];
+    } catch (error) {
+      console.warn('Failed to parse inclusions data:', data, error);
+      return [];
+    }
+  };
+
+  // Parse inclusions safely
+  const inclusions = parseInclusions(pkg.inclusions || pkg.includes);
   const discountPercentage = parseFloat(pkg.discount_percentage);
   const basePrice = parseFloat(pkg.price || pkg.base_price || '0');
   const originalPrice = basePrice / (1 - discountPercentage / 100);
@@ -125,25 +150,27 @@ export const PackageCard: React.FC<PackageCardProps> = ({
         </div>
 
         {/* Included Services */}
-        <div className="mb-4">
-          <h4 className="text-sm font-medium mb-2 flex items-center">
-            <Gift className="h-4 w-4 mr-1" />
-            What's Included:
-          </h4>
-          <div className="space-y-1">
-            {(pkg.inclusions || pkg.includes || []).slice(0, 3).map((item, index) => (
-              <div key={index} className="flex items-center text-xs text-gray-600">
-                <Star className="h-3 w-3 mr-1 text-yellow-500" />
-                <span className="line-clamp-1">{item}</span>
-              </div>
-            ))}
-            {(pkg.inclusions || pkg.includes || []).length > 3 && (
-              <div className="text-xs text-gray-500 italic">
-                +{(pkg.inclusions || pkg.includes || []).length - 3} more benefits
-              </div>
-            )}
+        {inclusions.length > 0 && (
+          <div className="mb-4">
+            <h4 className="text-sm font-medium mb-2 flex items-center">
+              <Gift className="h-4 w-4 mr-1" />
+              What's Included:
+            </h4>
+            <div className="space-y-1">
+              {inclusions.slice(0, 3).map((item, index) => (
+                <div key={index} className="flex items-center text-xs text-gray-600">
+                  <Star className="h-3 w-3 mr-1 text-yellow-500" />
+                  <span className="line-clamp-1">{item}</span>
+                </div>
+              ))}
+              {inclusions.length > 3 && (
+                <div className="text-xs text-gray-500 italic">
+                  +{inclusions.length - 3} more benefits
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Room Options */}
         {showRoomOptions && pkg.room_options && pkg.room_options.length > 0 && (

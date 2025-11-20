@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-button { background: #3b82f6; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 10px 5px; }
+        .test-button:hover { background: #2563eb; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #dcfce7; border: 1px solid #16a34a; color: #15803d; }
+        .error { background: #fef2f2; border: 1px solid #dc2626; color: #dc2626; }
+        .info { background: #eff6ff; border: 1px solid #3b82f6; color: #1d4ed8; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .endpoint-list { list-style: none; padding: 0; }
+        .endpoint-list li { padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+        .endpoint-list li:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 API Connection Test</h1>
+        <p>Test the connection to your PHP API endpoints from the frontend.</p>
+        
+        <div class="info result">
+            <strong>Current Configuration:</strong><br>
+            Environment: <span id="env">Loading...</span><br>
+            API Base URL: <span id="api-base">Loading...</span><br>
+            Current Origin: <span id="current-origin">Loading...</span>
+        </div>
+
+        <h2>Available Endpoints</h2>
+        <ul class="endpoint-list" id="endpoint-list">
+            <li>Loading endpoints...</li>
+        </ul>
+
+        <h2>Test Actions</h2>
+        <button class="test-button" onclick="testVillaInfo()">Test Villa Info</button>
+        <button class="test-button" onclick="testRooms()">Test Rooms</button>
+        <button class="test-button" onclick="testPackages()">Test Packages</button>
+        <button class="test-button" onclick="testBookings()">Test Bookings</button>
+        <button class="test-button" onclick="testAll()">Test All Endpoints</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Load configuration from frontend
+        const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const apiBase = isDevelopment ? '/api' : 'https://api.rumahdaisycantik.com';
+        
+        // Update page info
+        document.getElementById('env').textContent = isDevelopment ? 'development' : 'production';
+        document.getElementById('api-base').textContent = apiBase;
+        document.getElementById('current-origin').textContent = window.location.origin;
+
+        // Populate endpoint list
+        const endpoints = [
+            { name: 'Villa Info', url: `${apiBase}/villa.php` },
+            { name: 'Rooms', url: `${apiBase}/rooms.php` },
+            { name: 'Packages', url: `${apiBase}/packages.php` },
+            { name: 'Bookings', url: `${apiBase}/bookings.php` },
+            { name: 'iCal', url: `${apiBase}/ical.php` }
+        ];
+
+        const endpointList = document.getElementById('endpoint-list');
+        endpointList.innerHTML = endpoints.map(ep => 
+            `<li><strong>${ep.name}:</strong> <code>${ep.url}</code></li>`
+        ).join('');
+
+        function addResult(title, type, content) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<h3>${title}</h3>${content}`;
+            results.appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function testEndpoint(name, url) {
+            try {
+                console.log(`Testing ${name}: ${url}`);
+                const startTime = Date.now();
+                const response = await fetch(url);
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const contentType = response.headers.get('content-type');
+                let data;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    data = await response.text();
+                }
+
+                addResult(
+                    `✅ ${name} - Success`,
+                    'success',
+                    `
+                    <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                    <p><strong>Response Time:</strong> ${duration}ms</p>
+                    <p><strong>Content-Type:</strong> ${contentType}</p>
+                    <p><strong>Response Data:</strong></p>
+                    <pre>${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}</pre>
+                    `
+                );
+                return { success: true, data, duration };
+            } catch (error) {
+                console.error(`Error testing ${name}:`, error);
+                addResult(
+                    `❌ ${name} - Failed`,
+                    'error',
+                    `
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>URL:</strong> ${url}</p>
+                    <p><strong>Details:</strong> ${error.stack || 'No additional details'}</p>
+                    `
+                );
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testVillaInfo() {
+            document.getElementById('results').innerHTML = '';
+            await testEndpoint('Villa Info', `${apiBase}/villa.php`);
+        }
+
+        async function testRooms() {
+            document.getElementById('results').innerHTML = '';
+            await testEndpoint('Rooms', `${apiBase}/rooms.php`);
+        }
+
+        async function testPackages() {
+            document.getElementById('results').innerHTML = '';
+            await testEndpoint('Packages', `${apiBase}/packages.php`);
+        }
+
+        async function testBookings() {
+            document.getElementById('results').innerHTML = '';
+            await testEndpoint('Bookings', `${apiBase}/bookings.php`);
+        }
+
+        async function testAll() {
+            document.getElementById('results').innerHTML = '';
+            addResult('🔄 Testing All Endpoints', 'info', 'Running comprehensive API tests...');
+            
+            const results = [];
+            for (const endpoint of endpoints) {
+                const result = await testEndpoint(endpoint.name, endpoint.url);
+                results.push({ ...endpoint, ...result });
+                // Small delay between tests
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            // Summary
+            const successful = results.filter(r => r.success).length;
+            const total = results.length;
+            
+            addResult(
+                `📊 Test Summary`,
+                successful === total ? 'success' : 'error',
+                `
+                <p><strong>Results:</strong> ${successful}/${total} endpoints successful</p>
+                <ul>
+                    ${results.map(r => 
+                        `<li>${r.success ? '✅' : '❌'} ${r.name}: ${r.success ? `${r.duration}ms` : r.error}</li>`
+                    ).join('')}
+                </ul>
+                `
+            );
+        }
+
+        // Auto-run basic test on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('🚀 Page Loaded', 'info', 'Ready to test API connections. Click any test button above.');
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -19,13 +19,18 @@ A modern, full-stack villa booking and management system featuring a React/TypeS
 - 🔧 **[Setup Guide](readme/SETUP_COMPLETE.md)** - Installation and configuration
 - ⚡ **[Quick Reference](readme/DATABASE_QUICK_REF.md)** - Developer quick reference
 
-### **🔥 Recent Updates (Nov 12, 2025)**
+### **🔥 Recent Updates (Nov 19, 2025)**
+- ✅ **Documentation Cleanup**: Removed 9 duplicate files, optimized from 182 to 173 unique docs
+- ✅ **Amenities System**: Simplified API endpoint, comprehensive admin interface ready
 - ✅ **Package Filtering Fixed**: Admin changes now sync instantly with customer interface
 - ✅ **Complete Constants Audit**: 200+ constants documented across 30+ categories
 - ✅ **Hook Architecture Cleanup**: Resolved TypeScript import conflicts
-- ✅ **Comprehensive Documentation**: 30+ interconnected documentation files
 
-> 📋 **Full Documentation**: See **[readme/MASTER_DOCUMENTATION_INDEX.md](readme/MASTER_DOCUMENTATION_INDEX.md)** for complete system documentation with 30+ detailed guides covering architecture, database, APIs, constants, debugging, and more.
+- ✅ **Optimized Documentation**: 173 unique documentation files (duplicates removed Nov 19)
+
+> 📋 **Full Documentation**: See **[readme/MASTER_DOCUMENTATION_INDEX.md](readme/MASTER_DOCUMENTATION_INDEX.md)** for complete system documentation with 170+ detailed guides covering architecture, database, APIs, constants, debugging, and more.
+> 
+> 🧹 **Documentation Quality**: Recent cleanup removed 9 duplicate files, reducing redundancy from 20% to under 2% for improved navigation and maintenance.
 
 ## ✨ Key Features
 
@@ -43,6 +48,20 @@ A modern, full-stack villa booking and management system featuring a React/TypeS
 - **Villa Information Management**: Update site-wide details like contact info and amenities.
 - **Secure Authentication**: Session-based login system for administrators.
 - **Real-time Integration**: Changes made in the admin dashboard are instantly reflected on the public website.
+### 🧩 Amenities System (Nov 19 2025 Update)
+- **Normalized Amenity Catalog**: 26 amenities across 16 categories (rooms, packages, property-wide).
+- **Simplified Base Endpoint**: `GET /api/amenities.php` now returns the amenities list without needing `?endpoint=amenities`.
+- **Relationship Endpoints**:
+   - `GET /api/amenities.php/room-amenities/{room_id}` → Amenities mapped to a room
+   - `GET /api/amenities.php/package-amenities/{package_id}` → Perks mapped to a package
+   - `GET /api/amenities.php/sales-tool/{package_id}?room_id={roomId}` → Combined sales presentation
+- **Planned Mutations** (use query style until method branching added):
+   - `POST /api/amenities.php?endpoint=amenities` (create)
+   - `PUT /api/amenities.php?endpoint=amenities&id={id}` (update)
+   - `DELETE /api/amenities.php?endpoint=amenities&id={id}` (delete)
+- **Migration SQL**: Run `database/amenities-table.sql` to create amenity + mapping tables.
+- **Frontend Integration**: Admin React component now fetches via `fetch(buildApiUrl('amenities.php'))`.
+- **Legacy Compatibility**: `?endpoint=amenities` still accepted for backward compatibility.
 
 ## 🛠️ Tech Stack
 

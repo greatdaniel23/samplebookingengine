@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Authentication Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="max-w-4xl mx-auto p-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">🔐 Admin Authentication Test</h1>
+        
+        <!-- Current Auth Status -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Current Authentication Status</h2>
+            <div id="auth-status" class="space-y-2">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Test Actions -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Test Actions</h2>
+            <div class="space-x-4">
+                <button onclick="testLogin()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    🔑 Simulate Login
+                </button>
+                <button onclick="testLogout()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    🚪 Simulate Logout
+                </button>
+                <button onclick="checkAuth()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    🔍 Check Auth Status
+                </button>
+            </div>
+        </div>
+
+        <!-- Admin Access Test -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Admin Access Test</h2>
+            <div class="space-x-4">
+                <a href="/admin" target="_blank" class="inline-block bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    🎯 Try Access /admin
+                </a>
+                <a href="/admin/login" target="_blank" class="inline-block bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                    🔐 Go to /admin/login
+                </a>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Test Results</h2>
+            <div id="test-results" class="space-y-2 text-sm">
+                <p class="text-gray-600">Click buttons above to test authentication system...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function checkAuth() {
+            const adminLoggedIn = sessionStorage.getItem('adminLoggedIn');
+            const adminUser = sessionStorage.getItem('adminUser');
+            
+            const statusDiv = document.getElementById('auth-status');
+            const resultsDiv = document.getElementById('test-results');
+            
+            const status = adminLoggedIn === 'true';
+            const statusClass = status ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50';
+            const statusIcon = status ? '✅' : '❌';
+            const statusText = status ? 'AUTHENTICATED' : 'NOT AUTHENTICATED';
+            
+            statusDiv.innerHTML = `
+                <div class="p-3 rounded border ${statusClass}">
+                    <p class="font-semibold">${statusIcon} ${statusText}</p>
+                    <p class="text-sm mt-1">adminLoggedIn: ${adminLoggedIn || 'null'}</p>
+                    <p class="text-sm">adminUser: ${adminUser || 'null'}</p>
+                </div>
+            `;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            resultsDiv.innerHTML += `<p>[${timestamp}] Authentication check: ${statusText}</p>`;
+        }
+
+        function testLogin() {
+            sessionStorage.setItem('adminLoggedIn', 'true');
+            sessionStorage.setItem('adminUser', 'admin');
+            
+            const resultsDiv = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleTimeString();
+            resultsDiv.innerHTML += `<p class="text-green-600">[${timestamp}] ✅ Login simulated - session variables set</p>`;
+            
+            checkAuth();
+        }
+
+        function testLogout() {
+            sessionStorage.removeItem('adminLoggedIn');
+            sessionStorage.removeItem('adminUser');
+            
+            const resultsDiv = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleTimeString();
+            resultsDiv.innerHTML += `<p class="text-red-600">[${timestamp}] 🚪 Logout simulated - session variables cleared</p>`;
+            
+            checkAuth();
+        }
+
+        // Check auth status on page load
+        document.addEventListener('DOMContentLoaded', checkAuth);
+
+        // Auto-refresh auth status every 5 seconds
+        setInterval(checkAuth, 5000);
+    </script>
+</body>
+</html>

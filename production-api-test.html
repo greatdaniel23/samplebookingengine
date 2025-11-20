@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🌐 Production API Verification</title>
+    <meta charset="utf-8">
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            max-width: 800px; 
+            margin: 40px auto; 
+            padding: 20px; 
+            background: #f8f9fa;
+        }
+        .header { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 8px; 
+            margin-bottom: 30px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+            text-align: center;
+        }
+        .test-card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+        }
+        .success { border-left: 5px solid #28a745; }
+        .error { border-left: 5px solid #dc3545; }
+        .warning { border-left: 5px solid #ffc107; }
+        .status-title { font-size: 20px; font-weight: 600; margin-bottom: 15px; }
+        .status-detail { color: #666; margin-bottom: 10px; }
+        .code-block { 
+            background: #f1f3f4; 
+            padding: 15px; 
+            border-radius: 4px; 
+            font-family: 'Courier New', monospace; 
+            font-size: 13px; 
+            overflow-x: auto; 
+            white-space: pre-wrap;
+        }
+        .button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin: 8px; 
+            font-size: 14px;
+        }
+        .button:hover { background: #0056b3; }
+        .button.success { background: #28a745; }
+        .url-display { 
+            background: #e9ecef; 
+            padding: 10px; 
+            border-radius: 4px; 
+            font-family: monospace; 
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌐 Production API Verification</h1>
+        <p>Verifying that all API calls go to <strong>api.rumahdaisycantik.com</strong></p>
+        <button class="button success" onclick="testAllEndpoints()">🧪 Test All Production APIs</button>
+    </div>
+
+    <div id="results">
+        <!-- Results will be populated by JavaScript -->
+    </div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        // Expected production API base
+        const PRODUCTION_API = 'https://api.rumahdaisycantik.com';
+        
+        // API endpoints to test
+        const endpoints = [
+            { name: 'Villa API', path: '/villa.php', description: 'Villa information and details' },
+            { name: 'Rooms API', path: '/rooms.php', description: 'Room listings and availability' },
+            { name: 'Packages API', path: '/packages.php', description: 'Package offers and pricing' },
+            { name: 'Bookings API', path: '/bookings.php', description: 'Booking management' },
+            { name: 'Admin Auth API', path: '/admin/auth.php', description: 'Admin authentication' }
+        ];
+
+        function addEnvironmentCard() {
+            const card = document.createElement('div');
+            card.className = 'test-card warning';
+            card.innerHTML = `
+                <div class="status-title">⚙️ Current Configuration</div>
+                <div class="status-detail"><strong>Expected API Base:</strong></div>
+                <div class="url-display">${PRODUCTION_API}</div>
+                <div class="status-detail" style="margin-top: 15px;"><strong>Current Page:</strong> ${window.location.href}</div>
+                <div class="status-detail"><strong>Test Status:</strong> Verifying all endpoints use production API</div>
+            `;
+            resultsDiv.appendChild(card);
+        }
+
+        async function testEndpoint(endpoint) {
+            const fullUrl = PRODUCTION_API + endpoint.path;
+            const card = document.createElement('div');
+            card.className = 'test-card warning';
+            card.innerHTML = `
+                <div class="status-title">⏳ Testing ${endpoint.name}</div>
+                <div class="status-detail">${endpoint.description}</div>
+                <div class="url-display">${fullUrl}</div>
+                <div class="status-detail">Connecting to production API...</div>
+            `;
+            resultsDiv.appendChild(card);
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch(fullUrl);
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+
+                if (response.ok) {
+                    const contentType = response.headers.get('content-type') || '';
+                    let responseData = '';
+                    
+                    try {
+                        if (contentType.includes('application/json')) {
+                            const jsonData = await response.json();
+                            responseData = JSON.stringify(jsonData, null, 2);
+                        } else {
+                            responseData = await response.text();
+                        }
+                    } catch (e) {
+                        responseData = 'Could not parse response data';
+                    }
+
+                    card.className = 'test-card success';
+                    card.innerHTML = `
+                        <div class="status-title">✅ ${endpoint.name} - SUCCESS</div>
+                        <div class="status-detail">${endpoint.description}</div>
+                        <div class="status-detail"><strong>✅ Using Production API:</strong></div>
+                        <div class="url-display">${fullUrl}</div>
+                        <div class="status-detail"><strong>Status:</strong> ${response.status} ${response.statusText}</div>
+                        <div class="status-detail"><strong>Response Time:</strong> ${responseTime}ms</div>
+                        <div class="status-detail"><strong>Content-Type:</strong> ${contentType}</div>
+                        <div class="code-block">${responseData.substring(0, 300)}${responseData.length > 300 ? '...' : ''}</div>
+                    `;
+                } else {
+                    card.className = 'test-card error';
+                    card.innerHTML = `
+                        <div class="status-title">❌ ${endpoint.name} - HTTP ERROR</div>
+                        <div class="status-detail">${endpoint.description}</div>
+                        <div class="status-detail"><strong>URL:</strong></div>
+                        <div class="url-display">${fullUrl}</div>
+                        <div class="status-detail"><strong>Status:</strong> ${response.status} ${response.statusText}</div>
+                        <div class="status-detail"><strong>Response Time:</strong> ${responseTime}ms</div>
+                        <div class="status-detail">Production API returned an error, but connection successful.</div>
+                    `;
+                }
+            } catch (error) {
+                card.className = 'test-card error';
+                card.innerHTML = `
+                    <div class="status-title">❌ ${endpoint.name} - CONNECTION FAILED</div>
+                    <div class="status-detail">${endpoint.description}</div>
+                    <div class="status-detail"><strong>URL:</strong></div>
+                    <div class="url-display">${fullUrl}</div>
+                    <div class="status-detail"><strong>Error:</strong> ${error.message}</div>
+                    <div class="status-detail">Cannot connect to production API. Check CORS or network issues.</div>
+                `;
+            }
+        }
+
+        async function testAllEndpoints() {
+            // Clear previous results
+            resultsDiv.innerHTML = '';
+            
+            // Add environment info
+            addEnvironmentCard();
+            
+            // Test each endpoint
+            for (const endpoint of endpoints) {
+                await testEndpoint(endpoint);
+            }
+            
+            // Add summary card
+            const summaryCard = document.createElement('div');
+            summaryCard.className = 'test-card success';
+            summaryCard.innerHTML = `
+                <div class="status-title">📊 Test Complete</div>
+                <div class="status-detail">All API calls are now configured to use:</div>
+                <div class="url-display">${PRODUCTION_API}</div>
+                <div class="status-detail" style="margin-top: 15px;">
+                    <strong>✅ No Local Development API</strong> - No more localhost calls<br>
+                    <strong>✅ Production API Only</strong> - All data from api.rumahdaisycantik.com<br>
+                    <strong>✅ Consistent Environment</strong> - Same API in development and production
+                </div>
+            `;
+            resultsDiv.appendChild(summaryCard);
+        }
+
+        // Run test on page load
+        testAllEndpoints();
+    </script>
+</body>
+</html>

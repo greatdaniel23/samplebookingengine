@@ -377,7 +377,7 @@ import ImageManager from '@/components/ImageManager';
 ### **Technical Reference**
 - **[API Documentation](../api/README.md)** - Complete API documentation with image endpoints
 - **[UI Components](../src/components/ui/)** - ShadCN UI component library used in image gallery
-- **[Database Status](DATABASE_STATUS_FINAL.md)** - Current system status with image-related information
+- **[Database Status](DATABASE_STATUS.md)** - Current system status with image-related information
 - **[Master Documentation Index](MASTER_DOCUMENTATION_INDEX.md)** - Complete navigation across all documentation
 
 ### **Recent Updates & Achievements**

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, Image as ImageIcon, X } from 'lucide-react';
 import { getRoomImages } from '@/utils/images';
+import { paths } from '@/config/paths';
 
 interface ImageManagerProps {
   roomId: string;
@@ -42,7 +43,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({ roomId, onImagesUpda
         formData.append(`images[${imageType}]`, file);
       });
 
-      const response = await fetch('/api/rooms/upload-images', {
+      const response = await fetch(paths.buildApiUrl('upload.php'), {
         method: 'POST',
         body: formData
       });

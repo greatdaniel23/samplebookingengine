@@ -3,7 +3,6 @@ import { useRooms } from "@/hooks/useRooms";
 import { usePackages } from "@/hooks/usePackages";
 import { useVillaInfo } from "@/hooks/useVillaInfo";
 import type { Villa, Package, Room } from "@/types";
-import { villaData } from "@/data/dummy";
 
 /**
  * Custom hook to manage all data fetching and state aggregation for the Index page
@@ -16,12 +15,16 @@ export const useIndexPageData = () => {
   const { villaInfo, loading: villaLoading, error: villaError, refetch } = useVillaInfo();
 
   // Normalize villa data to ensure compatibility between VillaInfo and Villa types
-  const normalizeVillaData = (data: any): Villa => {
-    if (!data) return villaData;
+  const normalizeVillaData = (data: any): Villa | null => {
+    if (!data) {
+      console.warn('🚨 No villa data from API - cannot display villa information');
+      console.log('API Error:', villaError);
+      return null;
+    }
     
     // Convert amenities from string array to object array
     const normalizeAmenities = (amenities: any) => {
-      if (!Array.isArray(amenities)) return villaData.amenities;
+      if (!Array.isArray(amenities)) return [];
       
       // If already objects with name and icon, return as is
       if (amenities.length > 0 && typeof amenities[0] === 'object' && amenities[0].name) {
@@ -54,15 +57,15 @@ export const useIndexPageData = () => {
     };
     
     return {
-      id: data.id || villaData.id,
-      name: data.name || villaData.name,
-      location: data.address || data.location || villaData.location, // Enhanced DB uses 'address'
-      description: data.description || villaData.description,
-      rating: data.rating || villaData.rating,
-      reviews: data.reviews || villaData.reviews,
-      images: data.images || villaData.images,
+      id: data.id || 1,
+      name: data.name || 'Villa Name Not Available',
+      location: data.address || data.location || 'Location Not Available',
+      description: data.description || 'Description not available from API',
+      rating: data.rating || 0,
+      reviews: data.reviews || 0,
+      images: data.images || [],
       amenities: normalizeAmenities(data.amenities),
-      rooms: data.rooms || villaData.rooms,
+      rooms: data.rooms || [],
     };
   };
 
@@ -102,7 +105,7 @@ export const useIndexPageData = () => {
     // Data
     safeRooms,
     safePackages,
-    currentVillaData,
+    currentVillaData, // Can be null if API fails
     
     // States
     isLoading,
