@@ -607,7 +607,7 @@ The iCal system is **production-ready and essential for modern villa management*
 
 ### **Technical Documentation**
 - **[API Documentation](../api/README.md)** - Complete API reference including calendar endpoints
-- **[Database Documentation](DATABASE_STATUS_FINAL.md)** - Database structure supporting calendar functionality
+- **[Database Documentation](DATABASE_STATUS.md)** - Database structure supporting calendar functionality
 - **[Constants Documentation](CONSTANTS_DOCUMENTATION.md)** - Configuration constants for calendar system
 
 ---

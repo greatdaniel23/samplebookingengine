@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Amenities API Endpoint Verification</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        pre { background: #f8f9fa; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Amenities API Endpoint Verification</h1>
+    <p>Testing the actual API endpoints to verify the documentation...</p>
+    
+    <div id="results"></div>
+    
+    <script>
+        const API_BASE = 'https://api.rumahdaisycantik.com';
+        // For local: const API_BASE = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/api';
+        
+        const tests = [
+            {
+                name: 'GET /amenities.php (base endpoint)',
+                url: `${API_BASE}/amenities.php`,
+                expected: 'Should return all amenities'
+            },
+            {
+                name: 'GET /amenities.php/amenities',
+                url: `${API_BASE}/amenities.php/amenities`,
+                expected: 'Should return all amenities (explicit endpoint)'
+            },
+            {
+                name: 'GET /amenities.php/categories',
+                url: `${API_BASE}/amenities.php/categories`,
+                expected: 'Should return categories with stats'
+            },
+            {
+                name: 'GET /amenities.php/room-amenities/deluxe-suite',
+                url: `${API_BASE}/amenities.php/room-amenities/deluxe-suite`,
+                expected: 'Should return amenities for deluxe suite'
+            },
+            {
+                name: 'GET /amenities.php/package-amenities/1',
+                url: `${API_BASE}/amenities.php/package-amenities/1`,
+                expected: 'Should return amenities for package 1'
+            },
+            {
+                name: 'GET /amenities.php/sales-tool/1',
+                url: `${API_BASE}/amenities.php/sales-tool/1`,
+                expected: 'Should return sales tool data for package 1'
+            }
+        ];
+        
+        async function runTests() {
+            const resultsDiv = document.getElementById('results');
+            
+            for (const test of tests) {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'test-result info';
+                resultDiv.innerHTML = `
+                    <h3>${test.name}</h3>
+                    <p>Testing: <code>${test.url}</code></p>
+                    <p>Expected: ${test.expected}</p>
+                    <p>Status: Testing...</p>
+                `;
+                resultsDiv.appendChild(resultDiv);
+                
+                try {
+                    const response = await fetch(test.url);
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        resultDiv.className = 'test-result success';
+                        resultDiv.innerHTML = `
+                            <h3>✅ ${test.name}</h3>
+                            <p>URL: <code>${test.url}</code></p>
+                            <p>Status: ${response.status} ${response.statusText}</p>
+                            <p>Success: ${data.success ? 'True' : 'False'}</p>
+                            <details>
+                                <summary>Response Data</summary>
+                                <pre>${JSON.stringify(data, null, 2)}</pre>
+                            </details>
+                        `;
+                    } else {
+                        resultDiv.className = 'test-result error';
+                        resultDiv.innerHTML = `
+                            <h3>❌ ${test.name}</h3>
+                            <p>URL: <code>${test.url}</code></p>
+                            <p>Status: ${response.status} ${response.statusText}</p>
+                            <p>Error: ${data.error || 'Unknown error'}</p>
+                            <details>
+                                <summary>Error Details</summary>
+                                <pre>${JSON.stringify(data, null, 2)}</pre>
+                            </details>
+                        `;
+                    }
+                } catch (error) {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.innerHTML = `
+                        <h3>❌ ${test.name}</h3>
+                        <p>URL: <code>${test.url}</code></p>
+                        <p>Network Error: ${error.message}</p>
+                    `;
+                }
+            }
+        }
+        
+        // Run tests when page loads
+        window.onload = runTests;
+    </script>
+</body>
+</html>

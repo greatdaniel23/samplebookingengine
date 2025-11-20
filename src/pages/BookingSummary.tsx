@@ -62,6 +62,23 @@ const BookingSummary = () => {
   const navigate = useNavigate();
   const { villaInfo } = useVillaInfo();
 
+  // Helper function to safely parse inclusions data
+  const parseInclusions = (data: any): string[] => {
+    try {
+      if (Array.isArray(data)) {
+        return data;
+      }
+      if (typeof data === 'string' && data.trim().length > 0) {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+      return [];
+    } catch (error) {
+      console.warn('Failed to parse inclusions data:', data, error);
+      return [];
+    }
+  };
+
   // Get the image URL from either images array or image_url field  
   const getPackageImageUrl = (pkg: Package) => {
     // If pkg.images is an array and has items, use the first one
@@ -493,7 +510,7 @@ Total: $${bookingData?.pricing.totalPrice}
           </Card>
 
           {/* Package Includes (if package booking) */}
-          {packageData && packageData.includes && Array.isArray(packageData.includes) && packageData.includes.length > 0 && (
+          {packageData && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -503,7 +520,7 @@ Total: $${bookingData?.pricing.totalPrice}
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {packageData.includes.map((item, index) => (
+                  {parseInclusions(packageData.includes || packageData.inclusions).map((item, index) => (
                     <div key={index} className="flex items-start space-x-3">
                       <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                       <span className="text-sm">{item}</span>

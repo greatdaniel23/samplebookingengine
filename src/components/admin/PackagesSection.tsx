@@ -1,0 +1,822 @@
+import React, { useState, useEffect } from 'react';
+import { paths } from '@/config/paths';
+
+const PackagesSection: React.FC = () => {
+  const [packages, setPackages] = useState<any[]>([]);
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingPackage, setEditingPackage] = useState<any>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [packageFormData, setPackageFormData] = useState({
+    name: '',
+    description: '',
+    type: 'Romance',
+    price: 0,
+    duration_days: 1,
+    max_guests: 2,
+    available: true,
+    base_room_id: '',
+    inclusions: [] as string[],
+    exclusions: [] as string[],
+    images: [] as string[],
+    valid_from: '',
+    valid_until: '',
+    terms_conditions: ''
+  });
+  const [createFormData, setCreateFormData] = useState({
+    name: '',
+    description: '',
+    type: 'Romance',
+    base_room_id: '',
+    base_price: 0,
+    min_nights: 1,
+    max_nights: 30,
+    max_guests: 2,
+    discount_percentage: 0,
+    is_active: true,
+    inclusions: [] as string[],
+    exclusions: [] as string[],
+    featured: false
+  });
+
+  useEffect(() => {
+    fetchPackages();
+    fetchRooms();
+  }, []);
+
+  const fetchRooms = async () => {
+    try {
+      const apiUrl = paths.buildApiUrl('rooms.php');
+      const response = await fetch(apiUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const data = await response.json();
+      const roomsArray = data.success ? data.data : (Array.isArray(data) ? data : []);
+      setRooms(roomsArray);
+    } catch (error) {
+      console.error('Error fetching rooms:', error);
+      setRooms([]);
+    }
+  };
+
+  const fetchPackages = async () => {
+    try {
+      setLoading(true);
+      const apiUrl = paths.buildApiUrl('packages.php');
+      
+      const response = await fetch(apiUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      
+      const data = await response.json();
+      const packagesArray = data.success ? data.data : (Array.isArray(data) ? data : []);
+      
+      setPackages(packagesArray);
+    } catch (error) {
+      console.error('Error fetching packages:', error);
+      setPackages([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreatePackage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(paths.buildApiUrl('packages.php'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(createFormData)
+      });
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const result = await response.json();
+      if (result.success) {
+        alert('Sales tool created successfully!');
+        setShowCreateModal(false);
+        setCreateFormData({
+          name: '',
+          description: '',
+          type: 'Romance',
+          base_room_id: '',
+          base_price: 0,
+          min_nights: 1,
+          max_nights: 30,
+          max_guests: 2,
+          discount_percentage: 0,
+          is_active: true,
+          inclusions: [] as string[],
+          exclusions: [] as string[],
+          featured: false
+        });
+        fetchPackages();
+      } else {
+        throw new Error(result.error || 'Failed to create package');
+      }
+    } catch (error) {
+      console.error('Error creating package:', error);
+      alert('Error creating sales tool: ' + error);
+    }
+  };
+
+  const handleUpdatePackage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPackage) return;
+    
+    try {
+      // Prepare update data with proper field mapping to match database schema
+      const updateData = {
+        id: editingPackage.id,
+        name: packageFormData.name,
+        description: packageFormData.description,
+        // Map frontend fields to database schema
+        package_type: packageFormData.type,           // type -> package_type
+        base_price: packageFormData.price,            // price -> base_price  
+        min_nights: packageFormData.duration_days,    // duration_days -> min_nights
+        max_guests: packageFormData.max_guests,
+        is_active: packageFormData.available ? 1 : 0, // available -> is_active
+        // Note: base_room_id not yet in database schema, will be added in future update
+        // Handle JSON fields properly - send valid JSON arrays or null
+        includes: Array.isArray(packageFormData.inclusions) && packageFormData.inclusions.length > 0 
+          ? JSON.stringify(packageFormData.inclusions) 
+          : null,
+        exclusions: Array.isArray(packageFormData.exclusions) && packageFormData.exclusions.length > 0 
+          ? JSON.stringify(packageFormData.exclusions) 
+          : null,
+        images: Array.isArray(packageFormData.images) && packageFormData.images.length > 0 
+          ? JSON.stringify(packageFormData.images) 
+          : null,
+        valid_from: packageFormData.valid_from || null,
+        valid_until: packageFormData.valid_until || null,
+        terms_conditions: packageFormData.terms_conditions,
+        // Add default values for missing fields
+        discount_percentage: 0,
+        max_nights: 30
+      };
+
+      console.log('Updating package with data:', updateData);
+      
+      const response = await fetch(paths.buildApiUrl('packages.php'), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('Update API Response:', result);
+      
+      if (result.success) {
+        alert('Sales tool updated successfully!');
+        setEditingPackage(null);
+        setPackageFormData({
+          name: '',
+          description: '',
+          type: 'Romance',
+          price: 0,
+          duration_days: 1,
+          max_guests: 2,
+          available: true,
+          base_room_id: '',
+          inclusions: [] as string[],
+          exclusions: [] as string[],
+          images: [] as string[],
+          valid_from: '',
+          valid_until: '',
+          terms_conditions: ''
+        });
+        // Refresh the packages list
+        await fetchPackages();
+      } else {
+        throw new Error(result.error || result.message || 'Failed to update package');
+      }
+    } catch (error) {
+      console.error('Error updating package:', error);
+      alert('Error updating sales tool: ' + error);
+    }
+  };
+
+  const deletePackage = async (packageId: number) => {
+    if (!confirm('Are you sure you want to delete this sales tool?')) return;
+    
+    try {
+      const response = await fetch(paths.buildApiUrl('packages.php'), {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: packageId })
+      });
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const result = await response.json();
+      if (result.success) {
+        alert('Sales tool deleted successfully!');
+        fetchPackages();
+      } else {
+        throw new Error(result.error || 'Failed to delete package');
+      }
+    } catch (error) {
+      console.error('Error deleting package:', error);
+      alert('Error deleting sales tool: ' + error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-900">Sales Tools Management</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
+              <div className="h-4 bg-gray-300 rounded w-3/4 mb-4"></div>
+              <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+              <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Sales Tools Concept Header */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="flex items-start">
+          <svg className="w-6 h-6 text-blue-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">📦 Sales Tools Concept</h3>
+            <p className="text-blue-800 text-sm">
+              <strong>Packages are marketing tools</strong> that combine room accommodation with services to create attractive bundled offers. 
+              Each package is based on an actual room (the real inventory). Package availability depends on room availability.
+            </p>
+            <div className="mt-2 text-xs text-blue-700">
+              💡 <strong>Business Logic:</strong> Room + Services = Sales Tool → Customer chooses bundle → Books room with services
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Sales Tools Management</h2>
+          <p className="text-sm text-gray-600 mt-1">Create marketing packages that bundle rooms with services</p>
+        </div>
+        <button 
+          onClick={() => setShowCreateModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          Create Sales Tool
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {packages.map((pkg, index) => {
+          const baseRoom = rooms.find(room => room.id === pkg.base_room_id) || null;
+          const isActive = pkg.available === 1 || pkg.available === '1' || pkg.is_active === 1 || pkg.is_active === '1' || pkg.active;
+          
+          return (
+            <div key={pkg.id || index} className="bg-white rounded-lg shadow overflow-hidden border-l-4 border-blue-500">
+              <div className="p-6">
+                {/* Sales Tool Header */}
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                        🎁 Sales Tool
+                      </span>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">{pkg.name || 'Unnamed Sales Tool'}</h3>
+                  </div>
+                </div>
+                
+                {/* Base Room Information */}
+                <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <span className="text-sm font-medium text-gray-700">Base Room (Real Inventory)</span>
+                  </div>
+                  {baseRoom ? (
+                    <div className="text-sm text-gray-600">
+                      <p><strong>{baseRoom.name}</strong> - ${baseRoom.price}/night</p>
+                      <p className="text-xs text-gray-500">Capacity: {baseRoom.capacity} guests | Type: {baseRoom.type}</p>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-red-600">
+                      ⚠️ No base room assigned - Package availability cannot be determined
+                    </div>
+                  )}
+                </div>
+
+                {/* Sales Tool Details */}
+                <div className="space-y-2 text-sm text-gray-600">
+                  <div className="flex justify-between">
+                    <span><strong>Bundle Price:</strong></span>
+                    <span className="text-green-600 font-semibold">${pkg.price || pkg.base_price || '0'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span><strong>Marketing Category:</strong></span>
+                    <span>{pkg.type || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span><strong>Max Guests:</strong></span>
+                    <span>{pkg.max_guests || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span><strong>Package Duration:</strong></span>
+                    <span>{pkg.duration_days || pkg.min_nights || 'N/A'} {pkg.duration_days ? 'days' : 'nights'}</span>
+                  </div>
+                </div>
+
+                {/* Business Logic Explanation */}
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-yellow-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="text-xs text-yellow-800">
+                      <p className="font-medium">Sales Tool Logic:</p>
+                      <p>This package is available only when the base room has inventory. Room availability controls package availability.</p>
+                    </div>
+                  </div>
+                </div>
+              
+                {pkg.description && (
+                  <p className="mt-4 text-sm text-gray-600 line-clamp-3">{pkg.description}</p>
+                )}
+                
+                <div className="mt-4 flex space-x-2">
+                  <button 
+                    onClick={() => {
+                      setEditingPackage(pkg);
+                      setPackageFormData({
+                        name: pkg.name || '',
+                        description: pkg.description || '',
+                        type: pkg.type || 'Romance',
+                        price: parseFloat(pkg.price || pkg.base_price || 0),
+                        duration_days: parseInt(pkg.duration_days || pkg.min_nights || 1),
+                        max_guests: parseInt(pkg.max_guests || 2),
+                        available: pkg.available === 1 || pkg.available === '1' || pkg.is_active === 1 || pkg.is_active === '1' || pkg.active || false,
+                        base_room_id: pkg.base_room_id || '',
+                        inclusions: Array.isArray(pkg.inclusions) ? pkg.inclusions : 
+                                   (pkg.inclusions ? JSON.parse(pkg.inclusions) : []),
+                        exclusions: Array.isArray(pkg.exclusions) ? pkg.exclusions : 
+                                   (pkg.exclusions ? JSON.parse(pkg.exclusions) : []),
+                        images: Array.isArray(pkg.images) ? pkg.images : 
+                               (pkg.images ? JSON.parse(pkg.images) : []),
+                        valid_from: pkg.valid_from || '',
+                        valid_until: pkg.valid_until || '',
+                        terms_conditions: pkg.terms_conditions || ''
+                      });
+                    }}
+                    className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm hover:bg-blue-700"
+                  >
+                    Edit Sales Tool
+                  </button>
+                  <button 
+                    onClick={() => deletePackage(pkg.id)}
+                    className="flex-1 bg-red-600 text-white py-2 px-3 rounded text-sm hover:bg-red-700"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Create Package Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">Create New Sales Tool</h3>
+                <p className="text-sm text-gray-600 mt-1">Bundle a room with services to create an attractive marketing package</p>
+              </div>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleCreatePackage} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sales Tool Name</label>
+                <input
+                  type="text"
+                  value={createFormData.name}
+                  onChange={(e) => setCreateFormData({...createFormData, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., Romantic Getaway, Family Adventure"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Base Room (Real Inventory) <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={createFormData.base_room_id}
+                  onChange={(e) => setCreateFormData({...createFormData, base_room_id: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select the room this sales tool is based on</option>
+                  {rooms.map(room => (
+                    <option key={room.id} value={room.id}>
+                      {room.name} - ${room.price}/night (Capacity: {room.capacity})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Package availability will depend on this room's availability
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Marketing Category</label>
+                  <select
+                    value={createFormData.type}
+                    onChange={(e) => setCreateFormData({...createFormData, type: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="Romance">Romance</option>
+                    <option value="Family">Family</option>
+                    <option value="Adventure">Adventure</option>
+                    <option value="Business">Business</option>
+                    <option value="Wellness">Wellness</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Bundle Price</label>
+                  <input
+                    type="number"
+                    value={createFormData.base_price}
+                    onChange={(e) => setCreateFormData({...createFormData, base_price: parseFloat(e.target.value) || 0})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min="0"
+                    step="0.01"
+                    placeholder="Total package price"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Room + services combined price</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sales Pitch & Description</label>
+                <textarea
+                  value={createFormData.description}
+                  onChange={(e) => setCreateFormData({...createFormData, description: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="Describe the experience and value proposition. What makes this package attractive?"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Focus on the combined value: room comfort + included services
+                </p>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                >
+                  Create Sales Tool
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Package Modal - Enhanced with Business Logic */}
+      {editingPackage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">Edit Sales Tool</h3>
+                <p className="text-sm text-gray-600 mt-1">Update this marketing package that combines room + services</p>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingPackage(null);
+                  setPackageFormData({
+                    name: '',
+                    description: '',
+                    type: 'Romance',
+                    price: 0,
+                    duration_days: 1,
+                    max_guests: 2,
+                    available: true,
+                    base_room_id: '',
+                    inclusions: [] as string[],
+                    exclusions: [] as string[],
+                    images: [] as string[],
+                    valid_from: '',
+                    valid_until: '',
+                    terms_conditions: ''
+                  });
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Business Logic Reminder */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-blue-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <h4 className="text-sm font-semibold text-blue-900 mb-1">Sales Tool Business Logic</h4>
+                  <p className="text-xs text-blue-800">
+                    This package is a <strong>marketing tool</strong> that bundles room accommodation with services. 
+                    Package availability depends on the base room's inventory. Update the sales presentation to attract customers.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleUpdatePackage} className="space-y-6">
+              {/* Current Base Room Info */}
+              {(() => {
+                const baseRoom = rooms.find(room => room.id === editingPackage.base_room_id) || null;
+                return (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      <span className="text-sm font-medium text-gray-700">Current Base Room (Real Inventory)</span>
+                    </div>
+                    {baseRoom ? (
+                      <div className="text-sm text-gray-600">
+                        <p><strong>{baseRoom.name}</strong> - ${baseRoom.price}/night</p>
+                        <p className="text-xs text-gray-500">
+                          Capacity: {baseRoom.capacity} guests | Type: {baseRoom.type} | 
+                          <span className={baseRoom.available ? 'text-green-600' : 'text-red-600'}>
+                            {baseRoom.available ? ' Available' : ' Disabled'}
+                          </span>
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-red-600">
+                        ⚠️ No base room assigned - Package availability cannot be determined
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Base Room Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Change Base Room (Real Inventory) <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={packageFormData.base_room_id}
+                  onChange={(e) => setPackageFormData({...packageFormData, base_room_id: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select the room this sales tool is based on</option>
+                  {rooms.map(room => (
+                    <option key={room.id} value={room.id}>
+                      {room.name} - ${room.price}/night (Capacity: {room.capacity}) {!room.available ? ' - DISABLED' : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 <strong>Critical:</strong> Package availability will depend on this room's inventory. Choose the room that represents the actual accommodation being sold.
+                </p>
+              </div>
+
+              {/* Package Details */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column - Basic Info */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sales Tool Name</label>
+                    <input
+                      type="text"
+                      value={packageFormData.name}
+                      onChange={(e) => setPackageFormData({...packageFormData, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., Romantic Getaway, Family Adventure"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Customer-facing package name</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Marketing Category</label>
+                    <select
+                      value={packageFormData.type}
+                      onChange={(e) => setPackageFormData({...packageFormData, type: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Romance">Romance</option>
+                      <option value="Family">Family</option>
+                      <option value="Adventure">Adventure</option>
+                      <option value="Business">Business</option>
+                      <option value="Wellness">Wellness</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Marketing category for filtering and presentation</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Bundle Price</label>
+                    <input
+                      type="number"
+                      value={packageFormData.price}
+                      onChange={(e) => setPackageFormData({...packageFormData, price: parseFloat(e.target.value) || 0})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min="0"
+                      step="0.01"
+                      placeholder="Total package price"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      💰 <strong>Total value:</strong> Room base price + service add-ons + savings/discount
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right Column - Package Configuration */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                      <input
+                        type="number"
+                        value={packageFormData.duration_days}
+                        onChange={(e) => setPackageFormData({...packageFormData, duration_days: parseInt(e.target.value) || 1})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        min="1"
+                        placeholder="Days"
+                        required
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Package length (days/nights)</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Max Guests</label>
+                      <input
+                        type="number"
+                        value={packageFormData.max_guests}
+                        onChange={(e) => setPackageFormData({...packageFormData, max_guests: parseInt(e.target.value) || 2})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        min="1"
+                        placeholder="Guests"
+                        required
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Maximum occupancy</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={packageFormData.available}
+                        onChange={(e) => setPackageFormData({...packageFormData, available: e.target.checked})}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Sales Tool Active</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1 ml-6">
+                      ⚡ When enabled, customers can see and book this package (if base room has inventory)
+                    </p>
+                  </div>
+
+                  {/* Business Logic Reminder */}
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-4 h-4 text-yellow-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L3.316 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      <div className="text-xs text-yellow-800">
+                        <p className="font-medium">Package Availability Logic:</p>
+                        <p>Even if this sales tool is "Active", it will only be bookable when the base room has available inventory.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sales Pitch Section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sales Pitch & Description</label>
+                <textarea
+                  value={packageFormData.description}
+                  onChange={(e) => setPackageFormData({...packageFormData, description: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={4}
+                  placeholder="Describe the complete experience this package offers. Focus on the combined value of room comfort + included services + unique perks."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  🎯 <strong>Sales Strategy:</strong> Highlight the complete experience - what room features they get + what additional services are included + why this bundle is valuable
+                </p>
+              </div>
+
+              {/* Value Proposition Preview */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-green-900 mb-2">📊 Sales Tool Preview</h4>
+                <div className="text-xs text-green-800 space-y-1">
+                  <p><strong>Package:</strong> {packageFormData.name || 'Untitled Package'}</p>
+                  <p><strong>Category:</strong> {packageFormData.type}</p>
+                  <p><strong>Bundle Price:</strong> ${packageFormData.price}/package ({packageFormData.duration_days} {packageFormData.duration_days === 1 ? 'day' : 'days'})</p>
+                  <p><strong>Status:</strong> {packageFormData.available ? 'Active (subject to room inventory)' : 'Inactive'}</p>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingPackage(null);
+                    setPackageFormData({
+                      name: '',
+                      description: '',
+                      type: 'Romance',
+                      price: 0,
+                      duration_days: 1,
+                      max_guests: 2,
+                      available: true,
+                      base_room_id: '',
+                      inclusions: [] as string[],
+                      exclusions: [] as string[],
+                      images: [] as string[],
+                      valid_from: '',
+                      valid_until: '',
+                      terms_conditions: ''
+                    });
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Update Sales Tool
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PackagesSection;

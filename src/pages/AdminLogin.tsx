@@ -13,7 +13,7 @@ const AdminLogin = () => {
     // Check if already logged in
     const isAdminLoggedIn = sessionStorage.getItem('adminLoggedIn');
     if (isAdminLoggedIn === 'true') {
-      navigate('/admin/villa');
+      navigate('/admin');
     }
   }, [navigate]);
 
@@ -28,7 +28,7 @@ const AdminLogin = () => {
       if (credentials.username === 'admin' && credentials.password === 'admin123') {
         sessionStorage.setItem('adminLoggedIn', 'true');
         sessionStorage.setItem('adminUser', credentials.username);
-        navigate('/admin/villa');
+        navigate('/admin');
       } else {
         setError('Invalid username or password');
       }

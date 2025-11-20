@@ -7,21 +7,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "127.0.0.1",
     port: 8080,
-    // Only use proxy in development mode
-    ...(mode === 'development' && {
-      proxy: {
-        '/api': {
-          target: 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1',
-          changeOrigin: true,
-          secure: false,
-          configure: (proxy, options) => {
-            proxy.on('error', (err, req, res) => {
-              console.log('Proxy error:', err);
-            });
-          }
-        }
-      }
-    })
+    // No proxy needed - always use production API directly
   },
   plugins: [dyadComponentTagger(), react()],
   resolve: {

@@ -53,6 +53,24 @@ const Index = () => {
     return <IndexSkeleton />;
   }
 
+  // Check if villa data is available from API
+  if (!currentVillaData) {
+    return (
+      <div className="text-center py-20">
+        <h2 className="text-2xl font-bold text-red-600 mb-4">Villa Information Not Available</h2>
+        <p className="text-muted-foreground mb-6">Unable to load villa data from API. Please check your connection.</p>
+        <div className="space-x-4">
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-hotel-sage text-white px-6 py-2 rounded hover:bg-hotel-sage-dark transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gradient-to-br from-white to-hotel-cream min-h-screen">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">

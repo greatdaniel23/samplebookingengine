@@ -28,6 +28,23 @@ const PackageDetails = () => {
   const { villaInfo } = useVillaInfo();
   const [pkg, setPackage] = useState<Package | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Helper function to safely parse inclusions data
+  const parseInclusions = (data: any): string[] => {
+    try {
+      if (Array.isArray(data)) {
+        return data;
+      }
+      if (typeof data === 'string' && data.trim().length > 0) {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+      return [];
+    } catch (error) {
+      console.warn('Failed to parse inclusions data:', data, error);
+      return [];
+    }
+  };
   const [error, setError] = useState<string | null>(null);
 
   // Dynamic contact information helpers
@@ -215,7 +232,7 @@ const PackageDetails = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(pkg.inclusions || pkg.includes || []).map((item, index) => (
+                {parseInclusions(pkg.inclusions || pkg.includes).map((item, index) => (
                   <div key={index} className="flex items-start space-x-3">
                     <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                     <span className="text-sm">{item}</span>
@@ -317,15 +334,15 @@ const PackageDetails = () => {
                 <div className="space-y-3">
                   <h4 className="font-medium">Key Features:</h4>
                   <div className="space-y-2">
-                    {(pkg.inclusions || pkg.includes || []).slice(0, 4).map((item, index) => (
+                    {parseInclusions(pkg.inclusions || pkg.includes).slice(0, 4).map((item, index) => (
                       <div key={index} className="flex items-center text-sm">
                         <Star className="h-3 w-3 mr-2 text-yellow-500" />
                         <span className="line-clamp-1">{item}</span>
                       </div>
                     ))}
-                    {(pkg.inclusions || pkg.includes || []).length > 4 && (
+                    {parseInclusions(pkg.inclusions || pkg.includes).length > 4 && (
                       <div className="text-xs text-muted-foreground italic">
-                        +{(pkg.inclusions || pkg.includes || []).length - 4} more benefits included
+                        +{parseInclusions(pkg.inclusions || pkg.includes).length - 4} more benefits included
                       </div>
                     )}
                   </div>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Security Test Protocol</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .step { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; }
+        .danger { background: #f8d7da; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Admin Security Test Protocol</h1>
+    
+    <div class="step">
+        <h3>Step 1: Clear All Session Data</h3>
+        <button onclick="clearAll()">Clear Session Storage</button>
+        <p>Status: <span id="clear-status">Not cleared</span></p>
+    </div>
+    
+    <div class="step">
+        <h3>Step 2: Verify No Authentication</h3>
+        <button onclick="checkAuth()">Check Auth Status</button>
+        <p>adminLoggedIn: <span id="auth-status">unknown</span></p>
+    </div>
+    
+    <div class="step">
+        <h3>Step 3: Test Admin Access (Should Be BLOCKED)</h3>
+        <button onclick="testAdminAccess()">Open /admin (Should Block)</button>
+        <p>Expected: Access Denied screen with authentication required</p>
+    </div>
+    
+    <div class="step">
+        <h3>Step 4: Login Through Proper Channel</h3>
+        <button onclick="openLogin()">Open /admin/login</button>
+        <p>Use credentials: admin / admin123</p>
+    </div>
+    
+    <div class="step">
+        <h3>Step 5: Verify Authentication Set</h3>
+        <button onclick="checkAuth()">Check Auth Status Again</button>
+        <p>adminLoggedIn after login: <span id="auth-status-after">unknown</span></p>
+    </div>
+    
+    <div class="step">
+        <h3>Step 6: Test Admin Access (Should Work Now)</h3>
+        <button onclick="testAdminAccess()">Open /admin (Should Work)</button>
+        <p>Expected: Admin dashboard with management interface</p>
+    </div>
+    
+    <div class="step">
+        <h3>Step 7: Manual Session Test</h3>
+        <button onclick="setAuth()">Manually Set Authentication</button>
+        <button onclick="removeAuth()">Manually Remove Authentication</button>
+    </div>
+    
+    <div id="log" style="background: #f8f9fa; padding: 15px; margin-top: 20px; border-radius: 5px;">
+        <h3>Test Log:</h3>
+        <div id="log-content"></div>
+    </div>
+    
+    <script>
+        function log(message) {
+            const logContent = document.getElementById('log-content');
+            const timestamp = new Date().toLocaleTimeString();
+            logContent.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+        }
+        
+        function clearAll() {
+            sessionStorage.clear();
+            localStorage.clear();
+            document.getElementById('clear-status').textContent = 'Cleared';
+            log('All session and local storage cleared');
+            checkAuth();
+        }
+        
+        function checkAuth() {
+            const adminLoggedIn = sessionStorage.getItem('adminLoggedIn');
+            document.getElementById('auth-status').textContent = adminLoggedIn || 'null';
+            document.getElementById('auth-status-after').textContent = adminLoggedIn || 'null';
+            log(`Auth status: ${adminLoggedIn || 'null'}`);
+        }
+        
+        function testAdminAccess() {
+            log('Opening /admin page...');
+            window.open('http://127.0.0.1:8080/admin', '_blank');
+        }
+        
+        function openLogin() {
+            log('Opening login page...');
+            window.open('http://127.0.0.1:8080/admin/login', '_blank');
+        }
+        
+        function setAuth() {
+            sessionStorage.setItem('adminLoggedIn', 'true');
+            log('Manually set adminLoggedIn to true');
+            checkAuth();
+        }
+        
+        function removeAuth() {
+            sessionStorage.removeItem('adminLoggedIn');
+            log('Manually removed adminLoggedIn');
+            checkAuth();
+        }
+        
+        // Initialize
+        checkAuth();
+        log('Test protocol loaded - follow steps 1-6');
+    </script>
+</body>
+</html>

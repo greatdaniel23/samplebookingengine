@@ -521,7 +521,7 @@ Status: Active and receiving bookings
 - **Calendar System**: See `CALENDAR_DOCUMENTATION.md`
 - **iCal Integration**: See `ICAL_DOCUMENTATION.md`
 - **API Endpoints**: See `PATH_TARGETS_DOCUMENTATION.md`
-- **Database Status**: See `DATABASE_STATUS_FINAL.md`
+- **Database Status**: See `DATABASE_STATUS.md`
 
 ---
 

@@ -28,6 +28,23 @@ const BookingPage = () => {
 
   const [room, setRoom] = useState<Room | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
+
+  // Helper function to safely parse inclusions data
+  const parseInclusions = (data: any): string[] => {
+    try {
+      if (Array.isArray(data)) {
+        return data;
+      }
+      if (typeof data === 'string' && data.trim().length > 0) {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+      return [];
+    } catch (error) {
+      console.warn('Failed to parse inclusions data:', data, error);
+      return [];
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { addBooking, getBookingsForRoom } = useBookings();
@@ -535,7 +552,7 @@ const BookingPage = () => {
                       <div className="mb-6">
                         <h3 className="text-xl font-semibold mb-3">Package Includes</h3>
                         <ul className="space-y-2">
-                          {selectedPackage.includes.map((item, index) => (
+                          {parseInclusions(selectedPackage.includes || selectedPackage.inclusions).map((item, index) => (
                             <li key={index} className="flex items-center space-x-3">
                               <CheckCircle2 className="w-5 h-5 text-green-600" />
                               <span>{item}</span>
