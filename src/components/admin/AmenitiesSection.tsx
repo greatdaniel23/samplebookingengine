@@ -204,7 +204,7 @@ const AmenitiesSection: React.FC = () => {
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center">
-          <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+          <div className="p-3 rounded-full bg-hotel-navy/20 text-hotel-navy">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
             </svg>
@@ -218,7 +218,7 @@ const AmenitiesSection: React.FC = () => {
 
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center">
-          <div className="p-3 rounded-full bg-green-100 text-green-600">
+          <div className="p-3 rounded-full bg-hotel-sage/20 text-hotel-sage">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
             </svg>
@@ -232,7 +232,7 @@ const AmenitiesSection: React.FC = () => {
 
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center">
-          <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
+          <div className="p-3 rounded-full bg-hotel-gold/20 text-hotel-gold">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
             </svg>
@@ -246,7 +246,7 @@ const AmenitiesSection: React.FC = () => {
 
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center">
-          <div className="p-3 rounded-full bg-purple-100 text-purple-600">
+          <div className="p-3 rounded-full bg-hotel-bronze/20 text-hotel-bronze">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
@@ -325,14 +325,14 @@ const AmenitiesSection: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs ${
-                      amenity.is_active === "1" ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      amenity.is_active === "1" ? 'bg-hotel-sage/20 text-hotel-sage' : 'bg-hotel-bronze/20 text-hotel-bronze'
                     }`}>
                       {amenity.is_active === "1" ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {amenity.is_featured === "1" ? (
-                      <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-hotel-gold" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.518 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                       </svg>
                     ) : (
@@ -348,7 +348,7 @@ const AmenitiesSection: React.FC = () => {
                     </button>
                     <button 
                       onClick={() => handleDeleteAmenity(amenity.id)}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-hotel-bronze hover:text-hotel-bronze/80"
                     >
                       Delete
                     </button>
@@ -402,7 +402,7 @@ const AmenitiesSection: React.FC = () => {
         </div>
         <button 
           onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+          className="bg-hotel-gold hover:bg-hotel-gold-dark text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -429,7 +429,7 @@ const AmenitiesSection: React.FC = () => {
                 onClick={() => setActiveAmenitiesTab(tab.id)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeAmenitiesTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-hotel-gold text-hotel-gold'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -448,13 +448,13 @@ const AmenitiesSection: React.FC = () => {
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+            <div className="bg-hotel-cream border border-hotel-bronze rounded-md p-4 mb-6">
               <div className="flex">
-                <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-hotel-bronze" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Error loading amenities</h3>
+                  <h3 className="text-sm font-medium text-hotel-navy">Error loading amenities</h3>
                   <div className="mt-2 text-sm text-red-700">{error}</div>
                 </div>
               </div>

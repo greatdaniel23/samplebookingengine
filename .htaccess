@@ -1,11 +1,61 @@
-RewriteEngine On
+<IfModule mod_rewrite.c>
+    RewriteEngine On
 
-# Handle API requests
-RewriteCond %{REQUEST_URI} ^/api/
-RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+    # =====================================================
+    # 1. CLOUDFLARE & HOSTINGER STABILITY FIXES (CRITICAL)
+    # =====================================================
+    # Prevent Error 522 by increasing PHP timeouts
+    <IfModule mod_php7.c>
+        php_value max_execution_time 300
+        php_value max_input_time 300
+        php_value memory_limit 256M
+    </IfModule>
+    # For newer Hostinger servers running LSAPI
+    <IfModule lsapi_module>
+        php_value max_execution_time 300
+        php_value max_input_time 300
+    </IfModule>
 
-# Handle React Router (frontend)
-RewriteCond %{REQUEST_URI} !^/api/
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /index.html [L]
+    # =====================================================
+    # 2. SECURITY HEADERS
+    # =====================================================
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # =====================================================
+    # 3. CORS (SECURE CONFIGURATION)
+    # =====================================================
+    # Don't use "*". Use your actual domain or the AI Subdomain.
+    # This allows both your main site AND your AI VPS to talk to this API.
+    
+    SetEnvIf Origin "^http(s)?://(.+\.)?(yourhotel\.com|ai\.yourhotel\.com)$" CORS_ALLOW_ORIGIN=$0
+    Header always set Access-Control-Allow-Origin %{CORS_ALLOW_ORIGIN}e env=CORS_ALLOW_ORIGIN
+    
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-API-Key"
+    Header always set Access-Control-Allow-Credentials "true"
+
+    # Handle OPTIONS (Preflight) immediately to save server load
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ - [200,L]
+
+    # =====================================================
+    # 4. API ROUTING
+    # =====================================================
+    # If the file exists, serve it (images, css)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # Route /api/anything to api/index.php
+    RewriteCond %{REQUEST_URI} ^/api/(.*)$
+    RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+
+    # =====================================================
+    # 5. CACHING (PERFORMANCE)
+    # =====================================================
+    <FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|webp)$">
+        ExpiresActive On
+        ExpiresDefault "access plus 1 month"
+    </FilesMatch>
+</IfModule>

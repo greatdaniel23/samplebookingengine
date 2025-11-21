@@ -95,8 +95,8 @@ const HomepageContentManager: React.FC = () => {
   if (error && error.includes('404')) {
     return (
       <div className="p-6">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-medium text-yellow-800 mb-2">⚠️ Advanced Homepage Management Not Available</h3>
+        <div className="bg-hotel-gold/10 border border-hotel-gold-light rounded-lg p-4 mb-6">
+          <h3 className="text-lg font-medium text-hotel-navy mb-2">⚠️ Advanced Homepage Management Not Available</h3>
           <p className="text-yellow-700 mb-3">
             The advanced homepage content management requires the <code>homepage.php</code> API to be deployed to production.
           </p>
@@ -105,7 +105,7 @@ const HomepageContentManager: React.FC = () => {
           </p>
           <Button 
             onClick={() => window.location.hash = '#property'} 
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-hotel-gold hover:bg-hotel-gold-dark"
           >
             Go to Villa & Homepage Content →
           </Button>
@@ -465,7 +465,7 @@ const HomepageContentManager: React.FC = () => {
                     />
                   ) : (
                     <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md flex items-center">
-                      <Star className="w-4 h-4 text-yellow-500 mr-1" />
+                      <Star className="w-4 h-4 text-hotel-gold mr-1" />
                       {formData.rating}
                     </div>
                   )}
@@ -734,7 +734,7 @@ const HomepageContentManager: React.FC = () => {
                       />
                     ) : (
                       <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md flex items-center">
-                        <Users className="w-4 h-4 text-blue-500 mr-2" />
+                        <Users className="w-4 h-4 text-hotel-navy mr-2" />
                         {formData.maxGuests}
                       </div>
                     )}
@@ -752,7 +752,7 @@ const HomepageContentManager: React.FC = () => {
                       />
                     ) : (
                       <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md flex items-center">
-                        <Bed className="w-4 h-4 text-purple-500 mr-2" />
+                        <Bed className="w-4 h-4 text-hotel-bronze mr-2" />
                         {formData.bedrooms}
                       </div>
                     )}
@@ -788,7 +788,7 @@ const HomepageContentManager: React.FC = () => {
                       />
                     ) : (
                       <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md flex items-center">
-                        <DollarSign className="w-4 h-4 text-green-500 mr-2" />
+                        <DollarSign className="w-4 h-4 text-hotel-sage mr-2" />
                         ${formData.basePrice}/night
                       </div>
                     )}
@@ -1012,7 +1012,7 @@ const HomepageContentManager: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => removeAmenity(index)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-hotel-bronze hover:text-hotel-bronze/80"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -1036,16 +1036,16 @@ const HomepageContentManager: React.FC = () => {
       </Tabs>
 
       {isEditing && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-hotel-cream border border-hotel-gold-light rounded-lg p-4">
           <div className="flex items-start">
             <div className="flex-shrink-0">
-              <FileText className="h-5 w-5 text-blue-400" />
+              <FileText className="h-5 w-5 text-hotel-gold" />
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-800">
+              <h3 className="text-sm font-medium text-hotel-navy">
                 Editing Homepage Content
               </h3>
-              <div className="mt-2 text-sm text-blue-700">
+              <div className="mt-2 text-sm text-hotel-bronze">
                 <p>
                   You are currently editing the homepage content. Changes will be reflected on the main website
                   once you save. Use the tabs above to edit different sections of the homepage.

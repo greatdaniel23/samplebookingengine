@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { paths } from '@/config/paths';
-import AdminApiDiagnostics from '@/components/AdminApiDiagnostics';
 import BookingsSection from '@/components/admin/BookingsSection';
 import RoomsSection from '@/components/admin/RoomsSection';
 import PropertySection from '@/components/admin/PropertySection';
@@ -18,18 +17,18 @@ const AdminPanel: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-hotel-cream to-white flex">
       {/* Left Sidebar */}
-      <div className="w-64 bg-white shadow-lg flex flex-col">
+      <div className="w-64 bg-white shadow-lg flex flex-col border-r border-hotel-gold-light">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-hotel-gold-light">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-yellow-600 rounded-lg flex items-center justify-center text-white font-bold mr-3">
+            <div className="w-8 h-8 bg-hotel-gold rounded-lg flex items-center justify-center text-white font-bold mr-3">
               H
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">Hotel Admin</h1>
-              <p className="text-xs text-gray-500">Management Portal</p>
+              <h1 className="text-lg font-bold text-hotel-navy">Hotel Admin</h1>
+              <p className="text-xs text-hotel-bronze">Management Portal</p>
             </div>
           </div>
         </div>
@@ -82,17 +81,12 @@ const AdminPanel: React.FC = () => {
               onClick={() => setActiveTab('settings')}
               label="System Settings"
             />
-            <SidebarButton
-              active={activeTab === 'diagnostics'}
-              onClick={() => setActiveTab('diagnostics')}
-              label="API Diagnostics"
-            />
           </div>
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200 space-y-3">
-          <div className="flex items-center text-sm text-gray-600 px-2">
+        <div className="p-4 border-t border-hotel-gold-light space-y-3">
+          <div className="flex items-center text-sm text-hotel-bronze px-2">
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -101,7 +95,7 @@ const AdminPanel: React.FC = () => {
           
           <Link 
             to="/"
-            className="w-full flex items-center px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors"
+            className="w-full flex items-center px-3 py-2 text-sm bg-hotel-cream text-hotel-bronze rounded-md hover:bg-hotel-gold-light transition-colors"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-1M10 6V5a2 2 0 112 0v1M10 6h4" />
@@ -111,7 +105,7 @@ const AdminPanel: React.FC = () => {
           
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+            className="w-full flex items-center px-3 py-2 text-sm text-hotel-bronze hover:text-hotel-navy hover:bg-hotel-cream rounded-md transition-colors"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -124,16 +118,16 @@ const AdminPanel: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <header className="bg-white shadow-sm border-b border-hotel-gold-light px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{getTabTitle(activeTab)}</h1>
-              <p className="text-sm text-gray-600 mt-1">{getTabDescription(activeTab)}</p>
+              <h1 className="text-2xl font-bold text-hotel-navy">{getTabTitle(activeTab)}</h1>
+              <p className="text-sm text-hotel-bronze mt-1">{getTabDescription(activeTab)}</p>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-hotel-bronze">
                 <span className="inline-flex items-center">
-                  <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                  <span className="w-2 h-2 bg-hotel-sage rounded-full mr-2"></span>
                   All systems operational
                 </span>
               </div>
@@ -153,7 +147,6 @@ const AdminPanel: React.FC = () => {
             {activeTab === 'property' && <PropertySection />}
             {activeTab === 'analytics' && <AnalyticsSection />}
             {activeTab === 'settings' && <SettingsSection />}
-            {activeTab === 'diagnostics' && <AdminApiDiagnostics />}
           </div>
         </main>
       </div>
@@ -174,8 +167,8 @@ const SidebarButton: React.FC<SidebarButtonProps> = ({ active, onClick, label })
       onClick={onClick}
       className={`w-full flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
         active 
-          ? 'bg-yellow-600 text-white' 
-          : 'text-gray-700 hover:bg-gray-100'
+          ? 'bg-hotel-gold text-white' 
+          : 'text-hotel-bronze hover:bg-hotel-cream'
       }`}
     >
       <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,8 +189,7 @@ const getTabTitle = (tab: string) => {
     amenities: 'Amenities Management',
     property: 'Property Management',
     analytics: 'Analytics & Reports',
-    settings: 'System Settings',
-    diagnostics: 'API Diagnostics'
+    settings: 'System Settings'
   };
   return titles[tab] || 'Admin Panel';
 };
@@ -211,8 +203,7 @@ const getTabDescription = (tab: string) => {
     amenities: 'Manage room features and package perks',
     property: 'Update property information and settings',
     analytics: 'View performance metrics and reports',
-    settings: 'Configure system preferences',
-    diagnostics: 'Test API connections and debug issues'
+    settings: 'Configure system preferences'
   };
   return descriptions[tab] || 'Admin management panel';
 };
@@ -307,18 +298,18 @@ const OverviewSection: React.FC = () => {
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-hotel-cream border border-hotel-bronze rounded-lg p-4">
           <div className="flex items-center">
-            <svg className="w-5 h-5 text-red-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-5 h-5 text-hotel-bronze mr-3" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
-            <h3 className="text-sm font-medium text-red-800">API Connection Error</h3>
+            <h3 className="text-sm font-medium text-hotel-navy">API Connection Error</h3>
           </div>
           <div className="mt-2">
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-hotel-bronze">{error}</p>
             <button 
               onClick={() => window.location.reload()} 
-              className="mt-2 text-sm bg-red-100 text-red-800 px-3 py-1 rounded hover:bg-red-200"
+              className="mt-2 text-sm bg-hotel-gold text-white px-3 py-1 rounded hover:bg-hotel-gold-dark"
             >
               Retry Connection
             </button>
@@ -332,14 +323,14 @@ const OverviewSection: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'confirmed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-hotel-sage/20 text-hotel-sage';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-hotel-gold/20 text-hotel-gold';
       case 'checked_in':
       case 'checked in':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-hotel-navy/20 text-hotel-navy';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-hotel-bronze/20 text-hotel-bronze';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -348,17 +339,17 @@ const OverviewSection: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* API Connection Status */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+      <div className="bg-hotel-cream border border-hotel-gold-light rounded-lg p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <svg className="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-5 h-5 text-hotel-gold mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
-            <span className="text-sm font-medium text-blue-800">
+            <span className="text-sm font-medium text-hotel-navy">
               API Connection Active - All services operational
             </span>
           </div>
-          <div className="text-xs text-blue-600">
+          <div className="text-xs text-hotel-bronze">
             Last updated: {new Date().toLocaleTimeString()}
           </div>
         </div>
@@ -370,33 +361,33 @@ const OverviewSection: React.FC = () => {
           icon="bookings"
           value={loading ? "..." : stats.totalBookings}
           label="Total Bookings"
-          bgColor="bg-blue-50"
-          textColor="text-blue-600"
-          valueColor="text-blue-900"
+          bgColor="bg-hotel-cream"
+          textColor="text-hotel-navy"
+          valueColor="text-hotel-navy"
         />
         <StatCard
           icon="rooms"
           value={loading ? "..." : stats.availableRooms}
           label="Available Rooms"
-          bgColor="bg-green-50"
-          textColor="text-green-600"
-          valueColor="text-green-900"
+          bgColor="bg-hotel-sage/10"
+          textColor="text-hotel-sage"
+          valueColor="text-hotel-sage"
         />
         <StatCard
           icon="packages"
           value={loading ? "..." : stats.activePackages}
           label="Active Packages"
-          bgColor="bg-yellow-50"
-          textColor="text-yellow-600"
-          valueColor="text-yellow-900"
+          bgColor="bg-hotel-gold/10"
+          textColor="text-hotel-gold"
+          valueColor="text-hotel-gold"
         />
         <StatCard
           icon="guests"
           value={loading ? "..." : stats.totalGuests}
           label="Total Guests"
-          bgColor="bg-purple-50"
-          textColor="text-purple-600"
-          valueColor="text-purple-900"
+          bgColor="bg-hotel-bronze/10"
+          textColor="text-hotel-bronze"
+          valueColor="text-hotel-bronze"
         />
       </div>
 
@@ -449,39 +440,39 @@ const OverviewSection: React.FC = () => {
           <div className="grid grid-cols-2 gap-3">
             <button 
               onClick={() => setActiveTab('bookings')}
-              className="flex flex-col items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+              className="flex flex-col items-center p-4 bg-hotel-cream rounded-lg hover:bg-hotel-gold/20 transition-colors"
             >
-              <svg className="w-8 h-8 text-blue-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-8 h-8 text-hotel-navy mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              <span className="text-sm font-medium text-blue-900">New Booking</span>
+              <span className="text-sm font-medium text-hotel-navy">New Booking</span>
             </button>
             <button 
               onClick={() => setActiveTab('rooms')}
-              className="flex flex-col items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+              className="flex flex-col items-center p-4 bg-hotel-sage/10 rounded-lg hover:bg-hotel-sage/20 transition-colors"
             >
-              <svg className="w-8 h-8 text-green-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-8 h-8 text-hotel-sage mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-              <span className="text-sm font-medium text-green-900">Add Room</span>
+              <span className="text-sm font-medium text-hotel-sage">Add Room</span>
             </button>
             <button 
               onClick={() => setActiveTab('packages')}
-              className="flex flex-col items-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
+              className="flex flex-col items-center p-4 bg-hotel-gold/10 rounded-lg hover:bg-hotel-gold/20 transition-colors"
             >
-              <svg className="w-8 h-8 text-yellow-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-8 h-8 text-hotel-gold mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
-              <span className="text-sm font-medium text-yellow-900">New Package</span>
+              <span className="text-sm font-medium text-hotel-gold">New Package</span>
             </button>
             <button 
               onClick={() => setActiveTab('analytics')}
-              className="flex flex-col items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+              className="flex flex-col items-center p-4 bg-hotel-bronze/10 rounded-lg hover:bg-hotel-bronze/20 transition-colors"
             >
-              <svg className="w-8 h-8 text-purple-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-8 h-8 text-hotel-bronze mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              <span className="text-sm font-medium text-purple-900">View Reports</span>
+              <span className="text-sm font-medium text-hotel-bronze">View Reports</span>
             </button>
           </div>
         </div>
@@ -549,33 +540,33 @@ const DashboardWithFallbackData: React.FC = () => (
         icon="bookings"
         value="--"
         label="Total Bookings"
-        bgColor="bg-blue-50"
-        textColor="text-blue-600"
-        valueColor="text-blue-900"
+        bgColor="bg-hotel-cream"
+        textColor="text-hotel-navy"
+        valueColor="text-hotel-navy"
       />
       <StatCard
         icon="rooms"
         value="--"
         label="Available Rooms"
-        bgColor="bg-green-50"
-        textColor="text-green-600"
-        valueColor="text-green-900"
+        bgColor="bg-hotel-sage/10"
+        textColor="text-hotel-sage"
+        valueColor="text-hotel-sage"
       />
       <StatCard
         icon="packages"
         value="--"
         label="Active Packages"
-        bgColor="bg-yellow-50"
-        textColor="text-yellow-600"
-        valueColor="text-yellow-900"
+        bgColor="bg-hotel-gold/10"
+        textColor="text-hotel-gold"
+        valueColor="text-hotel-gold"
       />
       <StatCard
         icon="guests"
         value="--"
         label="Total Guests"
-        bgColor="bg-purple-50"
-        textColor="text-purple-600"
-        valueColor="text-purple-900"
+        bgColor="bg-hotel-bronze/10"
+        textColor="text-hotel-bronze"
+        valueColor="text-hotel-bronze"
       />
     </div>
     
@@ -721,8 +712,8 @@ const AnalyticsSection: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-2 bg-hotel-navy/20 rounded-lg">
+              <svg className="h-6 w-6 text-hotel-navy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
@@ -735,8 +726,8 @@ const AnalyticsSection: React.FC = () => {
 
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-2 bg-hotel-sage/20 rounded-lg">
+              <svg className="h-6 w-6 text-hotel-sage" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -749,8 +740,8 @@ const AnalyticsSection: React.FC = () => {
 
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-2 bg-hotel-gold/20 rounded-lg">
+              <svg className="h-6 w-6 text-hotel-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
@@ -763,8 +754,8 @@ const AnalyticsSection: React.FC = () => {
 
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-2 bg-hotel-bronze/20 rounded-lg">
+              <svg className="h-6 w-6 text-hotel-bronze" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -783,11 +774,11 @@ const AnalyticsSection: React.FC = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Bookings This Month</span>
-              <span className="text-xl font-bold text-blue-600">{analytics.monthlyBookings}</span>
+              <span className="text-xl font-bold text-hotel-navy">{analytics.monthlyBookings}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Weekly Revenue</span>
-              <span className="text-xl font-bold text-green-600">${analytics.weeklyRevenue.toLocaleString()}</span>
+              <span className="text-xl font-bold text-hotel-sage">${analytics.weeklyRevenue.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Top Performing Room</span>
@@ -801,7 +792,7 @@ const AnalyticsSection: React.FC = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Check-ins Next 7 Days</span>
-              <span className="text-xl font-bold text-orange-600">{analytics.upcomingCheckIns}</span>
+              <span className="text-xl font-bold text-hotel-gold">{analytics.upcomingCheckIns}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Current Occupancy</span>
@@ -846,11 +837,11 @@ const SettingsSection: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">System Settings</h2>
+        <h2 className="text-2xl font-bold text-hotel-navy">System Settings</h2>
         <button
           onClick={handleSave}
           disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+          className="bg-hotel-gold text-white px-4 py-2 rounded-md hover:bg-hotel-gold-dark disabled:opacity-50"
         >
           {loading ? 'Saving...' : 'Save Settings'}
         </button>
@@ -860,23 +851,23 @@ const SettingsSection: React.FC = () => {
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Site Name</label>
+              <label className="block text-sm font-medium text-hotel-bronze mb-2">Site Name</label>
               <input
                 type="text"
                 value={settings.siteName}
                 onChange={(e) => setSettings({...settings, siteName: e.target.value})}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                className="w-full border border-hotel-gold-light rounded-md px-3 py-2 focus:border-hotel-gold focus:ring-1 focus:ring-hotel-gold"
                 placeholder="Your Hotel Name"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Site URL</label>
+              <label className="block text-sm font-medium text-hotel-bronze mb-2">Site URL</label>
               <input
                 type="url"
                 value={settings.siteUrl}
                 onChange={(e) => setSettings({...settings, siteUrl: e.target.value})}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                className="w-full border border-hotel-gold-light rounded-md px-3 py-2 focus:border-hotel-gold focus:ring-1 focus:ring-hotel-gold"
                 placeholder="https://yourhotel.com"
               />
             </div>
@@ -884,22 +875,22 @@ const SettingsSection: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Admin Email</label>
+              <label className="block text-sm font-medium text-hotel-bronze mb-2">Admin Email</label>
               <input
                 type="email"
                 value={settings.adminEmail}
                 onChange={(e) => setSettings({...settings, adminEmail: e.target.value})}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                className="w-full border border-hotel-gold-light rounded-md px-3 py-2 focus:border-hotel-gold focus:ring-1 focus:ring-hotel-gold"
                 placeholder="admin@yourhotel.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+              <label className="block text-sm font-medium text-hotel-bronze mb-2">Currency</label>
               <select
                 value={settings.currency}
                 onChange={(e) => setSettings({...settings, currency: e.target.value})}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                className="w-full border border-hotel-gold-light rounded-md px-3 py-2 focus:border-hotel-gold focus:ring-1 focus:ring-hotel-gold"
               >
                 <option value="USD">USD - US Dollar</option>
                 <option value="EUR">EUR - Euro</option>
@@ -910,11 +901,11 @@ const SettingsSection: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+            <label className="block text-sm font-medium text-hotel-bronze mb-2">Timezone</label>
             <select
               value={settings.timezone}
               onChange={(e) => setSettings({...settings, timezone: e.target.value})}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              className="w-full border border-hotel-gold-light rounded-md px-3 py-2 focus:border-hotel-gold focus:ring-1 focus:ring-hotel-gold"
             >
               <option value="UTC">UTC</option>
               <option value="Asia/Jakarta">Asia/Jakarta</option>
@@ -929,9 +920,9 @@ const SettingsSection: React.FC = () => {
               id="maintenanceMode"
               checked={settings.maintenanceMode}
               onChange={(e) => setSettings({...settings, maintenanceMode: e.target.checked})}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+              className="h-4 w-4 text-hotel-gold border-hotel-gold-light rounded"
             />
-            <label htmlFor="maintenanceMode" className="ml-2 text-sm text-gray-700">
+            <label htmlFor="maintenanceMode" className="ml-2 text-sm text-hotel-bronze">
               Enable Maintenance Mode
             </label>
           </div>

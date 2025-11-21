@@ -101,7 +101,7 @@ const Index = () => {
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4 text-hotel-navy">Select Your Perfect Package</h2>
             <p className="text-xl text-hotel-bronze max-w-3xl mx-auto">
-              {currentVillaData.description || 'Choose from our collection of carefully curated packages, each designed to create unforgettable experiences with exclusive amenities and special pricing.'}
+Choose from our collection of carefully curated packages, each designed to create unforgettable experiences with exclusive amenities and special pricing.
             </p>
           </div>
           
