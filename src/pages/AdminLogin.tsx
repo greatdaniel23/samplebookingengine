@@ -122,11 +122,7 @@ const AdminLogin = () => {
             </button>
           </form>
 
-          <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Demo Credentials:</h3>
-            <p className="text-sm text-gray-600">Username: <code className="bg-gray-200 px-1 rounded">admin</code></p>
-            <p className="text-sm text-gray-600">Password: <code className="bg-gray-200 px-1 rounded">admin123</code></p>
-          </div>
+          
         </div>
       </div>
     </div>

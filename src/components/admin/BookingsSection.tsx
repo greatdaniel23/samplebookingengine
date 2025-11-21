@@ -179,10 +179,10 @@ const BookingsSection: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'confirmed': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'checked_in': return 'bg-blue-100 text-blue-800';
+      case 'confirmed': return 'bg-hotel-sage/20 text-hotel-sage';
+      case 'pending': return 'bg-hotel-gold/20 text-hotel-gold';
+      case 'cancelled': return 'bg-hotel-bronze/20 text-hotel-bronze';
+      case 'checked_in': return 'bg-hotel-navy/20 text-hotel-navy';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -208,7 +208,7 @@ const BookingsSection: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-900">Bookings Management</h2>
         <button
           onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+          className="bg-hotel-gold text-white px-4 py-2 rounded-md hover:bg-hotel-gold-dark flex items-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -297,13 +297,13 @@ const BookingsSection: React.FC = () => {
                             special_requests: booking.special_requests || ''
                           });
                         }}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-hotel-navy hover:text-hotel-navy/80"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => deleteBooking(booking.id)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-hotel-bronze hover:text-hotel-bronze/80"
                       >
                         Delete
                       </button>
@@ -500,7 +500,7 @@ const BookingsSection: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                    className="px-4 py-2 text-sm font-medium text-white bg-hotel-gold rounded-md hover:bg-hotel-gold-dark"
                   >
                     Create Booking
                   </button>
@@ -690,7 +690,7 @@ const BookingsSection: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                    className="px-4 py-2 text-sm font-medium text-white bg-hotel-gold rounded-md hover:bg-hotel-gold-dark"
                   >
                     Update Booking
                   </button>

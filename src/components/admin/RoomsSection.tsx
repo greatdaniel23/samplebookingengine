@@ -200,18 +200,18 @@ const RoomsSection: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Room Inventory Concept Header */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+      <div className="bg-hotel-cream border border-hotel-gold-light rounded-lg p-4 mb-6">
         <div className="flex items-start">
-          <svg className="w-6 h-6 text-green-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-hotel-gold mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
           <div>
-            <h3 className="text-lg font-semibold text-green-900 mb-2">🏨 Real Inventory Control</h3>
-            <p className="text-green-800 text-sm">
+            <h3 className="text-lg font-semibold text-hotel-navy mb-2">🏨 Real Inventory Control</h3>
+            <p className="text-hotel-bronze text-sm">
               <strong>Rooms are the real inventory</strong> that controls all booking availability. 
               Each room type has a total inventory count. When rooms are booked, availability decreases.
             </p>
-            <div className="mt-2 text-xs text-green-700">
+            <div className="mt-2 text-xs text-hotel-bronze">
               💡 <strong>Business Logic:</strong> Room availability controls all package availability → No rooms = No sales tools available
             </div>
           </div>
@@ -225,7 +225,7 @@ const RoomsSection: React.FC = () => {
         </div>
         <button 
           onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+          className="bg-hotel-gold text-white px-4 py-2 rounded-md hover:bg-hotel-gold-dark flex items-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -241,7 +241,7 @@ const RoomsSection: React.FC = () => {
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">{room.name || 'Unnamed Room'}</h3>
                 <span className={`px-2 py-1 text-xs rounded-full ${
-                  room.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  room.available ? 'bg-hotel-sage/20 text-hotel-sage' : 'bg-hotel-bronze/20 text-hotel-bronze'
                 }`}>
                   {room.available ? 'Available' : 'Unavailable'}
                 </span>
@@ -279,13 +279,13 @@ const RoomsSection: React.FC = () => {
                              (room.images ? JSON.parse(room.images) : [])
                     });
                   }}
-                  className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm hover:bg-blue-700"
+                  className="flex-1 bg-hotel-navy text-white py-2 px-3 rounded text-sm hover:bg-hotel-navy/90"
                 >
                   Edit
                 </button>
                 <button 
                   onClick={() => deleteRoom(room.id)}
-                  className="flex-1 bg-red-600 text-white py-2 px-3 rounded text-sm hover:bg-red-700"
+                  className="flex-1 bg-hotel-bronze text-white py-2 px-3 rounded text-sm hover:bg-hotel-bronze/90"
                 >
                   Delete
                 </button>
@@ -406,7 +406,7 @@ const RoomsSection: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 bg-hotel-gold text-white rounded-md hover:bg-hotel-gold-dark"
                 >
                   Update Room
                 </button>
@@ -528,7 +528,7 @@ const RoomsSection: React.FC = () => {
                     type="checkbox"
                     checked={createFormData.available}
                     onChange={(e) => setCreateFormData({...createFormData, available: e.target.checked})}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-hotel-gold focus:ring-hotel-gold"
                   />
                   <span className="ml-2 text-sm text-gray-700">Available for booking</span>
                 </label>
@@ -544,7 +544,7 @@ const RoomsSection: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 text-sm font-medium text-white bg-hotel-gold rounded-md hover:bg-hotel-gold-dark"
                 >
                   Create Room
                 </button>

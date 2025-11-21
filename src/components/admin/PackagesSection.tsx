@@ -269,16 +269,16 @@ const PackagesSection: React.FC = () => {
       {/* Sales Tools Concept Header */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
         <div className="flex items-start">
-          <svg className="w-6 h-6 text-blue-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-hotel-gold mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">📦 Sales Tools Concept</h3>
-            <p className="text-blue-800 text-sm">
+            <h3 className="text-lg font-semibold text-hotel-navy mb-2">📦 Sales Tools Concept</h3>
+            <p className="text-hotel-bronze text-sm">
               <strong>Packages are marketing tools</strong> that combine room accommodation with services to create attractive bundled offers. 
               Each package is based on an actual room (the real inventory). Package availability depends on room availability.
             </p>
-            <div className="mt-2 text-xs text-blue-700">
+            <div className="mt-2 text-xs text-hotel-bronze">
               💡 <strong>Business Logic:</strong> Room + Services = Sales Tool → Customer chooses bundle → Books room with services
             </div>
           </div>
@@ -292,7 +292,7 @@ const PackagesSection: React.FC = () => {
         </div>
         <button 
           onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+          className="bg-hotel-gold text-white px-4 py-2 rounded-md hover:bg-hotel-gold-dark flex items-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -313,11 +313,11 @@ const PackagesSection: React.FC = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                      <span className="text-xs bg-hotel-gold/20 text-hotel-gold px-2 py-1 rounded-full font-medium">
                         🎁 Sales Tool
                       </span>
                       <span className={`px-2 py-1 text-xs rounded-full ${
-                        isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        isActive ? 'bg-hotel-sage/20 text-hotel-sage' : 'bg-hotel-bronze/20 text-hotel-bronze'
                       }`}>
                         {isActive ? 'Active' : 'Inactive'}
                       </span>
@@ -350,7 +350,7 @@ const PackagesSection: React.FC = () => {
                 <div className="space-y-2 text-sm text-gray-600">
                   <div className="flex justify-between">
                     <span><strong>Bundle Price:</strong></span>
-                    <span className="text-green-600 font-semibold">${pkg.price || pkg.base_price || '0'}</span>
+                    <span className="text-hotel-sage font-semibold">${pkg.price || pkg.base_price || '0'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span><strong>Marketing Category:</strong></span>
@@ -367,7 +367,7 @@ const PackagesSection: React.FC = () => {
                 </div>
 
                 {/* Business Logic Explanation */}
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="mt-4 p-3 bg-hotel-gold/10 border border-hotel-gold-light rounded-lg">
                   <div className="flex items-start gap-2">
                     <svg className="w-4 h-4 text-yellow-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -407,13 +407,13 @@ const PackagesSection: React.FC = () => {
                         terms_conditions: pkg.terms_conditions || ''
                       });
                     }}
-                    className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm hover:bg-blue-700"
+                    className="flex-1 bg-hotel-navy text-white py-2 px-3 rounded text-sm hover:bg-hotel-navy/90"
                   >
                     Edit Sales Tool
                   </button>
                   <button 
                     onClick={() => deletePackage(pkg.id)}
-                    className="flex-1 bg-red-600 text-white py-2 px-3 rounded text-sm hover:bg-red-700"
+                    className="flex-1 bg-hotel-bronze text-white py-2 px-3 rounded text-sm hover:bg-hotel-bronze/90"
                   >
                     Delete
                   </button>
