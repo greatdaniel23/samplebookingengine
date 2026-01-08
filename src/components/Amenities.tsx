@@ -41,7 +41,7 @@ export const Amenities = ({ amenities }: AmenitiesProps) => {
           const IconComponent = iconMap[amenity.icon];
           return (
             <div key={amenity.name} className="flex items-center space-x-3">
-              {IconComponent && <IconComponent className="w-6 h-6 text-gray-700" />}
+              {IconComponent && <IconComponent className="h-5 w-5 text-blue-600" />}
               <span className="text-gray-700">{amenity.name}</span>
             </div>
           );

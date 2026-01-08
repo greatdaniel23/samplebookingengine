@@ -1,8 +1,8 @@
 Dear {{guest_name}},
 
-🎉 BOOKING CONFIRMATION - {{villa_name}}
+📋 BOOKING REQUEST RECEIVED - {{villa_name}}
 
-Thank you for choosing {{villa_name}}! Your booking has been confirmed.
+Thank you for choosing {{villa_name}}! Your booking request has been received and is pending confirmation.
 
 BOOKING DETAILS:
 ================
@@ -39,6 +39,12 @@ Email: info@villadaisycantik.com
 Phone: +62 123 456 7890
 Website: www.villadaisycantik.com
 Address: Luxury Villa District, Bali, Indonesia
+
+NEXT STEPS:
+===========
+⏳ Confirmation: We will review and confirm your booking within 24 hours
+💳 Payment: Payment instructions will be sent upon confirmation  
+📞 Contact: Feel free to contact us if you have any questions
 
 WHAT TO EXPECT:
 ===============

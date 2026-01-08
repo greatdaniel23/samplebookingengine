@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,7 @@ interface ApiResponse {
 }
 
 const ImageGallery: React.FC = () => {
+  const navigate = useNavigate();
   const [images, setImages] = useState<ImageItem[]>([]);
   const [filteredImages, setFilteredImages] = useState<ImageItem[]>([]);
   const [imagesByCategory, setImagesByCategory] = useState<{ [key: string]: ImageItem[] }>({});
@@ -58,7 +60,7 @@ const ImageGallery: React.FC = () => {
         setLoading(true);
         const response = await fetch(`${API_BASE_URL}/images.php`);
         const data: ApiResponse = await response.json();
-        
+
         if (data.success) {
           setImages(data.data.images);
           setFilteredImages(data.data.images);
@@ -83,7 +85,7 @@ const ImageGallery: React.FC = () => {
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(img => 
+      filtered = filtered.filter(img =>
         img.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         img.category.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -184,7 +186,7 @@ const ImageGallery: React.FC = () => {
     const getImageClasses = () => {
       const baseClasses = "transition-opacity duration-300";
       if (mode === 'thumbnail') {
-        return image.type === 'svg' 
+        return image.type === 'svg'
           ? `${baseClasses} max-w-32 max-h-32 object-contain p-2`
           : `${baseClasses} max-w-32 max-h-32 object-cover rounded`;
       }
@@ -235,14 +237,24 @@ const ImageGallery: React.FC = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4 flex items-center gap-3">
-            <ImageIcon className="text-blue-600" />
-            Image Gallery Manager
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Browse and manage all images from the <code className="bg-gray-200 px-2 py-1 rounded">/public/images</code> directory
-          </p>
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <img
+              src="https://rumahdaisycantik.com/images/rooms/logo.png"
+              alt="Logo"
+              className="h-16 w-auto object-contain cursor-pointer"
+              onClick={() => navigate('/')}
+            />
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+                <ImageIcon className="text-blue-600" />
+                Image Gallery Manager
+              </h1>
+              <p className="text-gray-600">
+                Browse and manage all images from the <code className="bg-gray-200 px-2 py-1 rounded">/public/images</code> directory
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Statistics */}
@@ -260,7 +272,7 @@ const ImageGallery: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -366,7 +378,7 @@ const ImageGallery: React.FC = () => {
                 </select>
               </div>
             </div>
-            
+
             {/* Loading Mode Info */}
             <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
               <div className="flex items-center gap-2 mb-1">
@@ -413,7 +425,7 @@ const ImageGallery: React.FC = () => {
                 <div className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
                   <LazyImage image={image} mode={loadingMode} />
                 </div>
-                
+
                 <CardContent className="p-4">
                   <div className="mb-3">
                     <h3 className="font-semibold text-gray-900 truncate" title={image.name}>

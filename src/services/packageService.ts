@@ -8,7 +8,7 @@ import { API_BASE_URL } from '@/config/paths';
 
 export const packageService = {
   /**
-   * Get all packages with optional filters
+   * Get all packages with optional filters including date-based availability
    */
   async getPackages(filters?: {
     check_in?: string;
@@ -39,14 +39,55 @@ export const packageService = {
   /**
    * Get package by ID
    */
-  async getPackageById(id: string): Promise<{ success: boolean; data: Package; message: string }> {
-    const response = await fetch(`${API_BASE_URL}/packages.php?id=${id}`);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch package: ${response.status}`);
-    }
+  async getPackageById(id: string, includeRooms: boolean = true): Promise<{ success: boolean; data: Package; message: string }> {
+    try {
+      const params = new URLSearchParams({
+        id: id,
+        ...(includeRooms && { include_rooms: 'true' })
+      });
+      
+      const response = await fetch(`${API_BASE_URL}/packages.php?${params.toString()}`);
+      
+      if (!response.ok) {
+        // If including rooms fails with 500, try without rooms
+        if (includeRooms && response.status === 500) {
+          console.warn(`Room information unavailable for package ${id}, fetching basic package data`);
+          return this.getPackageById(id, false);
+        }
+        
+        // If it's a 404 or other error, throw appropriately
+        if (response.status === 404) {
+          throw new Error(`Package with ID ${id} not found`);
+        }
+        
+        throw new Error(`Failed to fetch package ${id}: HTTP ${response.status}`);
+      }
 
-    return response.json();
+      const result = await response.json();
+      
+      // Check if the API returned an error in the response body
+      if (!result.success) {
+        // If rooms are included and there's an error, try without rooms
+        if (includeRooms && result.error && result.error.includes('max_occupancy')) {
+          console.warn(`Room data error for package ${id}, fetching basic package data:`, result.error);
+          return this.getPackageById(id, false);
+        }
+        throw new Error(result.error || `Package ${id} request failed`);
+      }
+
+      return result;
+    } catch (error) {
+      // Fallback: if room information fails, try basic package fetch
+      if (includeRooms && error.message && (
+        error.message.includes('max_occupancy') || 
+        error.message.includes('500') ||
+        error.message.includes('column')
+      )) {
+        console.warn(`Fallback: fetching package ${id} without room data due to:`, error.message);
+        return this.getPackageById(id, false);
+      }
+      throw error;
+    }
   },
 
   /**
@@ -185,27 +226,27 @@ export const packageService = {
    * Get package type color for UI
    */
   getPackageTypeColor(type: string): string {
-    if (!type) return 'bg-gray-100 text-gray-800';
+    if (!type) return 'bg-hotel-cream text-hotel-bronze';
     
     const normalizedType = type.toLowerCase();
     
     const typeColors = {
-      // API format mappings
-      romance: 'bg-rose-100 text-rose-800',
-      romantic: 'bg-rose-100 text-rose-800',
-      adventure: 'bg-yellow-100 text-yellow-800',
-      wellness: 'bg-teal-100 text-teal-800',
-      culture: 'bg-purple-100 text-purple-800',
-      cultural: 'bg-purple-100 text-purple-800',
-      family: 'bg-green-100 text-green-800',
-      business: 'bg-blue-100 text-blue-800',
-      luxury: 'bg-purple-100 text-purple-800',
-      weekend: 'bg-orange-100 text-orange-800',
-      holiday: 'bg-red-100 text-red-800',
-      spa: 'bg-teal-100 text-teal-800'
+      // API format mappings using hotel theme colors
+      romance: 'bg-hotel-cream text-hotel-gold',
+      romantic: 'bg-hotel-cream text-hotel-gold',
+      adventure: 'bg-hotel-cream text-hotel-bronze',
+      wellness: 'bg-hotel-cream text-hotel-sage',
+      culture: 'bg-hotel-cream text-hotel-navy',
+      cultural: 'bg-hotel-cream text-hotel-navy',
+      family: 'bg-hotel-cream text-hotel-sage',
+      business: 'bg-hotel-cream text-hotel-navy',
+      luxury: 'bg-hotel-cream text-hotel-gold',
+      weekend: 'bg-hotel-cream text-hotel-bronze',
+      holiday: 'bg-hotel-cream text-hotel-gold',
+      spa: 'bg-hotel-cream text-hotel-sage'
     };
 
-    return typeColors[normalizedType as keyof typeof typeColors] || 'bg-gray-100 text-gray-800';
+    return typeColors[normalizedType as keyof typeof typeColors] || 'bg-hotel-cream text-hotel-bronze';
   }
 };
 

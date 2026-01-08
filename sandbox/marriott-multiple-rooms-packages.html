@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiple Room Packages - Marriott Style</title>
+    <style>
+        /* Marriott Authentic Design System */
+        :root {
+            /* Brand Colors - Teal Theme */
+            --t-brand-primary-color: #078276;
+            --t-brand-secondary-color: #0a6359;
+            --t-brand-tertiary-color: #5fa59c;
+            --t-brand-bg-color: #ffffff;
+            --t-brand-fg-color: #1a1a1a;
+            
+            /* Typography Colors */
+            --t-text-primary: #1a1a1a;
+            --t-text-secondary: #666666;
+            --t-text-muted: #999999;
+            --t-link-text-color: #078276;
+            --t-link-border-color: #078276;
+            
+            /* UI Colors */
+            --t-horizontal-vertical-rule: #e5e7eb;
+            --t-border-light: #f1f5f9;
+            --t-button-primary-bg: #078276;
+            --t-button-primary-hover: #0a6359;
+            --t-button-tertiary-color: #5fa59c;
+            
+            /* Cards & Layout */
+            --t-cards-border-radius: 4px;
+            --t-container-max-width: 1200px;
+            
+            /* Font Families */
+            --t-font-family-primary: "BaskervilleBT", "Times New Roman", serif;
+            --t-font-family-secondary: "HelveticaNeue", "Arial", sans-serif;
+        }
+
+        /* Reset & Base */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--t-font-family-secondary);
+            line-height: 1.6;
+            color: var(--t-text-primary);
+            background-color: #f8fafc;
+        }
+
+        /* Typography System */
+        .t-title-xl {
+            font-family: var(--t-font-family-primary);
+            font-size: 2.5rem;
+            font-weight: 400;
+            line-height: 1.2;
+            color: var(--t-brand-fg-color);
+        }
+
+        .t-title-l {
+            font-family: var(--t-font-family-primary);
+            font-size: 2rem;
+            font-weight: 400;
+            line-height: 1.3;
+            color: var(--t-brand-fg-color);
+        }
+
+        .t-title-m {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.5rem;
+            font-weight: 400;
+            line-height: 1.3;
+            color: var(--t-brand-fg-color);
+        }
+
+        .t-body-l {
+            font-size: 1.125rem;
+            line-height: 1.6;
+            color: var(--t-text-secondary);
+        }
+
+        .t-body-m {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--t-text-secondary);
+        }
+
+        .t-caption {
+            font-size: 0.875rem;
+            line-height: 1.4;
+            color: var(--t-text-muted);
+        }
+
+        /* Layout Components */
+        .container {
+            max-width: var(--t-container-max-width);
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .main-content {
+            padding: 40px 0;
+        }
+
+        /* Utility Classes */
+        .d-flex {
+            display: flex;
+        }
+
+        .align-items-center {
+            align-items: center;
+        }
+
+        .justify-content-between {
+            justify-content: space-between;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mb-4 {
+            margin-bottom: 1.5rem;
+        }
+
+        .mb-6 {
+            margin-bottom: 2rem;
+        }
+
+        /* Package Header */
+        .package-header {
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .package-type {
+            font-size: 0.75rem;
+            color: var(--t-brand-primary-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .package-title {
+            font-family: var(--t-font-family-primary);
+            font-size: 2.5rem;
+            font-weight: 400;
+            color: var(--t-brand-fg-color);
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .package-description {
+            font-size: 1.125rem;
+            color: var(--t-text-secondary);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .package-highlights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .highlight-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .highlight-icon {
+            width: 20px;
+            height: 20px;
+            background: var(--t-brand-primary-color);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Room Selection Info */
+        .room-selection-info {
+            background: #f8fafc;
+            border: 1px solid var(--t-border-light);
+            border-radius: var(--t-cards-border-radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .selection-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--t-brand-primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .selection-title {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.25rem;
+            font-weight: 400;
+            color: var(--t-brand-fg-color);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Room Cards Grid */
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .room-package-card {
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .room-package-card:hover {
+            box-shadow: 0 8px 25px rgba(7, 130, 118, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .room-image-section {
+            position: relative;
+            height: 240px;
+            overflow: hidden;
+        }
+
+        .room-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .room-package-card:hover .room-image {
+            transform: scale(1.05);
+        }
+
+        .room-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--t-brand-primary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .room-content {
+            padding: 1.5rem;
+        }
+
+        .room-name {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.25rem;
+            font-weight: 400;
+            color: var(--t-brand-fg-color);
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .room-features {
+            color: var(--t-text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .package-inclusions {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .inclusions-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--t-brand-primary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .inclusions-list {
+            font-size: 0.875rem;
+            color: var(--t-text-secondary);
+            line-height: 1.4;
+        }
+
+        .room-pricing {
+            border-top: 1px solid var(--t-horizontal-vertical-rule);
+            padding-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .price-info {
+            flex: 1;
+        }
+
+        .price-label {
+            font-size: 0.75rem;
+            color: var(--t-text-muted);
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .price-amount {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--t-brand-fg-color);
+        }
+
+        .price-unit {
+            font-size: 0.875rem;
+            color: var(--t-text-secondary);
+            margin-left: 0.25rem;
+        }
+
+        /* Buttons */
+        .btn-select {
+            background: var(--t-button-primary-bg);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-select:hover {
+            background: var(--t-button-primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--t-brand-primary-color);
+            border: 1px solid var(--t-brand-primary-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: var(--t-brand-primary-color);
+            color: white;
+        }
+
+        /* Package Summary */
+        .package-summary {
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        .summary-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--t-horizontal-vertical-rule);
+        }
+
+        .summary-title {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: var(--t-brand-fg-color);
+        }
+
+        .rooms-count {
+            background: var(--t-brand-primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .summary-content {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 2rem;
+            align-items: end;
+        }
+
+        .pricing-details {
+            flex: 1;
+        }
+
+        .pricing-breakdown {
+            margin-bottom: 1rem;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            font-size: 0.875rem;
+            color: var(--t-text-secondary);
+        }
+
+        .price-row.total {
+            border-top: 1px solid var(--t-horizontal-vertical-rule);
+            margin-top: 0.5rem;
+            padding-top: 1rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--t-brand-fg-color);
+        }
+
+        .btn-book-package {
+            background: var(--t-button-primary-bg);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-book-package:hover {
+            background: var(--t-button-primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(7, 130, 118, 0.3);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .rooms-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .summary-content {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .package-title {
+                font-size: 2rem;
+            }
+            
+            .t-title-xl {
+                font-size: 2rem;
+            }
+            
+            .room-package-card {
+                min-width: unset;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .package-header {
+                padding: 1.5rem;
+            }
+            
+            .room-content {
+                padding: 1rem;
+            }
+            
+            .package-summary {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <main class="main-content">
+            <!-- Package Header -->
+            <div class="package-header">
+                <div class="package-type">Luxury Experience</div>
+                <h1 class="package-title">Ultimate Wellness Retreat Package</h1>
+                <p class="package-description">
+                    Immerse yourself in a transformative wellness journey with our comprehensive retreat package. 
+                    Choose from multiple premium room options, each designed to enhance your rejuvenation experience 
+                    with personalized amenities and exclusive access to our world-class spa facilities.
+                </p>
+                
+                <div class="package-highlights">
+                    <div class="highlight-item">
+                        <div class="highlight-icon"></div>
+                        <span class="t-body-m">5-Day Spa Treatment Program</span>
+                    </div>
+                    <div class="highlight-item">
+                        <div class="highlight-icon"></div>
+                        <span class="t-body-m">Personal Wellness Consultant</span>
+                    </div>
+                    <div class="highlight-item">
+                        <div class="highlight-icon"></div>
+                        <span class="t-body-m">Healthy Gourmet Dining</span>
+                    </div>
+                    <div class="highlight-item">
+                        <div class="highlight-icon"></div>
+                        <span class="t-body-m">Yoga & Meditation Sessions</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Room Selection Info -->
+            <div class="room-selection-info">
+                <div class="selection-badge">
+                    <span>Multiple Choices</span>
+                </div>
+                <h2 class="selection-title">Choose Your Perfect Retreat Accommodation</h2>
+                <p class="t-body-m">
+                    Select from our curated collection of premium rooms and suites. Each option includes the complete 
+                    wellness package with room-specific enhancements and personalized service levels.
+                </p>
+            </div>
+
+            <!-- Available Rooms -->
+            <div class="rooms-grid">
+                <!-- Serenity Suite -->
+                <div class="room-package-card">
+                    <div class="room-image-section">
+                        <img class="room-image" src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0016-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:400" alt="Serenity Suite">
+                        <div class="room-badge">Most Popular</div>
+                    </div>
+                    <div class="room-content">
+                        <h3 class="room-name">Serenity Suite</h3>
+                        <p class="room-features">
+                            King bed, private balcony with garden view, in-room meditation corner, 
+                            premium amenities, 450 sq ft
+                        </p>
+                        
+                        <div class="package-inclusions">
+                            <div class="inclusions-title">Package Includes</div>
+                            <div class="inclusions-list">
+                                Daily spa treatments • Healthy breakfast • Yoga sessions • 
+                                Wellness consultation • Aromatherapy amenities
+                            </div>
+                        </div>
+                        
+                        <div class="room-pricing">
+                            <div class="price-info">
+                                <div class="price-label">5-Day Package</div>
+                                <span class="price-amount">2.450.000</span>
+                                <span class="price-unit">IDR total</span>
+                            </div>
+                            <button class="btn-select">Select Suite</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tranquil Villa -->
+                <div class="room-package-card">
+                    <div class="room-image-section">
+                        <img class="room-image" src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0019-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:400" alt="Tranquil Villa">
+                        <div class="room-badge">Premium</div>
+                    </div>
+                    <div class="room-content">
+                        <h3 class="room-name">Tranquil Villa</h3>
+                        <p class="room-features">
+                            King bed, separate living area, private terrace, jacuzzi, 
+                            butler service, 650 sq ft
+                        </p>
+                        
+                        <div class="package-inclusions">
+                            <div class="inclusions-title">Package Includes</div>
+                            <div class="inclusions-list">
+                                Premium spa treatments • Private dining • Personal trainer • 
+                                Wellness consultation • Luxury amenity kit • Butler service
+                            </div>
+                        </div>
+                        
+                        <div class="room-pricing">
+                            <div class="price-info">
+                                <div class="price-label">5-Day Package</div>
+                                <span class="price-amount">3.250.000</span>
+                                <span class="price-unit">IDR total</span>
+                            </div>
+                            <button class="btn-select">Select Villa</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Harmony Residence -->
+                <div class="room-package-card">
+                    <div class="room-image-section">
+                        <img class="room-image" src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0037-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:400" alt="Harmony Residence">
+                        <div class="room-badge">Luxury</div>
+                    </div>
+                    <div class="room-content">
+                        <h3 class="room-name">Harmony Residence</h3>
+                        <p class="room-features">
+                            2 bedrooms, full kitchen, private pool, wellness studio, 
+                            dedicated concierge, 1200 sq ft
+                        </p>
+                        
+                        <div class="package-inclusions">
+                            <div class="inclusions-title">Package Includes</div>
+                            <div class="inclusions-list">
+                                Exclusive spa access • Private chef service • Personal wellness coach • 
+                                Custom treatment program • Luxury transportation • 24/7 concierge
+                            </div>
+                        </div>
+                        
+                        <div class="room-pricing">
+                            <div class="price-info">
+                                <div class="price-label">5-Day Package</div>
+                                <span class="price-amount">4.750.000</span>
+                                <span class="price-unit">IDR total</span>
+                            </div>
+                            <button class="btn-select">Select Residence</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zen Sanctuary -->
+                <div class="room-package-card">
+                    <div class="room-image-section">
+                        <img class="room-image" src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0025-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:400" alt="Zen Sanctuary">
+                        <div class="room-badge">Ultimate</div>
+                    </div>
+                    <div class="room-content">
+                        <h3 class="room-name">Zen Sanctuary</h3>
+                        <p class="room-features">
+                            Master suite, private spa room, infinity pool, meditation pavilion, 
+                            personal wellness team, 2000 sq ft
+                        </p>
+                        
+                        <div class="package-inclusions">
+                            <div class="inclusions-title">Package Includes</div>
+                            <div class="inclusions-list">
+                                Private spa suite • Master chef • Wellness team • Custom program • 
+                                Helicopter transfers • Exclusive experiences • Personal staff
+                            </div>
+                        </div>
+                        
+                        <div class="room-pricing">
+                            <div class="price-info">
+                                <div class="price-label">5-Day Package</div>
+                                <span class="price-amount">8.500.000</span>
+                                <span class="price-unit">IDR total</span>
+                            </div>
+                            <button class="btn-select">Select Sanctuary</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Package Summary -->
+            <div class="package-summary">
+                <div class="summary-header">
+                    <h2 class="summary-title">Package Summary</h2>
+                    <span class="rooms-count">4 Room Options Available</span>
+                </div>
+                
+                <div class="summary-content">
+                    <div class="pricing-details">
+                        <div class="pricing-breakdown">
+                            <div class="price-row">
+                                <span>Starting Package Price</span>
+                                <span>2.450.000 IDR</span>
+                            </div>
+                            <div class="price-row">
+                                <span>Duration</span>
+                                <span>5 Days / 4 Nights</span>
+                            </div>
+                            <div class="price-row">
+                                <span>Included Services</span>
+                                <span>Full Wellness Program</span>
+                            </div>
+                            <div class="price-row total">
+                                <span>Total Package Value</span>
+                                <span>Up to 8.500.000 IDR</span>
+                            </div>
+                        </div>
+                        
+                        <p class="t-caption">
+                            * Final pricing depends on selected room type and dates. 
+                            All packages include comprehensive wellness services and luxury amenities.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <button class="btn-book-package">Book Your Retreat</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Add interactive functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectButtons = document.querySelectorAll('.btn-select');
+            const roomCards = document.querySelectorAll('.room-package-card');
+            
+            selectButtons.forEach((button, index) => {
+                button.addEventListener('click', function() {
+                    // Remove active state from all cards
+                    roomCards.forEach(card => card.classList.remove('selected'));
+                    
+                    // Add active state to selected card
+                    const parentCard = this.closest('.room-package-card');
+                    parentCard.classList.add('selected');
+                    
+                    // Update button text
+                    selectButtons.forEach(btn => {
+                        if (btn !== this) {
+                            btn.textContent = btn.getAttribute('data-original-text') || btn.textContent;
+                            btn.classList.remove('selected');
+                        }
+                    });
+                    
+                    if (!this.getAttribute('data-original-text')) {
+                        this.setAttribute('data-original-text', this.textContent);
+                    }
+                    
+                    this.textContent = 'Selected ✓';
+                    this.classList.add('selected');
+                    
+                    // Scroll to summary
+                    document.querySelector('.package-summary').scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                });
+            });
+            
+            // Book package button
+            document.querySelector('.btn-book-package').addEventListener('click', function() {
+                const selectedCard = document.querySelector('.room-package-card.selected');
+                if (selectedCard) {
+                    const roomName = selectedCard.querySelector('.room-name').textContent;
+                    alert(`Booking ${roomName} for your Ultimate Wellness Retreat Package!`);
+                } else {
+                    alert('Please select a room option first.');
+                }
+            });
+        });
+        
+        // Add CSS for selected state
+        const style = document.createElement('style');
+        style.textContent = `
+            .room-package-card.selected {
+                border-color: var(--t-brand-primary-color);
+                box-shadow: 0 8px 25px rgba(7, 130, 118, 0.25);
+                transform: translateY(-2px);
+            }
+            
+            .btn-select.selected {
+                background: #059669;
+                transform: translateY(-1px);
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

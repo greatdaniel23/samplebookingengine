@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOKU Payment Gateway - Secure Payment</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FF6B00;
+        }
+        .badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid #fbbf24;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .payment-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .payment-header {
+            background: linear-gradient(135deg, #FF6B00 0%, #FF8533 100%);
+            color: white;
+            padding: 30px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .value {
+            color: #111827;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .amount {
+            font-size: 32px;
+            color: #111827;
+            font-weight: 700;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+        button {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        .btn-fail {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-fail:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        .note {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #78350f;
+        }
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">DOKU</div>
+        <div class="badge">🧪 SANDBOX MODE</div>
+    </div>
+
+    <div class="container">
+        <div class="payment-card">
+            <div class="payment-header">
+                <h1>Complete Your Payment</h1>
+                <div class="secure-badge">
+                    🔒 Secure Payment Gateway
+                </div>
+            </div>
+
+            <div class="payment-body">
+                <!-- Order Summary -->
+                <div class="order-summary">
+                    <div class="order-row">
+                        <span>Invoice Number</span>
+                        <span id="invoice">-</span>
+                    </div>
+                    <div class="order-row">
+                        <span>Booking Reference</span>
+                        <span id="booking">-</span>
+                    </div>
+                    <div class="order-row total">
+                        <span>Total Amount</span>
+                        <span id="amount">Rp 0</span>
+                    </div>
+                </div>
+
+                <!-- Payment Methods -->
+                <div class="section-title">Select Payment Method</div>
+                <div class="payment-methods">
+                    <label class="payment-method" onclick="selectMethod('visa')">
+                        <input type="radio" name="payment" value="visa">
+                        <div class="method-icon">💳</div>
+                        <div class="method-info">
+                            <div class="method-name">Credit/Debit Card</div>
+                            <div class="method-desc">Visa, Mastercard, JCB</div>
+                        </div>
+                    </label>
+
+                    <label class="payment-method" onclick="selectMethod('qris')">
+                        <input type="radio" name="payment" value="qris">
+                        <div class="method-icon">📱</div>
+                        <div class="method-info">
+                            <div class="method-name">QRIS</div>
+                            <div class="method-desc">Scan with any e-wallet app</div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Pay Button -->
+                <button class="pay-button" id="payButton" onclick="processPayment()" disabled>
+                    Select Payment Method
+                </button>
+
+                <!-- Security Info -->
+                <div class="security-info">
+                    <div class="security-item">
+                        🔒 SSL Encrypted
+                    </div>
+                    <div class="security-item">
+                        ✓ PCI DSS Certified
+                    </div>
+                    <div class="security-item">
+                        🛡️ Secure Transaction
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Parse URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const invoice = params.get('invoice') || 'N/A';
+        const booking = params.get('booking') || 'N/A';
+        const amount = params.get('amount') || '0';
+        
+        let selectedMethod = null;
+        
+        // Display info
+        document.getElementById('invoice').textContent = invoice;
+        document.getElementById('booking').textContent = booking;
+        document.getElementById('amount').textContent = 'Rp ' + parseInt(amount).toLocaleString('id-ID');
+        
+        function selectMethod(method) {
+            selectedMethod = method;
+            const payButton = document.getElementById('payButton');
+            
+            // Update button state
+            payButton.disabled = false;
+            if (method === 'visa') {
+                payButton.textContent = 'Pay with Card';
+            } else if (method === 'qris') {
+                payButton.textContent = 'Generate QR Code';
+            }
+            
+            // Update visual selection
+            documenFor sandbox testing: Randomly succeed or fail (80% success rate)
+                const status = Math.random() > 0.2 ? 'success' : 'failed';
+                
+                // Send callback to API
+                const callbackData = {
+                    order: {
+                        invoice_number: invoice,
+                        amount: parseFloat(amount)
+                    },
+                    transaction: {
+                        id: 'TEST-' + Date.now(),
+                        status: status === 'success' ? 'SUCCESS' : 'FAILED'
+                    },
+                    booking_id: booking,
+                    payment_method: selectedMethod
+                };
+                
+                // Call the callback endpoint
+                const callbackResponse = await fetch('https://api.rumahdaisycantik.com/payment/doku-callback.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(callbackData)
+                });
+                
+                const callbackResult = await callbackResponse.json();
+                console.log('Callback result:', callbackResult);
+                
+                // Get the actual booking ID from callback response if available
+                const actualBookingId = callbackResult.booking_id || booking;
+                
+                // Redirect back to frontend
+                const redirectUrl = `https://booking.rumahdaisycantik.com/confirmation/${actualBookingId}?payment=${status}`;
+                window.location.href = redirectUrl;
+                
+            } catch (error) {
+                alert('Error processing payment: ' + error.message);
+                payButton.disabled = false;
+                payButton.textContent = originalText
+                    body: JSON.stringify(callbackData)
+                });
+                
+                const callbackResult = await callbackResponse.json();
+                console.log('Callback result:', callbackResult);
+                
+                // Get the actual booking ID from callback response if available
+                const actualBookingId = callbackResult.booking_id || booking;
+                
+                // Redirect back to frontend
+                const redirectUrl = `https://booking.rumahdaisycantik.com/confirmation/${actualBookingId}?payment=${status}`;
+                window.location.href = redirectUrl;
+                
+            } catch (error) {
+                alert('Error simulating payment: ' + error.message);
+                btnSuccess.disabled = false;
+                btnFail.disabled = false;
+                btnSuccess.innerHTML = '✓ Simulate Success';
+                btnFail.innerHTML = '✗ Simulate Failure';
+                spinner.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

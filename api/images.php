@@ -36,6 +36,10 @@ function scanImageDirectory($dir, $baseDir = '') {
             // Check if file is an image
             $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
             if (in_array($extension, $imageExtensions)) {
+                $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                $baseUrl = $scheme . '://' . $host;
+
                 $images[] = [
                     'name' => $file,
                     'path' => $relativePath,
@@ -44,7 +48,7 @@ function scanImageDirectory($dir, $baseDir = '') {
                     'size' => filesize($fullPath),
                     'modified' => filemtime($fullPath),
                     'url' => '/images/' . $relativePath,
-                    'fullUrl' => 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/public/images/' . $relativePath
+                    'fullUrl' => $baseUrl . '/images/' . $relativePath
                 ];
             }
         }

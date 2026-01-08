@@ -1,3 +1,9 @@
+/* Import Google Fonts for Professional Hotel Typography */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&display=swap');
+
+/* Import Hotel Theme */
+/* @import './styles/hotel-theme.css'; */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -101,28 +107,99 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Professional Typography Hierarchy - Hotel Style */
+  h1, .heading-1 {
+    @apply font-display text-4xl md:text-6xl lg:text-7xl font-normal tracking-tight text-hotel-charcoal leading-none;
+    letter-spacing: -0.025em;
+  }
+  
+  h2, .heading-2 {
+    @apply font-display text-2xl md:text-4xl lg:text-5xl font-medium tracking-tight text-hotel-charcoal leading-tight;
+    letter-spacing: -0.02em;
+  }
+  
+  h3, .heading-3 {
+    @apply font-display text-xl md:text-3xl font-medium text-hotel-charcoal leading-tight;
+    letter-spacing: -0.015em;
+  }
+  
+  h4, .heading-4 {
+    @apply font-sans text-lg md:text-xl font-medium text-hotel-charcoal;
+  }
+  
+  h5, .heading-5 {
+    @apply font-sans text-base md:text-lg font-medium text-hotel-charcoal;
+  }
+  
+  h6, .heading-6 {
+    @apply font-sans text-sm md:text-base font-medium text-hotel-charcoal;
+  }
+
+  /* Professional Body Text */
+  .body-large {
+    @apply text-lg leading-relaxed text-hotel-bronze font-normal;
+  }
+  
+  .body-regular {
+    @apply text-base leading-relaxed text-hotel-bronze font-normal;
+  }
+  
+  .body-small {
+    @apply text-sm leading-relaxed text-hotel-bronze font-normal;
+  }
+
+  /* Hotel Brand Typography - Luxury Style */
+  .brand-title {
+    @apply font-display text-4xl md:text-6xl lg:text-8xl font-light text-hotel-charcoal;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+  }
+  
+  .section-title {
+    @apply font-display text-2xl md:text-4xl font-medium text-hotel-charcoal mb-6;
+    letter-spacing: -0.02em;
+  }
+  
+  .card-title {
+    @apply font-sans text-lg font-medium text-hotel-charcoal mb-2;
+  }
+
+  /* Luxury Spacing */
+  .letter-spacing-luxury {
+    letter-spacing: 0.05em;
   }
 }
 
-/* Custom Hotel Theme Variables */
+/* Dark Professional Hotel Theme Variables */
 :root {
-  /* Brand Colors */
-  --hotel-gold: 35 60% 45%;
-  --hotel-gold-light: 35 60% 85%;
-  --hotel-gold-dark: 35 60% 25%;
+  /* Brand Colors - Dark Premium Palette */
+  --hotel-navy: 222 84% 5%;         /* Very dark navy #0f172a */
+  --hotel-navy-light: 222 84% 85%;
   
-  --hotel-cream: 45 25% 94%;
-  --hotel-cream-dark: 40 20% 85%;
+  --hotel-gold: 30 91% 37%;         /* Muted elegant gold #b45309 */
+  --hotel-gold-light: 30 91% 75%;
   
-  --hotel-bronze: 25 40% 35%;
-  --hotel-bronze-light: 25 40% 60%;
+  --hotel-cream: 210 40% 98%;       /* Light background #f8fafc */
+  --hotel-cream-dark: 210 40% 90%;
   
-  --hotel-sage: 95 20% 45%;
-  --hotel-sage-light: 95 20% 85%;
+  --hotel-charcoal: 224 71% 4%;     /* Almost black #020617 */
+  --hotel-charcoal-light: 224 71% 60%;
   
-  --hotel-navy: 210 30% 25%;
-  --hotel-navy-light: 210 30% 85%;
+  --hotel-bronze: 215 25% 27%;      /* Dark gray #64748b */
+  --hotel-bronze-light: 215 25% 65%;
+  
+  --hotel-sage: 0 84% 60%;          /* Red accent #dc2626 */
+  --hotel-sage-light: 0 84% 85%;
+  
+  --hotel-primary: 224 76% 48%;     /* Dark blue #1e40af */
+  --hotel-primary-light: 224 76% 85%;
+  
+  --hotel-secondary: 215 28% 17%;   /* Dark gray backgrounds #334155 */
+  --hotel-secondary-light: 215 28% 75%;
   
   /* Status Colors */
   --success: 120 60% 45%;
