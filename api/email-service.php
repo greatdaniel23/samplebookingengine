@@ -33,18 +33,69 @@ require_once $phpmailer_base . 'Exception.php';
 require_once $phpmailer_base . 'PHPMailer.php';
 require_once $phpmailer_base . 'SMTP.php';
 
+// Include Villa Information Service for dynamic data (with error handling)
+$villa_service_path = __DIR__ . '/villa-info-service.php';
+if (file_exists($villa_service_path)) {
+    require_once $villa_service_path;
+}
+
 class VillaEmailService {
     
-    private $smtp_username = 'danielsantosomarketing2017@gmail.com';
-    private $smtp_password = 'araemhfoirpelkiz';
+    private $smtp_username = 'rumahdaisycantikreservations@gmail.com';
+    private $smtp_password = 'bcddffkwlfjlafgy';
     private $sender_name = 'Villa Booking Engine';
-    private $villa_name = 'Villa Daisy Cantik';
+    private $villa_info_service;
+    private $villa_info;
+    
+    public function __construct() {
+        // Initialize Villa Information Service with robust error handling
+        try {
+            if (class_exists('VillaInfoService')) {
+                $this->villa_info_service = new VillaInfoService();
+                $this->villa_info = $this->villa_info_service->getEmailTemplateInfo();
+            } else {
+                throw new Exception("VillaInfoService class not found");
+            }
+        } catch (Exception $e) {
+            error_log("Villa Info Service initialization failed: " . $e->getMessage());
+            // Use default values if service fails
+            $this->villa_info = $this->getDefaultVillaInfo();
+        }
+    }
+    
+    /**
+     * Get default villa information (fallback) - HOSTINGER DATABASE VALUES
+     * These values match what should be in the Hostinger database
+     */
+    private function getDefaultVillaInfo() {
+        return [
+            'villa_name' => 'Villa Daisy Cantik',
+            'villa_tagline' => 'Luxury Accommodation in Ubud, Bali',
+            'contact_email' => 'info@rumahdaisycantik.com',        // ✅ Correct domain
+            'admin_email' => 'admin@rumahdaisycantik.com',         // ✅ Correct domain  
+            'reservations_email' => 'reservations@rumahdaisycantik.com',
+            'phone_main' => '+62 361 234 5678',
+            'phone_whatsapp' => '+62 812 3456 7890',
+            'location_full' => 'Ubud, Bali, Indonesia',
+            'address_street' => 'Jl. Raya Ubud No. 123',
+            'website_url' => 'https://www.rumahdaisycantik.com',
+            'booking_url' => 'https://booking.rumahdaisycantik.com',
+            'check_in_time' => '15:00',
+            'check_out_time' => '11:00',
+            'currency_code' => 'USD',
+            'currency_symbol' => '$',
+            'email_footer_text' => 'Thank you for choosing Villa Daisy Cantik for your Bali getaway.',
+            'email_signature' => 'Villa Daisy Cantik Team',
+            'booking_confirmation_note' => 'We look forward to welcoming you!',
+            'admin_notification_note' => 'New booking requires attention',
+        ];
+    }
     
     /**
      * Send booking confirmation email to guest
      */
     public function sendBookingConfirmation($booking_data) {
-        $subject = "🎉 Booking Confirmation - {$this->villa_name}";
+        $subject = "🎉 Booking Confirmation - {$this->villa_info['villa_name']}";
         
         $html_body = $this->getBookingConfirmationHTML($booking_data);
         $text_body = $this->getBookingConfirmationText($booking_data);
@@ -62,13 +113,44 @@ class VillaEmailService {
      * Send admin notification about new booking
      */
     public function sendAdminNotification($booking_data) {
-        $subject = "🔔 New Booking Alert - {$this->villa_name}";
+        $subject = "🔔 New Booking Alert - {$this->villa_info['villa_name']}";
         
         $html_body = $this->getAdminNotificationHTML($booking_data);
         $text_body = $this->getAdminNotificationText($booking_data);
         
         return $this->sendEmail(
-            'greatdaniel87@gmail.com', // Admin email
+            $this->villa_info['admin_email'] ?? $this->smtp_username, // Dynamic admin email with fallback
+            'Villa Administrator',
+            $subject,
+            $html_body,
+            $text_body
+        );
+    }
+    
+    /**
+     * Send admin notification about booking status changes
+     */
+    public function sendAdminStatusChangeNotification($booking_data, $old_status, $new_status, $admin_action = 'updated') {
+        $status_icons = [
+            'pending' => '⏳',
+            'confirmed' => '✅', 
+            'cancelled' => '❌',
+            'checked_in' => '🏨',
+            'checked_out' => '🚪',
+            'no_show' => '👻',
+            'deleted' => '🗑️'
+        ];
+        
+        $old_icon = $status_icons[$old_status] ?? '📝';
+        $new_icon = $status_icons[$new_status] ?? '📝';
+        
+        $subject = "🔄 Booking Status Changed - {$booking_data['booking_reference']}";
+        
+        $html_body = $this->getAdminStatusChangeHTML($booking_data, $old_status, $new_status, $admin_action, $old_icon, $new_icon);
+        $text_body = $this->getAdminStatusChangeText($booking_data, $old_status, $new_status, $admin_action, $old_icon, $new_icon);
+        
+        return $this->sendEmail(
+            $this->villa_info['admin_email'] ?? $this->smtp_username,
             'Villa Administrator',
             $subject,
             $html_body,
@@ -161,6 +243,9 @@ class VillaEmailService {
                             <span class="detail-label">Email:</span> ' . ($booking['guest_email'] ?? '') . '
                         </div>
                         <div class="detail-row">
+                            <span class="detail-label">Phone:</span> ' . ($booking['guest_phone'] ?? $booking['phone'] ?? 'Not provided') . '
+                        </div>
+                        <div class="detail-row">
                             <span class="detail-label">Check-in:</span> ' . ($booking['check_in'] ?? 'TBD') . '
                         </div>
                         <div class="detail-row">
@@ -179,16 +264,18 @@ class VillaEmailService {
                     
                     <div class="highlight">
                         <h3>📍 Villa Information</h3>
-                        <p><strong>Location:</strong> Ubud, Bali, Indonesia</p>
-                        <p><strong>Contact:</strong> info@villadaisycantik.com</p>
-                        <p><strong>Phone:</strong> +62 361 234 5678</p>
+                        <p><strong>Location:</strong> ' . $this->villa_info['location_full'] . '</p>
+                        <p><strong>Contact:</strong> ' . $this->villa_info['contact_email'] . '</p>
+                        <p><strong>Phone:</strong> ' . $this->villa_info['phone_main'] . '</p>
+                        ' . (!empty($this->villa_info['website_url']) ? '<p><strong>Website:</strong> <a href="' . $this->villa_info['website_url'] . '">' . $this->villa_info['website_url'] . '</a></p>' : '') . '
                     </div>
                     
-                    <p>We look forward to welcoming you to ' . $this->villa_name . '!</p>
+                    <p>' . $this->villa_info['booking_confirmation_note'] . '</p>
                 </div>
                 <div class="footer">
-                    <p>Sent from ' . $this->villa_name . ' - Production Ready Booking System</p>
-                    <p>November 12, 2025</p>
+                    <p>' . $this->villa_info['email_footer_text'] . '</p>
+                    <p>' . $this->villa_info['villa_name'] . ' | ' . $this->villa_info['villa_tagline'] . '</p>
+                    <p>Email sent: ' . date('F j, Y') . '</p>
                 </div>
             </div>
         </body>
@@ -208,6 +295,7 @@ Booking Reference: " . ($booking['booking_reference'] ?? 'BK-' . rand(10000, 999
 📋 Booking Details:
 Guest Name: " . ($booking['guest_name'] ?? 'Guest') . "
 Email: " . ($booking['guest_email'] ?? '') . "
+Phone: " . ($booking['guest_phone'] ?? $booking['phone'] ?? 'Not provided') . "
 Check-in: " . ($booking['check_in'] ?? 'TBD') . "
 Check-out: " . ($booking['check_out'] ?? 'TBD') . "
 Guests: " . ($booking['guests'] ?? '1') . " guest(s)
@@ -215,15 +303,15 @@ Room/Package: " . ($booking['room_name'] ?? 'Standard Room') . "
 Total Amount: $" . ($booking['total_amount'] ?? '0.00') . "
 
 📍 Villa Information:
-Location: Ubud, Bali, Indonesia
-Contact: info@villadaisycantik.com
-Phone: +62 361 234 5678
+Location: " . $this->villa_info['location_full'] . "
+Contact: " . $this->villa_info['contact_email'] . "
+Phone: " . $this->villa_info['phone_main'] . "
+" . (!empty($this->villa_info['website_url']) ? "Website: " . $this->villa_info['website_url'] . "\n" : "") . "
+" . $this->villa_info['booking_confirmation_note'] . "
 
-We look forward to welcoming you to " . $this->villa_name . "!
-
-Sent from " . $this->villa_name . " - Production Ready Booking System
-November 12, 2025
-        ";
+" . $this->villa_info['email_footer_text'] . "
+" . $this->villa_info['villa_name'] . " | " . $this->villa_info['villa_tagline'] . "
+Email sent: " . date('F j, Y');
     }
     
     /**
@@ -269,7 +357,7 @@ November 12, 2025
                             <span class="detail-label">Email:</span> ' . ($booking['guest_email'] ?? '') . '
                         </div>
                         <div class="detail-row">
-                            <span class="detail-label">Phone:</span> ' . ($booking['guest_phone'] ?? 'Not provided') . '
+                            <span class="detail-label">Phone:</span> ' . ($booking['guest_phone'] ?? $booking['phone'] ?? 'Not provided') . '
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Check-in:</span> ' . ($booking['check_in'] ?? 'TBD') . '
@@ -327,7 +415,7 @@ Action Required: Review and confirm booking details
 Booking Reference: " . ($booking['booking_reference'] ?? 'BK-' . rand(10000, 99999)) . "
 Guest Name: " . ($booking['guest_name'] ?? 'Guest') . "
 Email: " . ($booking['guest_email'] ?? '') . "
-Phone: " . ($booking['guest_phone'] ?? 'Not provided') . "
+Phone: " . ($booking['guest_phone'] ?? $booking['phone'] ?? 'Not provided') . "
 Check-in: " . ($booking['check_in'] ?? 'TBD') . "
 Check-out: " . ($booking['check_out'] ?? 'TBD') . "
 Guests: " . ($booking['guests'] ?? '1') . " guest(s)
@@ -378,6 +466,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
         case 'admin_notification':
             $result = $emailService->sendAdminNotification($input['booking_data']);
+            echo json_encode($result);
+            break;
+            
+        case 'admin_status_change':
+            $result = $emailService->sendAdminStatusChangeNotification(
+                $input['booking_data'], 
+                $input['old_status'], 
+                $input['new_status'], 
+                $input['admin_action'] ?? 'updated'
+            );
             echo json_encode($result);
             break;
             
@@ -433,7 +531,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
             
         default:
-            echo json_encode(['success' => false, 'message' => 'Invalid action', 'available_actions' => ['booking_confirmation', 'admin_notification', 'send_booking_confirmation', 'test_booking', 'health_check']]);
+            echo json_encode(['success' => false, 'message' => 'Invalid action', 'available_actions' => ['booking_confirmation', 'admin_notification', 'admin_status_change', 'send_booking_confirmation', 'test_booking', 'health_check']]);
     }
     
     } catch (Exception $e) {
@@ -461,6 +559,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo '<ul>';
     echo '<li><strong>booking_confirmation</strong> - Send confirmation to guest</li>';
     echo '<li><strong>admin_notification</strong> - Send alert to admin</li>';
+    echo '<li><strong>admin_status_change</strong> - Send admin status change notification</li>';
     echo '<li><strong>send_booking_confirmation</strong> - Send both guest and admin emails</li>';
     echo '<li><strong>test_booking</strong> - Send test emails</li>';
     echo '<li><strong>health_check</strong> - Check service status</li>';

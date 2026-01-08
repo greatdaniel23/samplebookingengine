@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import BookingsSection from './admin/BookingsSection';
 import RoomsSection from './admin/RoomsSection';
 import PropertySection from './admin/PropertySection';
+import InclusionsSection from './admin/InclusionsSection';
 
 interface AdminPanelProps {
   onClose: () => void;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
-  const [activeTab, setActiveTab] = useState<'property' | 'bookings' | 'rooms'>('property');
+  const [activeTab, setActiveTab] = useState<'property' | 'bookings' | 'rooms' | 'inclusions'>('property');
 
   const tabs = [
     { id: 'property' as const, label: 'Property', icon: '🏠' },
     { id: 'bookings' as const, label: 'Bookings', icon: '📅' },
-    { id: 'rooms' as const, label: 'Rooms', icon: '🛏️' }
+    { id: 'rooms' as const, label: 'Rooms', icon: '🛏️' },
+    { id: 'inclusions' as const, label: 'What\'s Included', icon: '✅' }
   ];
 
   return (
@@ -58,6 +60,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
           {activeTab === 'property' && <PropertySection />}
           {activeTab === 'bookings' && <BookingsSection />}
           {activeTab === 'rooms' && <RoomsSection />}
+          {activeTab === 'inclusions' && <InclusionsSection />}
         </div>
       </div>
     </div>

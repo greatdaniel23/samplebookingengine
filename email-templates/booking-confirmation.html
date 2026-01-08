@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Confirmation - {{villa_name}}</title>
+    <title>Booking Request Received - {{villa_name}}</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -169,14 +169,14 @@
     <div class="container">
         <div class="header">
             <h1>🏨 {{villa_name}}</h1>
-            <h2>Booking Confirmation</h2>
+            <h2>Booking Request Received</h2>
         </div>
         
         <div class="content">
             <div class="highlight-box">
-                <h3>✅ Your booking has been confirmed!</h3>
+                <h3>📋 Your booking request has been received!</h3>
                 <p><strong>Booking Reference:</strong> {{booking_reference}}</p>
-                <p>Thank you for choosing {{villa_name}}. We're excited to host you!</p>
+                <p>Thank you for choosing {{villa_name}}. We will review your booking and send confirmation within 24 hours.</p>
             </div>
             
             <div class="booking-details">
@@ -233,16 +233,25 @@
             <div class="contact-info">
                 <h4>📞 Contact Information</h4>
                 <p><strong>{{villa_name}}</strong></p>
-                <p>📧 Email: info@villadaisycantik.com</p>
-                <p>📞 Phone: +62 123 456 7890</p>
-                <p>🌐 Website: www.villadaisycantik.com</p>
-                <p>📍 Address: Luxury Villa District, Bali, Indonesia</p>
+                <p>📧 Email: {{contact_email}}</p>
+                <p>📞 Phone: {{phone_main}}</p>
+                <p>🌐 Website: {{website_url}}</p>
+                <p>📍 Address: {{location_full}}</p>
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
                 <a href="#" class="btn">View Booking Details</a>
             </div>
             
+            <div style="background: #fff3e0; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff9800;">
+                <h4 style="color: #e65100; margin: 0 0 10px 0;">⏳ Next Steps</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #333;">
+                    <li><strong>Confirmation:</strong> We will review and confirm your booking within 24 hours</li>
+                    <li><strong>Payment:</strong> Payment instructions will be sent upon confirmation</li>
+                    <li><strong>Contact:</strong> Feel free to contact us if you have any questions</li>
+                </ul>
+            </div>
+
             <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <h4 style="color: #1976d2; margin: 0 0 10px 0;">🏨 What to Expect</h4>
                 <ul style="margin: 0; padding-left: 20px; color: #333;">
@@ -258,7 +267,7 @@
         <div class="footer">
             <p><strong>{{villa_name}}</strong></p>
             <p>This is an automated confirmation email. Please do not reply to this email.</p>
-            <p>If you have any questions, please contact us at info@villadaisycantik.com</p>
+            <p>If you have any questions, please contact us at {{contact_email}}</p>
             <p style="margin-top: 20px; font-size: 12px; color: #999;">
                 © 2025 {{villa_name}}. All rights reserved.
             </p>

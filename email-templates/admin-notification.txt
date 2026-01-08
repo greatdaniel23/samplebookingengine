@@ -1,11 +1,11 @@
-🔔 NEW BOOKING ALERT - {{villa_name}}
+🔔 NEW BOOKING REQUEST - {{villa_name}}
 
-URGENT: New booking received requiring review
+ACTION REQUIRED: New booking request needs confirmation
 
 BOOKING INFORMATION:
 ====================
 Booking Reference: {{booking_reference}}
-Status: CONFIRMED & Guest Notified
+Status: PENDING CONFIRMATION
 Timestamp: {{booking_timestamp}}
 
 GUEST DETAILS:
@@ -61,6 +61,13 @@ CONTACT GUEST:
 Email: {{guest_email}}
 Phone: {{guest_phone}}
 
+REQUIRED ACTIONS:
+================
+1. CONFIRM or DECLINE booking within 24 hours
+2. Send payment instructions to guest upon confirmation
+3. Update calendar and room availability
+4. Contact guest if additional information needed
+
 ADMIN DASHBOARD:
 ================
 View booking details: [Dashboard Link]
@@ -70,7 +77,7 @@ Contact guest: [Contact Link]
 ---
 {{villa_name}} Admin System
 This is an automated booking notification.
-For system support: admin@villadaisycantik.com
+For system support: {{admin_email}}
 
 DO NOT REPLY to this email - use admin dashboard for booking management.
 © 2025 {{villa_name}} Admin System. All rights reserved.

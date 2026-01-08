@@ -11,9 +11,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit(0); }
 require_once 'config/database.php';
 
 $source = isset($_GET['source']) ? trim($_GET['source']) : '';
+$packageId = isset($_GET['package_id']) ? intval($_GET['package_id']) : null;
+$roomId = isset($_GET['room_id']) ? trim($_GET['room_id']) : null;
+
 if ($source === '') {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'Missing source parameter']);
+    exit;
+}
+
+// Validate that either package_id or room_id is provided for mapping
+if ($packageId === null && $roomId === null) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Either package_id or room_id parameter is required for mapping']);
     exit;
 }
 
@@ -81,9 +91,9 @@ try {
     $inserted = 0; $updated = 0; $skipped = 0;
     $now = date('Y-m-d H:i:s');
 
-    $stmtSelect = $pdo->prepare('SELECT id FROM external_blocks WHERE source = :source AND uid = :uid');
-    $stmtInsert = $pdo->prepare('INSERT INTO external_blocks (source, uid, summary, description, start_date, end_date, raw_event, last_seen) VALUES (:source, :uid, :summary, :description, :start_date, :end_date, :raw_event, :last_seen)');
-    $stmtUpdate = $pdo->prepare('UPDATE external_blocks SET summary = :summary, description = :description, start_date = :start_date, end_date = :end_date, raw_event = :raw_event, last_seen = :last_seen, updated_at = CURRENT_TIMESTAMP WHERE source = :source AND uid = :uid');
+    $stmtSelect = $pdo->prepare('SELECT id FROM external_blocks WHERE source = :source AND uid = :uid AND package_id = :package_id AND room_id = :room_id');
+    $stmtInsert = $pdo->prepare('INSERT INTO external_blocks (source, package_id, room_id, uid, summary, description, start_date, end_date, raw_event, last_seen) VALUES (:source, :package_id, :room_id, :uid, :summary, :description, :start_date, :end_date, :raw_event, :last_seen)');
+    $stmtUpdate = $pdo->prepare('UPDATE external_blocks SET summary = :summary, description = :description, start_date = :start_date, end_date = :end_date, raw_event = :raw_event, last_seen = :last_seen, updated_at = CURRENT_TIMESTAMP WHERE source = :source AND uid = :uid AND package_id = :package_id AND room_id = :room_id');
 
     foreach ($events as $ev) {
         $uid = $ev['UID'] ?? sha1(($ev['DTSTART'] ?? '') . ($ev['DTEND'] ?? '') . $source);
@@ -93,7 +103,12 @@ try {
         $endDate = isset($ev['end_date']) ? date('Y-m-d', strtotime($ev['end_date'])) : null;
         if (!$startDate || !$endDate) { $skipped++; continue; }
 
-        $stmtSelect->execute(['source' => 'airbnb', 'uid' => $uid]);
+        $stmtSelect->execute([
+            'source' => 'airbnb', 
+            'uid' => $uid, 
+            'package_id' => $packageId, 
+            'room_id' => $roomId
+        ]);
         if ($stmtSelect->fetch()) {
             $stmtUpdate->execute([
                 'summary' => $summary,
@@ -103,12 +118,16 @@ try {
                 'raw_event' => json_encode($ev),
                 'last_seen' => $now,
                 'source' => 'airbnb',
-                'uid' => $uid
+                'uid' => $uid,
+                'package_id' => $packageId,
+                'room_id' => $roomId
             ]);
             $updated++;
         } else {
             $stmtInsert->execute([
                 'source' => 'airbnb',
+                'package_id' => $packageId,
+                'room_id' => $roomId,
                 'uid' => $uid,
                 'summary' => $summary,
                 'description' => $description,
@@ -124,6 +143,9 @@ try {
     echo json_encode([
         'success' => true,
         'source' => $source,
+        'package_id' => $packageId,
+        'room_id' => $roomId,
+        'mapping_type' => $packageId ? 'package' : 'room',
         'events_processed' => count($events),
         'inserted' => $inserted,
         'updated' => $updated,

@@ -65,11 +65,19 @@ export const RoomsSection: React.FC<RoomsSectionProps> = ({
             <div className="p-4">
               <h3 className="text-xl font-semibold mb-2">{room.name}</h3>
               <p className="text-gray-600 mb-3">{room.description}</p>
-              <div className="flex justify-between items-center">
-                <span className="text-hotel-sage font-bold">${room.price}/night</span>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-hotel-sage font-bold">${room.price}/night</span>
+                  <button 
+                    onClick={() => navigate(`/rooms/${room.id}`)}
+                    className="text-hotel-sage hover:text-hotel-sage-dark transition-colors text-sm font-medium"
+                  >
+                    View Details →
+                  </button>
+                </div>
                 <button 
-                  onClick={() => navigate(`/booking/${room.id}`)}
-                  className="bg-hotel-sage text-white px-4 py-2 rounded hover:bg-hotel-sage-dark transition-colors"
+                  onClick={() => navigate(`/book/${room.id}`)}
+                  className="w-full bg-hotel-sage text-white py-2 px-4 rounded hover:bg-hotel-sage-dark transition-colors"
                 >
                   Book Now
                 </button>

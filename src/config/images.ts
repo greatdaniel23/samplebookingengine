@@ -49,6 +49,8 @@ export const imagePaths = {
 
 /**
  * Get room image URLs for a specific room
+ * This function provides fallback static paths, but rooms with uploaded images
+ * should use the dynamic images from the database via getRoomImagesFromDatabase
  */
 export const getRoomImages = (roomId: string) => {
   const roomPath = `${imagePaths.rooms.base}/${roomId}`;
@@ -61,6 +63,22 @@ export const getRoomImages = (roomId: string) => {
       `${roomPath}/gallery-4.jpg`
     ],
     thumbnail: `${roomPath}/thumbnail.jpg`
+  };
+};
+
+/**
+ * Get room images from database (uploaded images)
+ * Falls back to static images if no database images exist
+ */
+export const getRoomImagesFromDatabase = (roomImages: string[] | null, roomId: string) => {
+  if (!roomImages || roomImages.length === 0) {
+    return getRoomImages(roomId);
+  }
+  
+  return {
+    main: roomImages[0],
+    gallery: roomImages.slice(1), // All images after the first one
+    thumbnail: roomImages[0] // Use main image as thumbnail
   };
 };
 

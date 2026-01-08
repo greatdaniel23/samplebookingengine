@@ -5,6 +5,7 @@
  * 
  * Date: November 19, 2025
  * Project: Villa Booking Engine
+ * Cache-buster: 2025-12-12 14:31
  */
 
 // Reliable path resolution for database config
@@ -142,7 +143,8 @@ function handleRoomAmenities($pdo, $request, $method) {
  * Example: GET /api/amenities.php/room-amenities/deluxe-suite
  */
 function handleGetRoomAmenities($pdo, $request) {
-    $roomId = $request[1] ?? null;
+    // Support both PATH_INFO (/amenities.php/room-amenities/{room_id}) and query string (?room_id=...)
+    $roomId = $request[1] ?? ($_GET['room_id'] ?? null);
     
     if (!$roomId) {
         http_response_code(400);
@@ -169,7 +171,7 @@ function handleGetRoomAmenities($pdo, $request) {
             a.category,
             a.description,
             a.icon,
-            ra.is_highlighted,
+            IF(ra.is_highlighted = 1, true, false) as is_highlighted,
             ra.custom_note
         FROM amenities a
         JOIN room_amenities ra ON a.id = ra.amenity_id
@@ -180,6 +182,13 @@ function handleGetRoomAmenities($pdo, $request) {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$roomId]);
     $amenities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Convert numeric booleans to actual booleans for JSON
+    foreach ($amenities as &$amenity) {
+        if (isset($amenity['is_highlighted'])) {
+            $amenity['is_highlighted'] = (bool)$amenity['is_highlighted'];
+        }
+    }
     
     echo json_encode([
         'success' => true,
@@ -306,7 +315,8 @@ function handleRemoveRoomAmenity($pdo, $request) {
  * Example: /api/amenities.php/package-amenities/1
  */
 function handlePackageAmenities($pdo, $request) {
-    $packageId = $request[1] ?? null;
+    // Support both PATH_INFO (/amenities.php/package-amenities/{package_id}) and query string (?package_id=...)
+    $packageId = $request[1] ?? ($_GET['package_id'] ?? null);
     
     if (!$packageId) {
         http_response_code(400);
@@ -322,7 +332,7 @@ function handlePackageAmenities($pdo, $request) {
             a.category,
             a.description,
             a.icon,
-            pa.is_highlighted,
+            IF(pa.is_highlighted = 1, true, false) as is_highlighted,
             pa.custom_note
         FROM packages p
         JOIN package_amenities pa ON p.id = pa.package_id
@@ -334,6 +344,13 @@ function handlePackageAmenities($pdo, $request) {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$packageId]);
     $amenities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Convert numeric booleans to actual booleans for JSON
+    foreach ($amenities as &$amenity) {
+        if (isset($amenity['is_highlighted'])) {
+            $amenity['is_highlighted'] = (bool)$amenity['is_highlighted'];
+        }
+    }
     
     echo json_encode([
         'success' => true,
@@ -408,7 +425,7 @@ function handleGetAmenities($pdo, $request) {
     
     if ($amenityId) {
         // Get specific amenity
-        $sql = "SELECT * FROM amenities WHERE id = ? AND is_active = 1";
+        $sql = "SELECT id, name, description, category, icon, is_featured FROM amenities WHERE id = ? AND is_active = 1";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$amenityId]);
         $amenity = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -431,7 +448,7 @@ function handleGetAmenities($pdo, $request) {
     $featured = $_GET['featured'] ?? null;
     $includeInactive = $_GET['include_inactive'] ?? false;
     
-    $sql = "SELECT * FROM amenities";
+    $sql = "SELECT id, name, description, category, icon, is_featured FROM amenities";
     $params = [];
     $conditions = [];
     
@@ -458,6 +475,16 @@ function handleGetAmenities($pdo, $request) {
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $amenities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Convert numeric booleans to actual booleans for JSON
+    foreach ($amenities as &$amenity) {
+        if (isset($amenity['is_featured'])) {
+            $amenity['is_featured'] = (bool)$amenity['is_featured'];
+        }
+        if (isset($amenity['is_active'])) {
+            $amenity['is_active'] = (bool)$amenity['is_active'];
+        }
+    }
     
     // Group by category
     $grouped = [];
@@ -528,7 +555,7 @@ function handleCreateAmenity($pdo, $request) {
         $newId = $pdo->lastInsertId();
         
         // Return the created amenity
-        $selectSql = "SELECT * FROM amenities WHERE id = ?";
+        $selectSql = "SELECT id, name, description, category, icon, is_featured FROM amenities WHERE id = ?";
         $selectStmt = $pdo->prepare($selectSql);
         $selectStmt->execute([$newId]);
         $newAmenity = $selectStmt->fetch(PDO::FETCH_ASSOC);
@@ -566,7 +593,7 @@ function handleUpdateAmenity($pdo, $request) {
     }
     
     // Check if amenity exists
-    $checkSql = "SELECT * FROM amenities WHERE id = ?";
+    $checkSql = "SELECT id FROM amenities WHERE id = ?";
     $checkStmt = $pdo->prepare($checkSql);
     $checkStmt->execute([$amenityId]);
     $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
@@ -610,7 +637,7 @@ function handleUpdateAmenity($pdo, $request) {
     
     if ($result) {
         // Return updated amenity
-        $selectSql = "SELECT * FROM amenities WHERE id = ?";
+        $selectSql = "SELECT id, name, description, category, icon, is_featured FROM amenities WHERE id = ?";
         $selectStmt = $pdo->prepare($selectSql);
         $selectStmt->execute([$amenityId]);
         $updatedAmenity = $selectStmt->fetch(PDO::FETCH_ASSOC);
@@ -640,7 +667,7 @@ function handleDeleteAmenity($pdo, $request) {
     }
     
     // Check if amenity exists
-    $checkSql = "SELECT * FROM amenities WHERE id = ? AND is_active = 1";
+    $checkSql = "SELECT id FROM amenities WHERE id = ? AND is_active = 1";
     $checkStmt = $pdo->prepare($checkSql);
     $checkStmt->execute([$amenityId]);
     $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
@@ -753,7 +780,7 @@ function handleSalesTool($pdo, $request) {
                 a.category,
                 a.description,
                 a.icon,
-                ra.is_highlighted,
+                IF(ra.is_highlighted = 1, true, false) as is_highlighted,
                 'room_feature' AS source_type
             FROM amenities a
             JOIN room_amenities ra ON a.id = ra.amenity_id
@@ -772,7 +799,7 @@ function handleSalesTool($pdo, $request) {
             a.category,
             a.description,
             a.icon,
-            pa.is_highlighted,
+            IF(pa.is_highlighted = 1, true, false) as is_highlighted,
             'package_perk' as source_type
         FROM amenities a
         JOIN package_amenities pa ON a.id = pa.amenity_id

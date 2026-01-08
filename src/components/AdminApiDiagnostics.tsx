@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { paths } from '@/config/paths';
 
 interface LogEntry {
   timestamp: string;
@@ -167,9 +168,9 @@ const AdminApiDiagnostics: React.FC = () => {
       .catch(error => console.error('Production API error:', error));
       
     // Test what the admin panel might call
-    fetch('/api/rooms.php')
+    fetch(paths.buildApiUrl('rooms.php'))
       .then(response => response.json())
-      .catch(error => console.error('Relative API error:', error));
+      .catch(error => console.error('Production API error:', error));
   };
 
   const localhostCalls = networkRequests.filter(req => req.type === 'localhost').length;

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image API Tester</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6">🧪 Image Resizer API Tester</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- API Test -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-lg font-semibold mb-4">Test API Endpoint</h2>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Image Source (in /images folder)</label>
+                    <input type="text" id="imageSrc" class="w-full p-2 border rounded" placeholder="example.jpg" value="sample.jpg">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Width</label>
+                        <input type="number" id="testWidth" class="w-full p-2 border rounded" placeholder="800" value="800">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Height</label>
+                        <input type="number" id="testHeight" class="w-full p-2 border rounded" placeholder="600">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Quality (1-100)</label>
+                    <input type="range" id="testQuality" min="1" max="100" value="80" class="w-full">
+                    <div class="text-center text-sm text-gray-600" id="testQualityValue">80</div>
+                </div>
+                
+                <button onclick="testAPI()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+                    🧪 Test API
+                </button>
+                
+                <div class="mt-4">
+                    <h3 class="font-semibold mb-2">Generated URL:</h3>
+                    <code id="apiUrl" class="text-xs bg-gray-100 p-2 rounded block break-all"></code>
+                </div>
+            </div>
+            
+            <!-- Results -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-lg font-semibold mb-4">Test Results</h2>
+                <div id="testResults">
+                    <div class="text-center text-gray-500">Click "Test API" to see results</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Batch Test -->
+        <div class="bg-white p-6 rounded-lg shadow mt-6">
+            <h2 class="text-lg font-semibold mb-4">Batch Processing Test</h2>
+            <button onclick="testBatch()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                📦 Test Batch Processing
+            </button>
+            <div id="batchResults" class="mt-4"></div>
+        </div>
+        
+        <!-- Sample Images Generator -->
+        <div class="bg-white p-6 rounded-lg shadow mt-6">
+            <h2 class="text-lg font-semibold mb-4">🎨 Generate Sample Images</h2>
+            <p class="text-sm text-gray-600 mb-4">Create sample images to test with</p>
+            <button onclick="generateSamples()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+                Generate Test Images
+            </button>
+            <div id="sampleResults" class="mt-4"></div>
+        </div>
+    </div>
+
+    <script>
+        const testQuality = document.getElementById('testQuality');
+        const testQualityValue = document.getElementById('testQualityValue');
+        
+        testQuality.addEventListener('input', () => {
+            testQualityValue.textContent = testQuality.value;
+            updateApiUrl();
+        });
+        
+        document.getElementById('imageSrc').addEventListener('input', updateApiUrl);
+        document.getElementById('testWidth').addEventListener('input', updateApiUrl);
+        document.getElementById('testHeight').addEventListener('input', updateApiUrl);
+        
+        function updateApiUrl() {
+            const src = document.getElementById('imageSrc').value;
+            const width = document.getElementById('testWidth').value;
+            const height = document.getElementById('testHeight').value;
+            const quality = testQuality.value;
+            
+            const params = new URLSearchParams();
+            if (src) params.append('src', src);
+            if (width) params.append('width', width);
+            if (height) params.append('height', height);
+            if (quality) params.append('quality', quality);
+            
+            const url = `resize-webp.php?${params.toString()}`;
+            document.getElementById('apiUrl').textContent = url;
+        }
+        
+        async function testAPI() {
+            const src = document.getElementById('imageSrc').value;
+            const width = document.getElementById('testWidth').value;
+            const height = document.getElementById('testHeight').value;
+            const quality = testQuality.value;
+            
+            if (!src) {
+                alert('Please enter an image source');
+                return;
+            }
+            
+            const params = new URLSearchParams();
+            params.append('src', src);
+            if (width) params.append('width', width);
+            if (height) params.append('height', height);
+            params.append('quality', quality);
+            
+            const url = `resize-webp.php?${params.toString()}`;
+            
+            try {
+                document.getElementById('testResults').innerHTML = '<div class="text-center">🔄 Testing...</div>';
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                displayTestResult(result);
+                
+            } catch (error) {
+                document.getElementById('testResults').innerHTML = `
+                    <div class="text-red-600">
+                        <strong>❌ Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function testBatch() {
+            try {
+                document.getElementById('batchResults').innerHTML = '<div class="text-center">🔄 Testing batch processing...</div>';
+                
+                const response = await fetch('resize-webp.php?batch=true');
+                const result = await response.json();
+                
+                displayBatchResult(result);
+                
+            } catch (error) {
+                document.getElementById('batchResults').innerHTML = `
+                    <div class="text-red-600">
+                        <strong>❌ Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        function displayTestResult(result) {
+            const resultsDiv = document.getElementById('testResults');
+            
+            if (result.success) {
+                resultsDiv.innerHTML = `
+                    <div class="border-l-4 border-green-500 bg-green-50 p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <strong class="text-green-800">✅ Success</strong>
+                            <span class="text-sm text-green-600">${result.data.stats.compression_ratio}% smaller</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 text-sm mb-3">
+                            <div>
+                                <div class="text-gray-600">Original</div>
+                                <div>${result.data.stats.original_dimensions.width}x${result.data.stats.original_dimensions.height}</div>
+                                <div class="text-gray-500">${(result.data.stats.original_size / 1024).toFixed(1)} KB</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-600">Processed</div>
+                                <div>${result.data.dimensions.width}x${result.data.dimensions.height}</div>
+                                <div class="text-gray-500">${(result.data.stats.new_size / 1024).toFixed(1)} KB</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Output:</strong> ${result.data.output_path}
+                        </div>
+                        
+                        <a href="${result.data.url}" target="_blank" class="inline-block bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
+                            📥 View Result
+                        </a>
+                    </div>
+                `;
+            } else {
+                resultsDiv.innerHTML = `
+                    <div class="border-l-4 border-red-500 bg-red-50 p-4">
+                        <strong class="text-red-800">❌ Failed</strong>
+                        <div class="text-red-600 text-sm mt-1">${result.error}</div>
+                    </div>
+                `;
+            }
+        }
+        
+        function displayBatchResult(result) {
+            const resultsDiv = document.getElementById('batchResults');
+            
+            if (result.success) {
+                resultsDiv.innerHTML = `
+                    <div class="border-l-4 border-green-500 bg-green-50 p-4">
+                        <strong class="text-green-800">✅ Batch Processing Complete</strong>
+                        <div class="text-green-700 text-sm">Processed ${result.total_processed} images</div>
+                        <div class="mt-2 space-y-1">
+                            ${result.batch_results.map(item => `
+                                <div class="flex justify-between items-center text-sm">
+                                    <span>${item.file}</span>
+                                    <span class="${item.result.success ? 'text-green-600' : 'text-red-600'}">
+                                        ${item.result.success ? '✅' : '❌'}
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                resultsDiv.innerHTML = `
+                    <div class="border-l-4 border-red-500 bg-red-50 p-4">
+                        <strong class="text-red-800">❌ Batch Failed</strong>
+                        <div class="text-red-600 text-sm mt-1">${result.error}</div>
+                    </div>
+                `;
+            }
+        }
+        
+        async function generateSamples() {
+            try {
+                document.getElementById('sampleResults').innerHTML = '<div class="text-center">🎨 Generating sample images...</div>';
+                
+                const response = await fetch('generate-samples.php');
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('sampleResults').innerHTML = `
+                        <div class="border-l-4 border-blue-500 bg-blue-50 p-4">
+                            <strong class="text-blue-800">✅ Sample Images Generated</strong>
+                            <div class="text-blue-700 text-sm mt-1">Created ${result.samples.length} test images in /images folder</div>
+                            <div class="mt-2 space-y-1">
+                                ${result.samples.map(sample => `
+                                    <div class="text-sm">📁 ${sample.filename} (${sample.size})</div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                document.getElementById('sampleResults').innerHTML = `
+                    <div class="text-red-600">
+                        <strong>❌ Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // Initialize
+        updateApiUrl();
+    </script>
+</body>
+</html>

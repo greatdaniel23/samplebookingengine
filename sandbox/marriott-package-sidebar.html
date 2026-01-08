@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Package Rooms - Marriott Style</title>
+    <style>
+        /* Marriott Authentic Design System */
+        :root {
+            /* Brand Colors - Teal Theme */
+            --t-brand-primary-color: #078276;
+            --t-brand-secondary-color: #0a6359;
+            --t-brand-tertiary-color: #5fa59c;
+            --t-brand-bg-color: #ffffff;
+            --t-brand-fg-color: #1a1a1a;
+            
+            /* Typography Colors */
+            --t-text-primary: #1a1a1a;
+            --t-text-secondary: #666666;
+            --t-text-muted: #999999;
+            --t-link-text-color: #078276;
+            --t-link-border-color: #078276;
+            
+            /* UI Colors */
+            --t-horizontal-vertical-rule: #e5e7eb;
+            --t-border-light: #f1f5f9;
+            --t-button-primary-bg: #078276;
+            --t-button-primary-hover: #0a6359;
+            --t-button-tertiary-color: #5fa59c;
+            
+            /* Cards & Layout */
+            --t-cards-border-radius: 4px;
+            --t-container-max-width: 1400px;
+            
+            /* Font Families */
+            --t-font-family-primary: "BaskervilleBT", "Times New Roman", serif;
+            --t-font-family-secondary: "HelveticaNeue", "Arial", sans-serif;
+        }
+
+        /* Reset & Base */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--t-font-family-secondary);
+            line-height: 1.6;
+            color: var(--t-text-primary);
+            background-color: #f8fafc;
+        }
+
+        /* Typography System */
+        .t-title-xl {
+            font-family: var(--t-font-family-primary);
+            font-size: 2.5rem;
+            font-weight: 400;
+            line-height: 1.2;
+            color: var(--t-brand-fg-color);
+        }
+
+        .t-title-l {
+            font-family: var(--t-font-family-primary);
+            font-size: 2rem;
+            font-weight: 400;
+            line-height: 1.3;
+            color: var(--t-brand-fg-color);
+        }
+
+        .t-title-m {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.5rem;
+            font-weight: 400;
+            line-height: 1.3;
+            color: var(--t-brand-fg-color);
+        }
+
+        .t-body-l {
+            font-size: 1.125rem;
+            line-height: 1.6;
+            color: var(--t-text-secondary);
+        }
+
+        .t-body-m {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--t-text-secondary);
+        }
+
+        .t-caption {
+            font-size: 0.875rem;
+            line-height: 1.4;
+            color: var(--t-text-muted);
+        }
+
+        /* Layout Components */
+        .container {
+            max-width: var(--t-container-max-width);
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 2rem;
+            padding: 40px 0;
+            min-height: 100vh;
+        }
+
+        /* Utility Classes */
+        .d-flex {
+            display: flex;
+        }
+
+        .align-items-center {
+            align-items: center;
+        }
+
+        .justify-content-between {
+            justify-content: space-between;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mb-4 {
+            margin-bottom: 1.5rem;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 350px;
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            height: fit-content;
+            position: sticky;
+            top: 40px;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--t-horizontal-vertical-rule);
+        }
+
+        .sidebar-title {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: var(--t-brand-fg-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-subtitle {
+            font-size: 0.875rem;
+            color: var(--t-text-secondary);
+        }
+
+        .packages-list {
+            padding: 0;
+        }
+
+        .package-item {
+            border-bottom: 1px solid var(--t-horizontal-vertical-rule);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .package-item:last-child {
+            border-bottom: none;
+        }
+
+        .package-item:hover {
+            background-color: #f8fafc;
+        }
+
+        .package-item.active {
+            background-color: var(--t-brand-primary-color);
+            color: white;
+        }
+
+        .package-content {
+            padding: 1.5rem;
+        }
+
+        .package-name {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.125rem;
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .package-description {
+            font-size: 0.875rem;
+            color: var(--t-text-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .package-item.active .package-description {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .package-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .package-price {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--t-brand-fg-color);
+        }
+
+        .package-item.active .package-price {
+            color: white;
+        }
+
+        .rooms-count {
+            background: rgba(7, 130, 118, 0.1);
+            color: var(--t-brand-primary-color);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .package-item.active .rooms-count {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        /* Main Content Area */
+        .content-area {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .content-header {
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .content-title {
+            font-family: var(--t-font-family-primary);
+            font-size: 2rem;
+            font-weight: 400;
+            color: var(--t-brand-fg-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .content-description {
+            font-size: 1.125rem;
+            color: var(--t-text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .package-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .feature-badge {
+            background: #f1f5f9;
+            color: var(--t-brand-primary-color);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Room List Styles */
+        .room-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .room-row {
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .room-row:hover {
+            box-shadow: 0 4px 12px rgba(7, 130, 118, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .room-row.selected {
+            border-color: var(--t-brand-primary-color);
+            box-shadow: 0 4px 16px rgba(7, 130, 118, 0.15);
+        }
+
+        .room-content {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        .room-image-container {
+            flex: 0 0 180px;
+            height: 120px;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .room-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .room-row:hover .room-image {
+            transform: scale(1.05);
+        }
+
+        .package-included-badge {
+            position: absolute;
+            top: 0.5rem;
+            left: 0.5rem;
+            background: var(--t-brand-primary-color);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .room-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .room-header {
+            margin-bottom: 0.75rem;
+        }
+
+        .room-name {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.125rem;
+            font-weight: 400;
+            color: var(--t-brand-fg-color);
+            margin-bottom: 0.25rem;
+            line-height: 1.3;
+        }
+
+        .room-type {
+            font-size: 0.875rem;
+            color: var(--t-text-muted);
+        }
+
+        .room-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-tag {
+            background: #f1f5f9;
+            color: var(--t-text-secondary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .package-inclusions {
+            background: #f8fafc;
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-bottom: 0.75rem;
+        }
+
+        .inclusions-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--t-brand-primary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .inclusions-text {
+            font-size: 0.75rem;
+            color: var(--t-text-secondary);
+            line-height: 1.4;
+        }
+
+        .room-pricing {
+            flex: 0 0 200px;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 120px;
+        }
+
+        .price-container {
+            margin-bottom: 1rem;
+        }
+
+        .price-label {
+            font-size: 0.75rem;
+            color: var(--t-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .package-price-display {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--t-brand-primary-color);
+            line-height: 1.2;
+        }
+
+        .price-savings {
+            font-size: 0.75rem;
+            color: #059669;
+            margin-top: 0.25rem;
+        }
+
+        .room-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .btn-select-room {
+            background: var(--t-button-primary-bg);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-select-room:hover {
+            background: var(--t-button-primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-select-room.selected {
+            background: #059669;
+        }
+
+        .btn-view-details {
+            background: transparent;
+            color: var(--t-brand-primary-color);
+            border: 1px solid var(--t-brand-primary-color);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-view-details:hover {
+            background: var(--t-brand-primary-color);
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            padding: 3rem;
+            text-align: center;
+            color: var(--t-text-muted);
+        }
+
+        .empty-state-title {
+            font-size: 1.25rem;
+            color: var(--t-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-layout {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                position: static;
+            }
+            
+            .packages-list {
+                display: flex;
+                overflow-x: auto;
+                gap: 0;
+            }
+            
+            .package-item {
+                flex: 0 0 300px;
+                border-bottom: none;
+                border-right: 1px solid var(--t-horizontal-vertical-rule);
+            }
+            
+            .package-item:last-child {
+                border-right: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .room-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .room-image-container {
+                flex: none;
+                width: 100%;
+                height: 200px;
+            }
+            
+            .room-pricing {
+                flex: none;
+                text-align: center;
+                height: auto;
+            }
+            
+            .content-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .content-header {
+                padding: 1.5rem;
+            }
+            
+            .room-content {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-layout">
+            <!-- Sidebar with Packages -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h2 class="sidebar-title">Experience Packages</h2>
+                    <p class="sidebar-subtitle">Choose your perfect getaway package</p>
+                </div>
+                
+                <div class="packages-list">
+                    <div class="package-item active" data-package="romantic">
+                        <div class="package-content">
+                            <h3 class="package-name">Romantic Getaway</h3>
+                            <p class="package-description">
+                                Perfect for couples seeking intimate luxury with spa treatments and fine dining experiences.
+                            </p>
+                            <div class="package-info">
+                                <span class="package-price">From 2.850.000 IDR</span>
+                                <span class="rooms-count">3 Rooms</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="package-item" data-package="wellness">
+                        <div class="package-content">
+                            <h3 class="package-name">Wellness Retreat</h3>
+                            <p class="package-description">
+                                Rejuvenate your mind and body with comprehensive wellness programs and spa therapies.
+                            </p>
+                            <div class="package-info">
+                                <span class="package-price">From 3.200.000 IDR</span>
+                                <span class="rooms-count">4 Rooms</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="package-item" data-package="family">
+                        <div class="package-content">
+                            <h3 class="package-name">Family Adventure</h3>
+                            <p class="package-description">
+                                Create lasting memories with family-friendly activities and spacious accommodations.
+                            </p>
+                            <div class="package-info">
+                                <span class="package-price">From 2.450.000 IDR</span>
+                                <span class="rooms-count">5 Rooms</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="package-item" data-package="business">
+                        <div class="package-content">
+                            <h3 class="package-name">Business Elite</h3>
+                            <p class="package-description">
+                                Premium business amenities with executive services and meeting facilities.
+                            </p>
+                            <div class="package-info">
+                                <span class="package-price">From 3.750.000 IDR</span>
+                                <span class="rooms-count">2 Rooms</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="package-item" data-package="luxury">
+                        <div class="package-content">
+                            <h3 class="package-name">Ultimate Luxury</h3>
+                            <p class="package-description">
+                                The pinnacle of luxury with personalized service and exclusive amenities.
+                            </p>
+                            <div class="package-info">
+                                <span class="package-price">From 6.500.000 IDR</span>
+                                <span class="rooms-count">3 Rooms</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="content-area">
+                <!-- Content Header -->
+                <div class="content-header">
+                    <h1 class="content-title" id="packageTitle">Romantic Getaway Package</h1>
+                    <p class="content-description" id="packageDescription">
+                        Perfect for couples seeking intimate luxury with spa treatments, fine dining experiences, 
+                        and romantic amenities designed to create unforgettable memories together.
+                    </p>
+                    <div class="package-features" id="packageFeatures">
+                        <span class="feature-badge">Couples Spa</span>
+                        <span class="feature-badge">Romantic Dining</span>
+                        <span class="feature-badge">Champagne Welcome</span>
+                        <span class="feature-badge">Rose Petals</span>
+                    </div>
+                </div>
+
+                <!-- Room List -->
+                <div class="room-list" id="roomList">
+                    <!-- Rooms will be populated by JavaScript -->
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <h3 class="empty-state-title">No rooms available</h3>
+                    <p>Please select a different package to view available rooms.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Package and room data
+        const packageData = {
+            romantic: {
+                title: "Romantic Getaway Package",
+                description: "Perfect for couples seeking intimate luxury with spa treatments, fine dining experiences, and romantic amenities designed to create unforgettable memories together.",
+                features: ["Couples Spa", "Romantic Dining", "Champagne Welcome", "Rose Petals"],
+                rooms: [
+                    {
+                        name: "Romantic Suite",
+                        type: "Luxury Suite",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0016-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["King Bed", "50m²", "Ocean View", "Private Balcony"],
+                        inclusions: "Couples massage • Romantic dinner • Champagne • Rose petals",
+                        price: "2.850.000",
+                        savings: "Save 15% vs separate booking"
+                    },
+                    {
+                        name: "Honeymoon Villa",
+                        type: "Private Villa",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0019-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["King Bed", "75m²", "Private Pool", "Garden View"],
+                        inclusions: "Private spa • Butler service • Romantic amenities • Premium dining",
+                        price: "4.250.000",
+                        savings: "Save 20% vs separate booking"
+                    },
+                    {
+                        name: "Love Nest Pavilion",
+                        type: "Premium Suite",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0037-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["King Bed", "65m²", "Infinity Pool", "Sunset View"],
+                        inclusions: "Sunset dinner • Couples activities • Spa credits • Welcome gifts",
+                        price: "3.650.000",
+                        savings: "Save 18% vs separate booking"
+                    }
+                ]
+            },
+            wellness: {
+                title: "Wellness Retreat Package",
+                description: "Rejuvenate your mind and body with comprehensive wellness programs, spa therapies, healthy dining, and meditation sessions in our serene environment.",
+                features: ["Daily Spa", "Yoga Sessions", "Detox Meals", "Meditation"],
+                rooms: [
+                    {
+                        name: "Serenity Suite",
+                        type: "Wellness Suite",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0025-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["King Bed", "45m²", "Garden View", "Meditation Corner"],
+                        inclusions: "Daily wellness treatments • Healthy meals • Yoga classes • Spa access",
+                        price: "3.200.000",
+                        savings: "Save 25% vs individual services"
+                    },
+                    {
+                        name: "Tranquil Villa",
+                        type: "Wellness Villa",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0019-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["King Bed", "80m²", "Private Spa", "Zen Garden"],
+                        inclusions: "Private wellness coach • Custom treatments • Healthy chef • Meditation guide",
+                        price: "5.500.000",
+                        savings: "Save 30% vs individual services"
+                    },
+                    {
+                        name: "Harmony Residence",
+                        type: "Wellness Residence",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0037-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["2 Bedrooms", "120m²", "Wellness Studio", "Private Pool"],
+                        inclusions: "Full wellness program • Personal trainer • Spa suite • Nutrition consultation",
+                        price: "7.200.000",
+                        savings: "Save 35% vs individual services"
+                    },
+                    {
+                        name: "Zen Sanctuary",
+                        type: "Ultimate Wellness",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0016-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["Master Suite", "150m²", "Private Spa Room", "Meditation Pavilion"],
+                        inclusions: "24/7 wellness team • Custom programs • Private facilities • Luxury amenities",
+                        price: "9.800.000",
+                        savings: "Save 40% vs individual services"
+                    }
+                ]
+            },
+            family: {
+                title: "Family Adventure Package",
+                description: "Create lasting memories with family-friendly activities, spacious accommodations, kids' programs, and exciting adventures suitable for all ages.",
+                features: ["Kids Club", "Family Activities", "Adventure Tours", "Babysitting"],
+                rooms: [
+                    {
+                        name: "Family Suite",
+                        type: "Family Suite",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0016-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["2 Queen Beds", "55m²", "Garden View", "Connecting Room"],
+                        inclusions: "Kids club access • Family activities • Meal plans • Adventure tours",
+                        price: "2.450.000",
+                        savings: "Kids stay free"
+                    },
+                    {
+                        name: "Adventure Villa",
+                        type: "Family Villa",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0019-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["3 Bedrooms", "100m²", "Private Pool", "Play Area"],
+                        inclusions: "Private family activities • Dedicated nanny • Custom meal plans • Adventure gear",
+                        price: "4.100.000",
+                        savings: "All inclusive family fun"
+                    },
+                    {
+                        name: "Explorer Residence",
+                        type: "Family Residence",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0037-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["4 Bedrooms", "150m²", "Game Room", "Private Beach"],
+                        inclusions: "Family concierge • Adventure programs • Private beach • All meals included",
+                        price: "6.300.000",
+                        savings: "Ultimate family experience"
+                    },
+                    {
+                        name: "Grand Family Estate",
+                        type: "Luxury Estate",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0025-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["5 Bedrooms", "200m²", "Entertainment Center", "Private Staff"],
+                        inclusions: "Dedicated family team • Custom adventures • Private facilities • Luxury amenities",
+                        price: "8.900.000",
+                        savings: "Luxury family memories"
+                    },
+                    {
+                        name: "Kids Paradise Suite",
+                        type: "Themed Suite",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0016-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["Themed Decor", "60m²", "Bunk Beds", "Play Corner"],
+                        inclusions: "Kids theme experience • Character visits • Special meals • Adventure activities",
+                        price: "3.200.000",
+                        savings: "Magical kids experience"
+                    }
+                ]
+            },
+            business: {
+                title: "Business Elite Package",
+                description: "Premium business amenities with executive services, meeting facilities, high-speed connectivity, and professional support for the discerning business traveler.",
+                features: ["Executive Lounge", "Meeting Rooms", "Business Center", "Concierge"],
+                rooms: [
+                    {
+                        name: "Executive Suite",
+                        type: "Business Suite",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0016-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["King Bed", "45m²", "Work Station", "City View"],
+                        inclusions: "Executive lounge • Meeting room hours • Business services • Airport transfer",
+                        price: "3.750.000",
+                        savings: "Premium business perks"
+                    },
+                    {
+                        name: "Presidential Office Suite",
+                        type: "Executive Suite",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0019-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["King Bed", "80m²", "Private Office", "Meeting Area"],
+                        inclusions: "Private office space • Dedicated assistant • Premium services • Luxury amenities",
+                        price: "6.200.000",
+                        savings: "Executive productivity suite"
+                    }
+                ]
+            },
+            luxury: {
+                title: "Ultimate Luxury Package",
+                description: "The pinnacle of luxury with personalized service, exclusive amenities, private facilities, and bespoke experiences crafted for the most discerning guests.",
+                features: ["Private Butler", "Exclusive Access", "Bespoke Service", "Luxury Amenities"],
+                rooms: [
+                    {
+                        name: "Luxury Penthouse",
+                        type: "Penthouse Suite",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0019-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["King Bed", "200m²", "Private Terrace", "Panoramic View"],
+                        inclusions: "Private butler • Exclusive experiences • Luxury amenities • Personalized service",
+                        price: "6.500.000",
+                        savings: "Ultimate luxury experience"
+                    },
+                    {
+                        name: "Royal Villa",
+                        type: "Royal Villa",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0037-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["Master Suite", "300m²", "Private Beach", "Infinity Pool"],
+                        inclusions: "Royal treatment • Private staff • Exclusive facilities • Bespoke experiences",
+                        price: "12.500.000",
+                        savings: "Royal luxury lifestyle"
+                    },
+                    {
+                        name: "Emperor's Retreat",
+                        type: "Ultimate Suite",
+                        image: "https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0025-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300",
+                        features: ["Private Estate", "500m²", "Helicopter Pad", "Private Island"],
+                        inclusions: "Complete privacy • Personal team • Exclusive island • Ultimate luxury",
+                        price: "25.000.000",
+                        savings: "Once-in-a-lifetime experience"
+                    }
+                ]
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const packageItems = document.querySelectorAll('.package-item');
+            const packageTitle = document.getElementById('packageTitle');
+            const packageDescription = document.getElementById('packageDescription');
+            const packageFeatures = document.getElementById('packageFeatures');
+            const roomList = document.getElementById('roomList');
+            const emptyState = document.getElementById('emptyState');
+
+            let selectedRoom = null;
+
+            // Initialize with first package
+            displayPackage('romantic');
+
+            // Package selection
+            packageItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Remove active class from all items
+                    packageItems.forEach(p => p.classList.remove('active'));
+                    
+                    // Add active class to clicked item
+                    this.classList.add('active');
+                    
+                    // Display selected package
+                    const packageId = this.dataset.package;
+                    displayPackage(packageId);
+                });
+            });
+
+            function displayPackage(packageId) {
+                const data = packageData[packageId];
+                
+                if (!data) {
+                    showEmptyState();
+                    return;
+                }
+
+                // Update header
+                packageTitle.textContent = data.title;
+                packageDescription.textContent = data.description;
+                
+                // Update features
+                packageFeatures.innerHTML = data.features
+                    .map(feature => `<span class="feature-badge">${feature}</span>`)
+                    .join('');
+
+                // Display rooms
+                if (data.rooms && data.rooms.length > 0) {
+                    displayRooms(data.rooms);
+                    emptyState.style.display = 'none';
+                } else {
+                    showEmptyState();
+                }
+            }
+
+            function displayRooms(rooms) {
+                roomList.innerHTML = rooms.map((room, index) => `
+                    <div class="room-row" data-room-index="${index}">
+                        <div class="room-content">
+                            <div class="room-image-container">
+                                <img class="room-image" src="${room.image}" alt="${room.name}">
+                                <div class="package-included-badge">Package</div>
+                            </div>
+                            
+                            <div class="room-details">
+                                <div class="room-header">
+                                    <h3 class="room-name">${room.name}</h3>
+                                    <div class="room-type">${room.type}</div>
+                                </div>
+                                
+                                <div class="room-features">
+                                    ${room.features.map(feature => `<span class="feature-tag">${feature}</span>`).join('')}
+                                </div>
+                                
+                                <div class="package-inclusions">
+                                    <div class="inclusions-title">Package Includes</div>
+                                    <div class="inclusions-text">${room.inclusions}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="room-pricing">
+                                <div class="price-container">
+                                    <div class="price-label">Package Price</div>
+                                    <div class="package-price-display">${room.price} IDR</div>
+                                    <div class="price-savings">${room.savings}</div>
+                                </div>
+                                
+                                <div class="room-actions">
+                                    <button class="btn-select-room">Select Package</button>
+                                    <button class="btn-view-details">View Details</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Add event listeners to new room elements
+                attachRoomEventListeners();
+            }
+
+            function showEmptyState() {
+                roomList.innerHTML = '';
+                emptyState.style.display = 'block';
+            }
+
+            function attachRoomEventListeners() {
+                const roomRows = document.querySelectorAll('.room-row');
+                const selectButtons = document.querySelectorAll('.btn-select-room');
+                const detailButtons = document.querySelectorAll('.btn-view-details');
+
+                // Room selection
+                selectButtons.forEach((button, index) => {
+                    button.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        
+                        // Remove previous selections
+                        roomRows.forEach(row => row.classList.remove('selected'));
+                        selectButtons.forEach(btn => {
+                            btn.textContent = 'Select Package';
+                            btn.classList.remove('selected');
+                        });
+
+                        // Set current selection
+                        const roomRow = this.closest('.room-row');
+                        roomRow.classList.add('selected');
+                        this.textContent = 'Selected ✓';
+                        this.classList.add('selected');
+
+                        selectedRoom = {
+                            name: roomRow.querySelector('.room-name').textContent,
+                            price: roomRow.querySelector('.package-price-display').textContent
+                        };
+                    });
+                });
+
+                // Row click to select
+                roomRows.forEach(row => {
+                    row.addEventListener('click', function() {
+                        const selectBtn = this.querySelector('.btn-select-room');
+                        selectBtn.click();
+                    });
+                });
+
+                // View details
+                detailButtons.forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const roomName = this.closest('.room-row').querySelector('.room-name').textContent;
+                        alert(`Viewing details for: ${roomName} Package`);
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # 🛠️ Amenities Management API Documentation
 
-**Enhanced Date**: November 19, 2025  
+**Last Updated**: December 12, 2025  
 **Project**: Villa Booking Engine  
 **API Base**: `https://api.rumahdaisycantik.com`
 
@@ -8,15 +8,17 @@
 
 ## 🌟 **OVERVIEW**
 
-The Amenities Management API provides comprehensive CRUD operations for managing villa amenities, room assignments, and categories. This system supports the villa booking engine with structured amenity data and relationships.
+The Amenities Management API provides comprehensive CRUD operations for managing villa amenities, room assignments, and package relationships. This system supports the villa booking engine with structured amenity data and icon mapping.
 
-### **Key Features**
+### **✅ Current Status - FULLY FUNCTIONAL**
 - ✅ **Full CRUD Operations** - Create, Read, Update, Delete amenities
-- ✅ **Category Management** - Organize amenities by categories
+- ✅ **Category Management** - Organize amenities by categories  
 - ✅ **Room Assignments** - Link amenities to specific rooms
-- ✅ **Package Integration** - Associate amenities with packages
-- ✅ **Featured System** - Highlight important amenities
-- ✅ **Soft Delete** - Safe deletion with relationship protection
+- ✅ **Package Integration** - Associate amenities with packages (FIXED Dec 12)
+- ✅ **Icon System** - Backend-to-frontend icon mapping with Lucide React
+- ✅ **Frontend UI** - Complete admin interface for amenities management
+- ✅ **API Endpoints** - All endpoints tested and working
+- ✅ **Bug Fixes Applied** - Package amenities "0" count issue resolved
 
 ---
 
@@ -40,11 +42,22 @@ GET    /amenities.php/room-amenities/{room_id}  → Get room amenities
 POST   /amenities.php/room-amenities/{room_id}  → Add amenity to room
 DELETE /amenities.php/room-amenities/{room_id}  → Remove amenity from room
 
+PACKAGE AMENITIES (Fixed Dec 12, 2025):
+GET    /package-amenities.php?package_id={id}   → Get package amenities
+GET    /package-amenities.php?action=add        → Add amenity to package
+GET    /package-amenities.php?action=remove     → Remove amenity from package
+
 OTHER ENDPOINTS:
 GET    /amenities.php/categories                → Get category statistics
-GET    /amenities.php/package-amenities/{id}    → Get package amenities
+GET    /amenities.php/package-amenities/{id}    → Get package amenities (legacy)
 GET    /amenities.php/sales-tool/{package_id}   → Get sales tool data
 ```
+
+**🔧 Recent Fixes (December 12, 2025):**
+- Fixed package amenities "0" count bug by correcting API endpoints
+- Updated frontend to use proper `package-amenities.php` endpoints
+- Synchronized backend icon mapping with frontend Lucide React icons
+- Added comprehensive debugging and error handling
 
 ### **🏷️ Amenities CRUD**
 
@@ -383,7 +396,75 @@ const createAmenity = async (amenityData) => {
 
 ---
 
+## 🔧 **PACKAGE AMENITIES IMPLEMENTATION**
+
+### **Current Working System (Fixed December 12, 2025)**
+
+**Problem Resolved**: Package amenities were showing "0" count due to incorrect API endpoints.
+
+**Solution Applied**: 
+- Updated frontend to use dedicated `package-amenities.php` endpoints
+- Fixed API routing and action-based parameter handling
+- Added comprehensive debugging and error handling
+
+**Working Endpoints:**
+```javascript
+// GET package amenities
+GET /package-amenities.php?package_id={id}
+
+// ADD amenity to package  
+GET /package-amenities.php?action=add&package_id={id}&amenity_id={aid}&is_highlighted={0|1}
+
+// REMOVE amenity from package
+GET /package-amenities.php?action=remove&package_id={id}&amenity_id={aid}
+```
+
+**Frontend Integration:**
+- `PackagesSection.tsx` - Admin interface for managing package amenities
+- `PackageCard.tsx` - Displays amenities with proper icon mapping
+- `PackageDetails.tsx` - Shows detailed amenity information
+- Icon mapping system converts backend strings (`"wifi"`, `"car"`) to Lucide React components
+
+---
+
+## 🎨 **ICON SYSTEM IMPLEMENTATION**
+
+### **Backend-Frontend Icon Synchronization**
+
+**Backend Storage**: Icons stored as lowercase strings in `amenities.icon` field
+```sql
+-- Examples from database
+'wifi', 'car', 'bath', 'star', 'sparkles', 'coffee'
+```
+
+**Frontend Mapping**: Lucide React components via `getAmenityIcon()` function
+```typescript
+const getAmenityIcon = (iconName: string) => {
+  const iconMap = {
+    'wifi': Wifi, 'car': Car, 'bath': Bath, 
+    'sparkles': Sparkles, 'star': Star, 'coffee': Coffee
+  };
+  return iconMap[iconName?.toLowerCase()] || Star;
+};
+```
+
+**Default Behavior**: 
+- Backend default: `'star'` (amenities.php line 518)
+- Frontend fallback: `Star` component from Lucide React
+- Visual consistency maintained across all interfaces
+
+---
+
 ## 📝 **CHANGELOG**
+
+### **v3.0 - December 12, 2025** 🆕
+- ✅ **FIXED**: Package amenities "0" count bug
+- ✅ **UPDATED**: API endpoints for package-amenity relationships
+- ✅ **IMPLEMENTED**: Complete Lucide React icon standardization
+- ✅ **ADDED**: Backend-frontend icon mapping system
+- ✅ **ENHANCED**: Error handling and debugging capabilities
+- ✅ **TESTED**: All package amenities CRUD operations working
+- ✅ **DOCUMENTED**: Updated API references and implementation guides
 
 ### **v2.0 - November 19, 2025**
 - ✅ Added complete CRUD operations
@@ -402,4 +483,20 @@ const createAmenity = async (amenityData) => {
 
 ---
 
-*This API provides a complete amenity management system for the Villa Booking Engine, enabling dynamic content management and enhanced guest experience presentation.*
+## ✅ **CURRENT SYSTEM STATUS**
+
+**🎯 All Components Operational:**
+- Database schema and relationships ✅
+- API endpoints and routing ✅  
+- Admin interface and management ✅
+- Frontend package integration ✅
+- Icon system standardization ✅
+- Error handling and debugging ✅
+
+**🔧 Recent Fixes Applied:**
+- Package amenities API endpoints corrected
+- Frontend-backend icon synchronization complete
+- Admin panel amenities management fully functional
+- Package details and cards showing correct amenity data
+
+*This API provides a complete, tested, and fully functional amenity management system for the Villa Booking Engine.*
