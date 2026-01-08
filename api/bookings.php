@@ -4,6 +4,10 @@ header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json");
 
+// Enhanced error logging for debugging
+error_reporting(E_ALL);
+ini_set('log_errors', 1);
+
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -16,7 +20,14 @@ try {
     $database = new Database();
     $db = $database->getConnection();
     
+    if (!$db) {
+        throw new Exception('Database connection failed');
+    }
+    
     $method = $_SERVER['REQUEST_METHOD'];
+    
+    // Log the incoming request for debugging
+    error_log("Booking API Request: Method={$method}, Time=" . date('Y-m-d H:i:s'));
     
     switch ($method) {
         case 'GET':
@@ -38,10 +49,15 @@ try {
     }
     
 } catch (Exception $e) {
+    // Enhanced error logging
+    error_log("Booking API Error: " . $e->getMessage() . " | File: " . $e->getFile() . " | Line: " . $e->getLine());
+    error_log("Stack trace: " . $e->getTraceAsString());
+    
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => 'Server error: ' . $e->getMessage()
+        'error' => 'Server error: ' . $e->getMessage(),
+        'timestamp' => date('Y-m-d H:i:s')
     ]);
 }
 
@@ -86,7 +102,20 @@ function handlePost($db) {
     try {
         $input = json_decode(file_get_contents('php://input'), true);
         
-        // Validate required fields
+        // Check if this is a delete action request
+        if (isset($input['action']) && $input['action'] === 'delete') {
+            if (!isset($input['id']) || $input['id'] === '') {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Missing required field: id']);
+                return;
+            }
+            
+            // Call handleDelete with the input data directly
+            handleDeleteWithInput($db, $input);
+            return;
+        }
+        
+        // Validate required fields for booking creation
         $requiredFields = ['room_id', 'first_name', 'email', 'check_in', 'check_out', 'guests', 'total_price'];
         foreach ($requiredFields as $field) {
             if (!isset($input[$field]) || $input[$field] === '') {
@@ -96,11 +125,18 @@ function handlePost($db) {
             }
         }
         
-        // Validate room_id exists in rooms table
-        $validRoomIds = ['deluxe-suite', 'economy-room', 'family-room', 'master-suite', 'standard-room'];
-        if (!in_array($input['room_id'], $validRoomIds)) {
+        // Validate room_id exists in rooms table by querying the database
+        try {
+            $roomCheck = $db->prepare("SELECT id FROM rooms WHERE id = ? AND available = 1");
+            $roomCheck->execute([$input['room_id']]);
+            if (!$roomCheck->fetch()) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => "Invalid or unavailable room_id: {$input['room_id']}"]);
+                return;
+            }
+        } catch (Exception $e) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => "Invalid room_id: {$input['room_id']}. Must be one of: " . implode(', ', $validRoomIds)]);
+            echo json_encode(['success' => false, 'error' => "Room validation failed: " . $e->getMessage()]);
             return;
         }
         
@@ -115,9 +151,9 @@ function handlePost($db) {
         // Validate package_id if provided
         if (isset($input['package_id']) && $input['package_id'] !== null) {
             $packageId = intval($input['package_id']);
-            if ($packageId < 1 || $packageId > 5) {
+            if ($packageId < 1 || $packageId > 50) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'error' => "Invalid package_id: {$packageId}. Must be between 1 and 5"]);
+                echo json_encode(['success' => false, 'error' => "Invalid package_id: {$packageId}. Must be between 1 and 50"]);
                 return;
             }
         }
@@ -159,7 +195,7 @@ function handlePost($db) {
             $children,
             $input['total_price'] ?? 0,
             $input['special_requests'] ?? '',
-            $input['status'] ?? 'confirmed',
+            $input['status'] ?? 'pending',
             $input['payment_status'] ?? 'pending',
             $input['source'] ?? 'direct'
         ]);
@@ -168,6 +204,15 @@ function handlePost($db) {
         
         // SEND EMAIL CONFIRMATIONS
         try {
+            // Get package name if package_id exists
+            $packageName = null;
+            if (!empty($input['package_id'])) {
+                $pkgStmt = $db->prepare("SELECT name FROM packages WHERE id = ?");
+                $pkgStmt->execute([$input['package_id']]);
+                $packageResult = $pkgStmt->fetch(PDO::FETCH_ASSOC);
+                $packageName = $packageResult ? $packageResult['name'] : null;
+            }
+
             // Prepare booking data for emails
             $emailBookingData = [
                 'guest_name' => trim($input['first_name'] . ' ' . ($input['last_name'] ?? '')),
@@ -179,6 +224,7 @@ function handlePost($db) {
                 'adults' => $adults,
                 'children' => $children,
                 'room_id' => $input['room_id'],
+                'room_name' => $packageName ?: 'Accommodation', // Use package name as room/package name
                 'total_amount' => number_format($input['total_price'], 2),
                 'special_requests' => $input['special_requests'] ?? '',
                 'phone' => $input['phone'] ?? '',
@@ -222,13 +268,36 @@ function handlePost($db) {
 
 function handlePut($db) {
     try {
+        // Log PUT request start
+        error_log("HandlePut started at " . date('Y-m-d H:i:s'));
+        
         $input = json_decode(file_get_contents('php://input'), true);
         
         if (!$input || !isset($input['id'])) {
+            error_log("HandlePut: Missing booking ID");
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Booking ID is required']);
             return;
         }
+        
+        error_log("HandlePut: Processing booking ID " . $input['id']);
+        
+        // Get current booking data before update
+        error_log("HandlePut: Fetching current booking data");
+        $currentStmt = $db->prepare("SELECT * FROM bookings WHERE id = ?");
+        $currentStmt->execute([$input['id']]);
+        $currentBooking = $currentStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$currentBooking) {
+            error_log("HandlePut: Booking not found for ID " . $input['id']);
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'Booking not found']);
+            return;
+        }
+        
+        $oldStatus = $currentBooking['status'];
+        $newStatus = $input['status'] ?? 'pending';
+        error_log("HandlePut: Status change from '{$oldStatus}' to '{$newStatus}'");
         
         $stmt = $db->prepare("
             UPDATE bookings SET 
@@ -243,6 +312,7 @@ function handlePut($db) {
         $children = $input['children'] ?? 0;
         $totalGuests = $adults + $children;
         
+        error_log("HandlePut: Executing database update");
         $stmt->execute([
             $input['room_id'],
             $input['first_name'],
@@ -256,14 +326,70 @@ function handlePut($db) {
             $children,
             $input['total_price'] ?? 0,
             $input['special_requests'] ?? '',
-            $input['status'] ?? 'confirmed',
+            $newStatus,
             $input['payment_status'] ?? 'pending',
             $input['id']
         ]);
+        error_log("HandlePut: Database update completed");
         
-        echo json_encode(['success' => true, 'data' => ['updated' => true]]);
+        // Send admin notification if status changed (async, non-blocking)
+        if ($oldStatus !== $newStatus) {
+            error_log("HandlePut: Status changed, sending email notification");
+            // Use output buffering to prevent email issues from affecting response
+            ob_start();
+            
+            try {
+                // Check if email service file exists before including
+                $email_service_path = __DIR__ . '/email-service.php';
+                if (file_exists($email_service_path)) {
+                    require_once $email_service_path;
+                    
+                    // Verify class exists before instantiation
+                    if (class_exists('VillaEmailService')) {
+                        $emailService = new VillaEmailService();
+                        
+                        // Prepare updated booking data for email
+                        $updatedBooking = array_merge($currentBooking, [
+                            'booking_reference' => $currentBooking['booking_reference'],
+                            'first_name' => $input['first_name'],
+                            'last_name' => $input['last_name'] ?? '',
+                            'email' => $input['email'],
+                            'phone' => $input['phone'] ?? '',
+                            'check_in' => $input['check_in'],
+                            'check_out' => $input['check_out'],
+                            'adults' => $adults,
+                            'children' => $children,
+                            'total_price' => $input['total_price'] ?? 0,
+                            'special_requests' => $input['special_requests'] ?? '',
+                            'status' => $newStatus
+                        ]);
+                        
+                        // Send notification with timeout protection
+                        error_log("HandlePut: Calling sendAdminStatusChangeNotification");
+                        $emailResult = $emailService->sendAdminStatusChangeNotification(
+                            $updatedBooking, 
+                            $oldStatus, 
+                            $newStatus, 
+                            'updated via admin panel'
+                        );
+                        error_log("HandlePut: Email notification result: " . json_encode($emailResult));
+                    }
+                }
+            } catch (Exception $emailError) {
+                // Comprehensive error logging
+                error_log("Admin notification email failed - Booking: {$currentBooking['booking_reference']}, Error: " . $emailError->getMessage());
+                error_log("Email error trace: " . $emailError->getTraceAsString());
+            } finally {
+                // Clean up output buffer
+                ob_end_clean();
+            }
+        }
+        
+        error_log("HandlePut: Request completed successfully");
+        echo json_encode(['success' => true, 'data' => ['updated' => true, 'status_changed' => $oldStatus !== $newStatus]]);
         
     } catch (Exception $e) {
+        error_log("HandlePut Error: " . $e->getMessage() . " | Line: " . $e->getLine());
         http_response_code(500);
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
@@ -279,6 +405,16 @@ function handleDelete($db) {
             return;
         }
         
+        handleDeleteWithInput($db, $input);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+}
+
+function handleDeleteWithInput($db, $input) {
+    try {
+        // Simple delete without complex email notifications for now
         $stmt = $db->prepare("DELETE FROM bookings WHERE id = ?");
         $stmt->execute([$input['id']]);
         

@@ -1,0 +1,7 @@
+{
+  "booking_id": 46,
+  "amount": 1000000,
+  "customer_name": "Test User",
+  "customer_email": "test@example.com",
+  "customer_phone": "081234567890"
+}

@@ -25,6 +25,60 @@ Availability safety = Push AND Pull simultaneously.
 
 ---
 
+## 📊 Database Schema (Calendar Tables)
+
+### Calendar-Specific Tables:
+
+#### 1. **`calendar_settings`** - System Configuration
+- **Purpose**: Stores calendar system configuration and behavior
+- **Key Fields**: 
+  - `setting_key` - Configuration parameter name
+  - `setting_value` - Configuration value
+  - `setting_type` - Data type (string, integer, boolean, json)
+  - `category` - Groups settings (calendar, sync, etc.)
+  - `is_public` - Whether setting is publicly readable
+
+**Current Settings:**
+```sql
+sync_frequency_default: 15 (minutes)
+timezone_default: Asia/Makassar
+ical_calendar_name: "Villa Daisy Cantik Bookings"
+enable_webcal_protocol: true
+calendar_sync_enabled: true (master switch)
+```
+
+#### 2. **`calendar_subscriptions`** - Access Management
+- **Purpose**: Manages calendar subscription tokens and access control
+- **Subscription Types**: iCal, WebCal, Google, Outlook, Apple, Airbnb, VRBO
+- **Key Features**:
+  - Unique subscription tokens for security
+  - Room-specific and date range filtering
+  - Access analytics (count, user agent, IP tracking)
+  - Subscriber contact information
+
+#### 3. **`platform_integrations`** - External Platform Sync
+- **Purpose**: Manages API connections to external booking platforms
+- **Platform Types**: OTA, calendar, payment, channel manager, PMS
+- **Sync Modes**: Real-time, hourly, daily, weekly, manual
+- **Bidirectional Support**: Import, export, or both directions
+- **Features**:
+  - OAuth token management with refresh
+  - Custom mapping rules (JSON)
+  - Error logging and sync statistics
+  - Configurable sync frequency per platform
+
+#### 4. **`platform_sync_history`** - Audit Trail
+- **Purpose**: Comprehensive logging of all sync operations
+- **Tracking**: Success/failure rates, data volumes, timing analytics
+- **Debugging**: Error details and performance metrics
+
+#### 5. **`bookings`** - Core Calendar Events
+- **Purpose**: Primary booking data that feeds all calendar exports
+- **Calendar Fields**: `check_in`, `check_out`, `status`, `room_id`
+- **Integration**: Automatically included in iCal feeds based on status
+
+---
+
 ## 🏗️ Architecture
 ```
              ┌────────────────────────────────────┐
@@ -42,7 +96,11 @@ Availability safety = Push AND Pull simultaneously.
                  │                      │
           iCalGenerator             Airbnb ICS Fetch + Parse
                  │                      │
-        bookings table            external_blocks table
+        ┌─bookings table───┐      external_blocks table
+        │─calendar_settings─│             │
+        │─calendar_subscriptions─│        │
+        │─platform_integrations──│        │
+        └─platform_sync_history───┘       │
                  │                      │
                  └──────────┬───────────┘
                             │
@@ -78,26 +136,154 @@ INDEX (source, start_date, end_date)
 UNIQUE (source, uid)
 ```
 
----
+### **External Calendar Management**
 
-## ✅ Frontend Components (Recap)
-`CalendarIntegration.tsx` provides:
-- Export & subscription URL generation
-- Copy-to-clipboard helpers
-- Platform integration instructions
-- (Planned) External blocks preview tab
+#### **External Blocks API (`/api/external_blocks.php`)**
+- **Purpose**: List imported calendar blocks from external platforms
+- **Filtering**: By source, date ranges
+- **Usage**: View and manage external calendar conflicts
 
-`BookingCalendar.tsx` (visual layer) – color-coded events + filters.
-
-Enhancement TODOs:
-- Display external blocks with distinct color/hatching (e.g., grey diagonal stripes)
-- Toggle visibility of internal vs external events
-- Conflict inspector: highlight overlapping internal & external entries (should never occur after enforcement)
+#### **Airbnb Import API (`/api/ical_import_airbnb.php`)**
+- **Purpose**: Import Airbnb calendar feeds to prevent double-booking
+- **Security**: URL validation for Airbnb calendar patterns
+- **Storage**: Saves blocks to `external_blocks` table
 
 ---
 
-## 🌐 API Endpoints (Outbound Push)
-Same as previous documentation (kept intact for clarity):
+## 📦 **PACKAGE-SPECIFIC CALENDAR INTEGRATION**
+
+### **Database Integration:**
+- ✅ **Fixed SQL Join**: Packages properly connect via `bookings.package_id`
+- ✅ **Package Tracking**: Every booking can link to specific packages
+- ✅ **Global + Individual**: Both global and package-specific calendars supported
+
+### **Individual Package Features:**
+
+#### **Unique iCal Feeds per Package:**
+```bash
+# Package 1 calendar
+/api/ical.php?action=calendar&package_id=1&format=ics
+
+# Package 2 with date filter
+/api/ical.php?action=calendar&package_id=2&from_date=2025-12-01
+
+# Package subscription URLs
+/api/ical.php?action=subscribe&package_id=1
+```
+
+#### **Dynamic File Naming:**
+- Global calendar: `villa-bookings.ics`
+- Package calendar: `package-1-bookings.ics`  
+- Room calendar: `room-villa-1-bookings.ics`
+
+#### **Platform Integration per Package:**
+- **Google Calendar**: Add package-specific URL
+- **Airbnb**: Use as external calendar for specific package
+- **VRBO**: Subscribe to package availability feed
+- **Outlook/Apple**: Auto-sync package bookings
+
+### **Frontend Service Integration:**
+
+#### **New CalendarService Methods:**
+```typescript
+// Get package calendar information
+const info = await calendarService.getPackageCalendarInfo(packageId);
+
+// Export package-specific calendar  
+const icalData = await calendarService.exportPackageCalendar(packageId, {
+  status: 'confirmed',
+  from_date: '2025-12-01'
+});
+
+// Get package subscription URLs
+const urls = await calendarService.getPackageSubscriptionUrls(packageId);
+console.log(urls.ical, urls.webcal, urls.google_calendar);
+```
+
+---
+
+## ✅ Frontend Components
+
+### **CalendarIntegration.tsx** - Enhanced with:
+- ✅ Global and package-specific export capabilities
+- ✅ Package filtering in URL generation
+- ✅ Copy-to-clipboard for package URLs
+- ✅ Platform-specific integration instructions
+- ✅ External blocks preview and management
+
+### **BookingCalendar.tsx** - Visual Features:
+- ✅ Color-coded events by status and type
+- ✅ Package and room filtering
+- ✅ External block display with conflict detection
+- ✅ Date range navigation and zoom controls
+
+### **Package Management Integration:**
+- ✅ Package details show calendar export options
+- ✅ Individual package calendar URLs in admin panel
+- ✅ Subscription management per package
+- ✅ Analytics tracking via calendar access logs
+
+---
+
+## 🌐 API Endpoints (Calendar Control)
+
+### **Core Calendar API (`/api/ical.php`)**
+
+#### **Available Actions:**
+
+**1. `?action=calendar` - Generate Calendar Export**
+- **Purpose**: Export booking calendar in iCal or JSON format
+- **Parameters**:
+  - `format`: 'ics' or 'json' (default: 'ics')
+  - `status`: 'all', 'confirmed', 'pending', 'cancelled' (default: 'all')
+  - `from_date`: Start date filter (YYYY-MM-DD)
+  - `to_date`: End date filter (YYYY-MM-DD)
+  - `package_id`: Filter by specific package ID (new feature)
+  - `room_id`: Filter by specific room ID (new feature)
+- **Output**: iCal file download or JSON response
+
+```bash
+# Global calendar
+GET /api/ical.php?action=calendar&format=ics
+
+# Package-specific calendar
+GET /api/ical.php?action=calendar&package_id=1&format=ics
+
+# Room-specific calendar with date range
+GET /api/ical.php?action=calendar&room_id=villa-1&from_date=2025-12-01&to_date=2025-12-31
+```
+
+**2. `?action=subscribe` - Get Subscription URLs**
+- **Purpose**: Generate subscription URLs for external calendar platforms
+- **Parameters**: Same filtering as calendar action
+- **Returns**: iCal URL, WebCal URL, and platform-specific instructions
+
+```bash
+# Global subscription URLs
+GET /api/ical.php?action=subscribe
+
+# Package-specific subscription URLs
+GET /api/ical.php?action=subscribe&package_id=1
+```
+
+**3. `?action=package_calendar` - Package Calendar Info** *(New)*
+- **Purpose**: Get comprehensive calendar information for a specific package
+- **Parameters**: `package_id` (required)
+- **Returns**: Package-specific URLs, WebCal links, and description
+
+```bash
+GET /api/ical.php?action=package_calendar&package_id=1
+```
+
+**4. `?action=sync` - Platform Sync**
+- **Purpose**: Synchronize with specific external platform
+- **Parameters**: `platform` (required)
+
+**5. `?action=sync_all` - Bulk Sync**
+- **Purpose**: Synchronize all configured platforms
+
+**6. `?action=save_test` - Test Calendar URL**
+- **Purpose**: Validate and save external calendar feeds
 ```
 GET /api/ical.php?action=subscribe
 GET /api/ical.php?action=calendar&format=ics[&status=confirmed&from_date=YYYY-MM-DD&to_date=YYYY-MM-DD]
@@ -527,6 +713,137 @@ const googleCalendarUrl = `https://calendar.google.com/calendar/render?cid=${enc
 .room-family { border-left: 4px solid #10b981; }       /* Green */
 .room-deluxe { border-left: 4px solid #8b5cf6; }       /* Purple */
 .room-master { border-left: 4px solid #f59e0b; }       /* Gold */
+```
+
+---
+
+## 🗄️ **DATABASE IMPLEMENTATION DETAILS**
+
+### **Calendar Settings Management**
+```sql
+-- Example: Update sync frequency
+UPDATE calendar_settings 
+SET setting_value = '30' 
+WHERE setting_key = 'sync_frequency_default';
+
+-- Add new calendar setting
+INSERT INTO calendar_settings (setting_key, setting_value, setting_type, description, category) 
+VALUES ('max_sync_retries', '3', 'integer', 'Maximum retry attempts for failed syncs', 'calendar');
+```
+
+### **Subscription Token Security**
+- Tokens are UUID-based for security
+- Each subscription can be filtered by room, date range, or status
+- Access is logged with IP and user agent for security monitoring
+- Subscriptions can be disabled without deleting history
+
+### **Platform Integration Flow**
+1. **Setup**: Store API credentials in `platform_integrations`
+2. **Authentication**: Handle OAuth tokens with automatic refresh
+3. **Sync Scheduling**: Configure frequency and direction
+4. **Execution**: Log all operations in `platform_sync_history`
+5. **Error Handling**: Capture and store detailed error information
+
+### **Calendar Data Relationships**
+```
+bookings (check_in, check_out) 
+    ↓ [feeds into]
+calendar_subscriptions (filtered by room/date)
+    ↓ [generates]
+iCal feeds (via /api/ical.php)
+    ↓ [consumed by]
+External platforms (Airbnb, VRBO, Google Calendar)
+
+External platforms 
+    ↓ [import via]
+platform_integrations (API credentials)
+    ↓ [creates]
+external_blocks (date blocking)
+    ↓ [prevents]
+Double bookings
+```
+
+### **Performance Optimizations**
+- **Indexes**: Date ranges, room IDs, package IDs, and sync timestamps are indexed
+- **Caching**: Calendar feeds can be cached based on last booking update
+- **Batch Processing**: Multiple bookings can be synced in single API calls
+- **Rate Limiting**: Configurable delays between platform API calls
+- **Package Filtering**: Efficient SQL queries with proper joins for package-specific data
+
+### **Package Calendar Benefits**
+- 📦 **Granular Control**: Each package has independent calendar management
+- 🔄 **Real-Time Sync**: External platforms automatically see package-specific availability
+- 🚫 **Conflict Prevention**: Prevents double booking across platforms per package
+- 📊 **Analytics**: Track performance and usage per package via calendar subscriptions
+- 🎯 **Marketing**: Share specific package availability with partners and platforms
+- 🏷️ **Branding**: Custom calendar names and descriptions per package
+
+---
+
+## 🔄 **CALENDAR SYNC & UPDATES**
+
+## 🎯 **USAGE EXAMPLES**
+
+### **Package Calendar Integration Examples:**
+
+#### **1. Romantic Package Calendar Setup:**
+```bash
+# Get package calendar info
+GET /api/ical.php?action=package_calendar&package_id=1
+
+# Response:
+{
+  "success": true,
+  "package_id": "1",
+  "calendar_url": "https://yoursite.com/api/ical.php?action=calendar&format=ics&package_id=1",
+  "webcal_url": "webcal://yoursite.com/api/ical.php?action=calendar&format=ics&package_id=1",
+  "description": "Package-specific calendar feed containing only bookings for this package"
+}
+```
+
+#### **2. Multi-Package Platform Integration:**
+```bash
+# Airbnb integration for Adventure Package
+Airbnb External Calendar URL: 
+https://yoursite.com/api/ical.php?action=calendar&package_id=2&format=ics&status=confirmed
+
+# Google Calendar for Wellness Package  
+Google Calendar Add by URL:
+https://yoursite.com/api/ical.php?action=calendar&package_id=3&format=ics
+```
+
+#### **3. Frontend Component Usage:**
+```typescript
+// Package calendar component
+import { calendarService } from '@/services/calendarService';
+
+const PackageCalendar = ({ packageId }) => {
+  const [calendarUrls, setCalendarUrls] = useState(null);
+  
+  useEffect(() => {
+    const loadCalendarUrls = async () => {
+      try {
+        const urls = await calendarService.getPackageSubscriptionUrls(packageId);
+        setCalendarUrls(urls);
+      } catch (error) {
+        console.error('Failed to load calendar URLs:', error);
+      }
+    };
+    
+    loadCalendarUrls();
+  }, [packageId]);
+
+  const exportPackageCalendar = async () => {
+    try {
+      await calendarService.exportPackageCalendar(packageId, {
+        format: 'ics',
+        status: 'confirmed'
+      });
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+};
 ```
 
 ---

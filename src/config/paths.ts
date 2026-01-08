@@ -13,6 +13,7 @@ export interface AppPaths {
     bookingById: (id: number | string) => string; // Single booking
     rooms: string;          // Rooms listing (placeholder)
   };
+  confirmation: (id: number | string) => string; // Booking confirmation page
   frontendBase: string;     // Public site root
   adminBase: string;        // Admin dashboard base route
   assets: {
@@ -75,6 +76,7 @@ export const paths: AppPaths = {
     bookingById: (id) => buildApiUrl(`bookings.php?id=${id}`),
     rooms: buildApiUrl('rooms.php')
   },
+  confirmation: (id: number | string) => `/confirmation/${id}`,
   frontendBase: PUBLIC_BASE,
   adminBase: ADMIN_BASE,
   assets: {

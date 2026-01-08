@@ -1,5 +1,6 @@
-// Calendar sync and iCal integration service
+// Calendar sync and iCal integration service with automatic sync
 import { paths } from '../config/paths';
+import { icalService, type ExternalBlock, type ConflictDetection } from './icalService';
 
 // Unified calendar item types (internal bookings + external blocks)
 export interface BookingRange {
@@ -39,13 +40,172 @@ export interface iCalExportOptions {
   from_date?: string;
   to_date?: string;
   format?: 'ics' | 'json';
+  package_id?: string | number;
+  room_id?: string;
+}
+
+export interface PackageCalendarInfo {
+  success: boolean;
+  package_id: string | number;
+  calendar_url: string;
+  webcal_url: string;
+  subscribe_endpoint: string;
+  description: string;
 }
 
 class CalendarService {
   private apiBase: string;
+  private listeners: Array<(state: any) => void> = [];
+  private autoSyncInitialized: boolean = false;
 
   constructor() {
     this.apiBase = paths.buildApiUrl('');
+  }
+
+  /**
+   * 🔄 Initialize automatic iCal synchronization
+   */
+  async initializeAutoSync(): Promise<void> {
+    if (this.autoSyncInitialized) {
+      console.log('📅 Auto-sync already initialized');
+      return;
+    }
+
+    console.log('🔄 Initializing automatic iCal sync...');
+    
+    try {
+      // Initialize the iCal service
+      await icalService.initializeAutoSync();
+      
+      this.autoSyncInitialized = true;
+      console.log('✅ Automatic iCal sync initialized successfully');
+      
+      // Notify listeners
+      this.notifyListeners({ autoSyncEnabled: true, lastSync: new Date().toISOString() });
+    } catch (error) {
+      console.error('❌ Failed to initialize auto-sync:', error);
+      this.notifyListeners({ autoSyncEnabled: false, error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  }
+
+  /**
+   * 📊 Validate booking against external calendars
+   */
+  async validateBookingWithExternalCalendars(checkIn: string, checkOut: string): Promise<{
+    valid: boolean;
+    conflicts: ConflictDetection;
+    canProceed: boolean;
+    warnings: string[];
+    blockers: string[];
+  }> {
+    console.log('🔍 Validating booking against external calendars:', { checkIn, checkOut });
+    
+    const warnings: string[] = [];
+    const blockers: string[] = [];
+    
+    try {
+      // Check external calendar conflicts using iCal service
+      const conflicts = await icalService.checkConflicts(checkIn, checkOut);
+      
+      if (conflicts.hasConflicts) {
+        conflicts.conflicts.forEach(conflict => {
+          const sourceName = conflict.source.charAt(0).toUpperCase() + conflict.source.slice(1);
+          blockers.push(`${sourceName} booking exists on ${conflict.date}`);
+        });
+      }
+      
+      const canProceed = blockers.length === 0;
+      
+      return {
+        valid: canProceed && warnings.length === 0,
+        conflicts,
+        canProceed,
+        warnings,
+        blockers
+      };
+    } catch (error) {
+      console.error('❌ Booking validation failed:', error);
+      return {
+        valid: false,
+        conflicts: {
+          hasConflicts: true,
+          conflicts: [],
+          blockedDates: [],
+          cannotOverride: true
+        },
+        canProceed: false,
+        warnings: [],
+        blockers: ['Validation system error - please try again']
+      };
+    }
+  }
+
+  /**
+   * 🔄 Refresh calendar with external sync
+   */
+  async refreshWithExternalSync(): Promise<void> {
+    console.log('🔄 Refreshing calendar with external sync...');
+    
+    try {
+      // Sync external calendars first
+      const syncResults = await icalService.syncAllPlatforms();
+      console.log('📊 Sync results:', syncResults);
+      
+      // Notify listeners of refresh
+      this.notifyListeners({ 
+        refreshing: true, 
+        lastSync: new Date().toISOString(),
+        syncResults 
+      });
+      
+      console.log('✅ Calendar refresh with external sync completed');
+    } catch (error) {
+      console.error('❌ Calendar refresh with external sync failed:', error);
+      this.notifyListeners({ 
+        refreshing: false, 
+        error: error instanceof Error ? error.message : 'Refresh failed' 
+      });
+    }
+  }
+
+  /**
+   * 📅 Subscribe to calendar state changes
+   */
+  subscribe(listener: (state: any) => void): () => void {
+    this.listeners.push(listener);
+    
+    // Return unsubscribe function
+    return () => {
+      const index = this.listeners.indexOf(listener);
+      if (index > -1) {
+        this.listeners.splice(index, 1);
+      }
+    };
+  }
+
+  /**
+   * 🔔 Notify all listeners of state changes
+   */
+  private notifyListeners(state: any): void {
+    this.listeners.forEach(listener => {
+      try {
+        listener(state);
+      } catch (error) {
+        console.error('Error in calendar listener:', error);
+      }
+    });
+  }
+
+  /**
+   * 📊 Get sync monitoring data
+   */
+  getSyncMonitoringData(): {
+    lastSync: Record<string, string | null>;
+    activePlatforms: string[];
+    syncIntervals: Record<string, number>;
+    enabledPlatforms: string[];
+  } {
+    return icalService.getMonitoringData();
   }
 
   /** Fetch raw bookings (no server-side date filtering yet) */
@@ -356,6 +516,85 @@ class CalendarService {
     } catch (error) {
       console.error('❌ Failed to get calendar stats:', error);
       return { total: 0, by_status: {} };
+    }
+  }
+
+  /**
+   * 📦 Get package-specific calendar information
+   */
+  async getPackageCalendarInfo(packageId: string | number): Promise<PackageCalendarInfo> {
+    try {
+      const response = await fetch(`${this.apiBase}ical.php?action=package_calendar&package_id=${encodeURIComponent(packageId)}`);
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to get package calendar info');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Failed to get package calendar info:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 📦 Export package-specific calendar
+   */
+  async exportPackageCalendar(packageId: string | number, options: Partial<iCalExportOptions> = {}): Promise<string> {
+    try {
+      const params = new URLSearchParams({
+        action: 'calendar',
+        format: options.format || 'ics',
+        package_id: packageId.toString()
+      });
+
+      if (options.status && options.status !== 'all') {
+        params.append('status', options.status);
+      }
+      if (options.from_date) {
+        params.append('from_date', options.from_date);
+      }
+      if (options.to_date) {
+        params.append('to_date', options.to_date);
+      }
+
+      const response = await fetch(`${this.apiBase}ical.php?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.text();
+    } catch (error) {
+      console.error('❌ Package calendar export failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 📦 Get package calendar subscription URLs
+   */
+  async getPackageSubscriptionUrls(packageId: string | number): Promise<CalendarUrls> {
+    try {
+      const response = await fetch(`${this.apiBase}ical.php?action=subscribe&package_id=${encodeURIComponent(packageId)}`);
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to get subscription URLs');
+      }
+      
+      return {
+        ical: result.subscribe_url,
+        webcal: result.webcal_url,
+        google_calendar: result.instructions.google_calendar,
+        outlook: result.instructions.outlook,
+        apple_calendar: result.instructions.apple_calendar,
+        airbnb: result.instructions.airbnb
+      };
+    } catch (error) {
+      console.error('❌ Failed to get package subscription URLs:', error);
+      throw error;
     }
   }
 }

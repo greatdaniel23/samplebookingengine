@@ -19,7 +19,12 @@ A modern, full-stack villa booking and management system featuring a React/TypeS
 - 🔧 **[Setup Guide](readme/SETUP_COMPLETE.md)** - Installation and configuration
 - ⚡ **[Quick Reference](readme/DATABASE_QUICK_REF.md)** - Developer quick reference
 
-### **🔥 Recent Updates (Nov 19, 2025)**
+### **🔥 Recent Updates (Dec 29, 2025)**
+- ✅ **Page Structure Reorganization**: Separated admin/user pages into dedicated folders
+- ✅ **Code Cleanup**: Removed 6 unused files (~153 KB of dead code)
+- ✅ **Improved Maintainability**: Clear separation of admin, user, shared, and debug pages
+
+### **Previous Updates (Nov 19, 2025)**
 - ✅ **Documentation Cleanup**: Removed 9 duplicate files, optimized from 182 to 173 unique docs
 - ✅ **Amenities System**: Simplified API endpoint, comprehensive admin interface ready
 - ✅ **Package Filtering Fixed**: Admin changes now sync instantly with customer interface
@@ -409,23 +414,39 @@ sudo tail -f /var/log/apache2/error.log
 
 ```
 .
-├── api/                # Backend PHP REST API files
+├── api/                    # Backend PHP REST API files
 │   ├── bookings.php
 │   ├── rooms.php
 │   ├── packages.php
 │   └── config/
-├── database/           # Database schema and migration files
+├── database/               # Database schema and migration files
 │   └── schema.sql
-├── public/             # Static assets (images, icons)
-├── src/                # Frontend React application source code
-│   ├── components/     # Reusable React components
-│   ├── hooks/          # Custom React hooks (e.g., useRooms)
-│   ├── pages/          # Page components (Index, Booking, etc.)
-│   ├── services/       # API service functions
-│   └── config/         # Application configuration (e.g., paths)
-├── admin-dashboard.html # Admin panel entry point
-├── package.json        # Project dependencies and scripts
-└── README.md           # You are here!
+├── public/                 # Static assets (images, icons)
+├── src/                    # Frontend React application source code
+│   ├── components/         # Reusable React components
+│   │   └── admin/          # Admin-specific components
+│   ├── hooks/              # Custom React hooks (e.g., useRooms)
+│   ├── pages/              # Page components (organized by role)
+│   │   ├── admin/          # Admin dashboard pages
+│   │   │   ├── AdminLogin.tsx
+│   │   │   └── AdminPanel.tsx
+│   │   ├── user/           # Public user-facing pages
+│   │   │   ├── Index.tsx
+│   │   │   ├── Booking.tsx
+│   │   │   ├── BookingSummary.tsx
+│   │   │   ├── Packages.tsx
+│   │   │   ├── PackageDetails.tsx
+│   │   │   └── RoomDetails.tsx
+│   │   ├── shared/         # Shared pages (404, etc.)
+│   │   │   └── NotFound.tsx
+│   │   └── debug/          # Development/debug pages
+│   │       └── ApiDebug.tsx
+│   ├── services/           # API service functions
+│   └── config/             # Application configuration (e.g., paths)
+├── readme/                 # Documentation files (120+ guides)
+├── admin-dashboard.html    # Admin panel entry point
+├── package.json            # Project dependencies and scripts
+└── README.md               # You are here!
 ```
 
 ## 🤝 Contributing

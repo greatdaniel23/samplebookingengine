@@ -31,23 +31,25 @@ class Database {
         // $this->username = $_ENV['DB_USERNAME'] ?? 'YOUR_ACTUAL_DB_USER';
         // $this->password = $_ENV['DB_PASSWORD'] ?? 'YOUR_ACTUAL_DB_PASSWORD';
         
-        // Method 2: Direct configuration - AUTO-DETECT ENVIRONMENT
-        // Check if we're running on localhost (XAMPP) or production (Hostinger)
-        $isLocalhost = $_SERVER['HTTP_HOST'] === 'localhost' || strpos($_SERVER['HTTP_HOST'], '127.0.0.1') !== false;
+        // Method 2: Direct configuration - FORCE HOSTINGER PRODUCTION DATABASE
+        // Always use Hostinger database for consistency between local dev and production
         
-        if ($isLocalhost) {
-            // XAMPP Local Development Configuration
+        // Production Hostinger Configuration - ALWAYS USE THIS
+        $this->host = 'localhost';             // Hostinger shared hosting
+        $this->db_name = 'u289291769_booking'; // Database name from cPanel
+        $this->username = 'u289291769_booking'; // Database admin username from cPanel  
+        $this->password = 'Kanibal123!!!';     // Database password from cPanel
+        
+        // Optional: Local XAMPP fallback (commented out - use Hostinger instead)
+        /*
+        if ($_SERVER['HTTP_HOST'] === 'localhost' || strpos($_SERVER['HTTP_HOST'], '127.0.0.1') !== false) {
+            // XAMPP Local Development Configuration (DISABLED)
             $this->host = 'localhost';
-            $this->db_name = 'booking_engine';     // Consistent with project database name
-            $this->username = 'root';              // XAMPP default username
-            $this->password = '';                  // XAMPP default password (empty)
-        } else {
-            // Production Hostinger Configuration - CORRECTED CREDENTIALS
-            $this->host = 'localhost';             // Hostinger shared hosting
-            $this->db_name = 'u289291769_booking'; // Database name from cPanel
-            $this->username = 'u289291769_booking'; // Database admin username from cPanel  
-            $this->password = 'Kanibal123!!!';     // Database password from cPanel
+            $this->db_name = 'booking_engine';
+            $this->username = 'root';
+            $this->password = '';
         }
+        */
         
         // Configuration complete - ready for production deployment
     }

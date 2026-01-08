@@ -1,5 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { paths } from '@/config/paths';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Plus, Pencil, Trash2, Archive } from 'lucide-react';
 
 const BookingsSection: React.FC = () => {
   const [bookings, setBookings] = useState<any[]>([]);
@@ -18,7 +40,7 @@ const BookingsSection: React.FC = () => {
     adults: 1,
     children: 0,
     total_price: 0,
-    status: 'confirmed',
+    status: 'pending',
     special_requests: ''
   });
 
@@ -30,37 +52,37 @@ const BookingsSection: React.FC = () => {
     try {
       setLoading(true);
       const apiUrl = paths.buildApiUrl('bookings.php');
-      
-      
+
+
       const response = await fetch(apiUrl);
-      
-      
+
+
       if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      
+
       const data = await response.json();
-      
-      
-      
-      
-      
+
+
+
+
+
       // Handle wrapped response format: {success: true, data: Array}
       let bookingsArray = [];
       if (data && data.success && Array.isArray(data.data)) {
         bookingsArray = data.data;
-        
+
       } else if (Array.isArray(data)) {
         bookingsArray = data;
-        
+
       }
-      
+
       if (bookingsArray.length > 0) {
-        
-        
+
+
       }
-      
+
       setBookings(bookingsArray);
-      
-      
+
+
     } catch (error) {
       console.error('❌ Error fetching bookings:', error);
       console.error('❌ Error details:', error.message);
@@ -72,16 +94,37 @@ const BookingsSection: React.FC = () => {
 
   const deleteBooking = async (id: string) => {
     if (!confirm('Are you sure you want to delete this booking?')) return;
-    
+
     try {
-      const response = await fetch(paths.buildApiUrl(`bookings.php?id=${id}`), {
-        method: 'DELETE'
+      const apiUrl = paths.buildApiUrl('bookings.php');
+      console.log('DELETE (via POST) URL:', apiUrl); // Debug logging
+
+      // Use POST with action=delete instead of DELETE method
+      // This is more compatible with various server configurations
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          id: id
+        })
       });
-      
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
-      alert('Booking deleted successfully!');
-      fetchBookings();
+
+      if (!response.ok) {
+        console.error('Response status:', response.status);
+        console.error('Response statusText:', response.statusText);
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        alert('Booking deleted successfully!');
+        fetchBookings();
+      } else {
+        throw new Error(result.error || 'Failed to delete booking');
+      }
     } catch (error) {
       console.error('Error deleting booking:', error);
       alert('Error deleting booking: ' + error);
@@ -101,7 +144,7 @@ const BookingsSection: React.FC = () => {
 
   const handleAddBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const response = await fetch(paths.buildApiUrl('bookings.php'), {
         method: 'POST',
@@ -110,9 +153,9 @@ const BookingsSection: React.FC = () => {
         },
         body: JSON.stringify(formData)
       });
-      
+
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
+
       const result = await response.json();
       if (result.success) {
         alert('Booking created successfully!');
@@ -129,7 +172,7 @@ const BookingsSection: React.FC = () => {
           adults: 1,
           children: 0,
           total_price: 0,
-          status: 'confirmed',
+          status: 'pending',
           special_requests: ''
         });
         fetchBookings();
@@ -145,14 +188,14 @@ const BookingsSection: React.FC = () => {
   const handleEditBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingBooking) return;
-    
+
     try {
       // Include the booking ID in the request body as expected by the API
       const requestBody = {
         ...formData,
         id: editingBooking.id
       };
-      
+
       const response = await fetch(paths.buildApiUrl(`bookings.php`), {
         method: 'PUT',
         headers: {
@@ -160,9 +203,9 @@ const BookingsSection: React.FC = () => {
         },
         body: JSON.stringify(requestBody)
       });
-      
+
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
+
       const result = await response.json();
       if (result.success) {
         alert('Booking updated successfully!');
@@ -177,27 +220,35 @@ const BookingsSection: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status?.toLowerCase()) {
-      case 'confirmed': return 'bg-hotel-sage/20 text-hotel-sage';
-      case 'pending': return 'bg-hotel-gold/20 text-hotel-gold';
-      case 'cancelled': return 'bg-hotel-bronze/20 text-hotel-bronze';
-      case 'checked_in': return 'bg-hotel-navy/20 text-hotel-navy';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'confirmed': return 'default';
+      case 'pending': return 'secondary';
+      case 'cancelled': return 'destructive';
+      case 'checked_in': return 'outline';
+      default: return 'outline';
     }
   };
 
   if (loading) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-gray-300 rounded w-1/4"></div>
-          <div className="space-y-2">
-            <div className="h-4 bg-gray-300 rounded"></div>
-            <div className="h-4 bg-gray-300 rounded w-5/6"></div>
-          </div>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-48" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="flex items-center gap-4">
+              <Skeleton className="h-12 w-12 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+              <Skeleton className="h-6 w-20" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     );
   }
 
@@ -205,16 +256,11 @@ const BookingsSection: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Bookings Management</h2>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="bg-hotel-gold text-white px-4 py-2 rounded-md hover:bg-hotel-gold-dark flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
+        <h2 className="text-xl font-semibold">Bookings Management</h2>
+        <Button onClick={() => setShowAddForm(true)}>
+          <Plus className="w-4 h-4 mr-2" />
           Add Booking
-        </button>
+        </Button>
       </div>
 
       {/* Bookings List */}
@@ -222,7 +268,7 @@ const BookingsSection: React.FC = () => {
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-medium text-gray-900">All Bookings ({bookings.length})</h3>
         </div>
-        
+
         {bookings.length === 0 ? (
           <div className="p-6 text-center text-gray-500">
             <svg className="h-12 w-12 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -249,9 +295,9 @@ const BookingsSection: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {booking.guest_name || booking.name || 
-                           (booking.first_name ? `${booking.first_name} ${booking.last_name || ''}`.trim() : '') || 
-                           'N/A'}
+                          {booking.guest_name || booking.name ||
+                            (booking.first_name ? `${booking.first_name} ${booking.last_name || ''}`.trim() : '') ||
+                            'N/A'}
                         </div>
                         <div className="text-sm text-gray-500">{booking.email || booking.guest_email}</div>
                       </div>
@@ -266,47 +312,51 @@ const BookingsSection: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(booking.status)}`}>
+                      <Badge variant={getStatusVariant(booking.status)}>
                         {booking.status || 'pending'}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       ${booking.total_price || '0'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => {
-                          const guestName = booking.guest_name || booking.name || 
-                                           (booking.first_name ? `${booking.first_name} ${booking.last_name || ''}`.trim() : '');
-                          const [firstName, ...lastNameParts] = guestName.split(' ');
-                          
-                          setEditingBooking(booking);
-                          setFormData({
-                            first_name: booking.first_name || firstName || '',
-                            last_name: booking.last_name || lastNameParts.join(' ') || '',
-                            email: booking.email || booking.guest_email || '',
-                            phone: booking.phone || booking.guest_phone || '',
-                            check_in: booking.check_in || '',
-                            check_out: booking.check_out || '',
-                            room_id: booking.room_id || '',
-                            guests: booking.guests || booking.adults + booking.children || 1,
-                            adults: booking.adults || booking.guests || 1,
-                            children: booking.children || 0,
-                            total_price: parseFloat(booking.total_price || booking.total_amount || 0),
-                            status: booking.status || 'confirmed',
-                            special_requests: booking.special_requests || ''
-                          });
-                        }}
-                        className="text-hotel-navy hover:text-hotel-navy/80"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteBooking(booking.id)}
-                        className="text-hotel-bronze hover:text-hotel-bronze/80"
-                      >
-                        Delete
-                      </button>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const guestName = booking.guest_name || booking.name ||
+                              (booking.first_name ? `${booking.first_name} ${booking.last_name || ''}`.trim() : '');
+                            const [firstName, ...lastNameParts] = guestName.split(' ');
+
+                            setEditingBooking(booking);
+                            setFormData({
+                              first_name: booking.first_name || firstName || '',
+                              last_name: booking.last_name || lastNameParts.join(' ') || '',
+                              email: booking.email || booking.guest_email || '',
+                              phone: booking.phone || booking.guest_phone || '',
+                              check_in: booking.check_in || '',
+                              check_out: booking.check_out || '',
+                              room_id: booking.room_id || '',
+                              guests: booking.guests || booking.adults + booking.children || 1,
+                              adults: booking.adults || booking.guests || 1,
+                              children: booking.children || 0,
+                              total_price: parseFloat(booking.total_price || booking.total_amount || 0),
+                              status: booking.status || 'pending',
+                              special_requests: booking.special_requests || ''
+                            });
+                          }}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteBooking(booking.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -332,7 +382,7 @@ const BookingsSection: React.FC = () => {
                   </svg>
                 </button>
               </div>
-              
+
               <form onSubmit={handleAddBooking} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -449,7 +499,7 @@ const BookingsSection: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Status</label>
-                    <select 
+                    <select
                       value={formData.status}
                       onChange={(e) => handleFormChange('status', e.target.value)}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -461,7 +511,7 @@ const BookingsSection: React.FC = () => {
                     </select>
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Special Requests</label>
                   <textarea
@@ -472,7 +522,7 @@ const BookingsSection: React.FC = () => {
                     placeholder="Any special requests..."
                   />
                 </div>
-                
+
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
                     type="button"
@@ -490,7 +540,7 @@ const BookingsSection: React.FC = () => {
                         adults: 1,
                         children: 0,
                         total_price: 0,
-                        status: 'confirmed',
+                        status: 'pending',
                         special_requests: ''
                       });
                     }}
@@ -527,7 +577,7 @@ const BookingsSection: React.FC = () => {
                   </svg>
                 </button>
               </div>
-              
+
               <form onSubmit={handleEditBooking} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -639,7 +689,7 @@ const BookingsSection: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Status</label>
-                    <select 
+                    <select
                       value={formData.status}
                       onChange={(e) => handleFormChange('status', e.target.value)}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -651,7 +701,7 @@ const BookingsSection: React.FC = () => {
                     </select>
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Special Requests</label>
                   <textarea
@@ -662,7 +712,7 @@ const BookingsSection: React.FC = () => {
                     placeholder="Any special requests..."
                   />
                 </div>
-                
+
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
                     type="button"
@@ -680,7 +730,7 @@ const BookingsSection: React.FC = () => {
                         adults: 1,
                         children: 0,
                         total_price: 0,
-                        status: 'confirmed',
+                        status: 'pending',
                         special_requests: ''
                       });
                     }}
