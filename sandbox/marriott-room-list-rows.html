@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room List - Row Style | Marriott</title>
+    <style>
+        /* Marriott Authentic Design System */
+        :root {
+            /* Brand Colors - Teal Theme */
+            --t-brand-primary-color: #078276;
+            --t-brand-secondary-color: #0a6359;
+            --t-brand-tertiary-color: #5fa59c;
+            --t-brand-bg-color: #ffffff;
+            --t-brand-fg-color: #1a1a1a;
+            
+            /* Typography Colors */
+            --t-text-primary: #1a1a1a;
+            --t-text-secondary: #666666;
+            --t-text-muted: #999999;
+            --t-link-text-color: #078276;
+            --t-link-border-color: #078276;
+            
+            /* UI Colors */
+            --t-horizontal-vertical-rule: #e5e7eb;
+            --t-border-light: #f1f5f9;
+            --t-button-primary-bg: #078276;
+            --t-button-primary-hover: #0a6359;
+            --t-button-tertiary-color: #5fa59c;
+            
+            /* Cards & Layout */
+            --t-cards-border-radius: 4px;
+            --t-container-max-width: 1200px;
+            
+            /* Font Families */
+            --t-font-family-primary: "BaskervilleBT", "Times New Roman", serif;
+            --t-font-family-secondary: "HelveticaNeue", "Arial", sans-serif;
+        }
+
+        /* Reset & Base */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--t-font-family-secondary);
+            line-height: 1.6;
+            color: var(--t-text-primary);
+            background-color: #f8fafc;
+        }
+
+        /* Typography System */
+        .t-title-xl {
+            font-family: var(--t-font-family-primary);
+            font-size: 2.5rem;
+            font-weight: 400;
+            line-height: 1.2;
+            color: var(--t-brand-fg-color);
+        }
+
+        .t-title-l {
+            font-family: var(--t-font-family-primary);
+            font-size: 2rem;
+            font-weight: 400;
+            line-height: 1.3;
+            color: var(--t-brand-fg-color);
+        }
+
+        .t-title-m {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.5rem;
+            font-weight: 400;
+            line-height: 1.3;
+            color: var(--t-brand-fg-color);
+        }
+
+        .t-body-l {
+            font-size: 1.125rem;
+            line-height: 1.6;
+            color: var(--t-text-secondary);
+        }
+
+        .t-body-m {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--t-text-secondary);
+        }
+
+        .t-caption {
+            font-size: 0.875rem;
+            line-height: 1.4;
+            color: var(--t-text-muted);
+        }
+
+        /* Layout Components */
+        .container {
+            max-width: var(--t-container-max-width);
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .main-content {
+            padding: 40px 0;
+        }
+
+        /* Utility Classes */
+        .d-flex {
+            display: flex;
+        }
+
+        .align-items-center {
+            align-items: center;
+        }
+
+        .justify-content-between {
+            justify-content: space-between;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mb-4 {
+            margin-bottom: 1.5rem;
+        }
+
+        .mb-6 {
+            margin-bottom: 2rem;
+        }
+
+        /* Page Header */
+        .page-header {
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .page-title {
+            font-family: var(--t-font-family-primary);
+            font-size: 2.5rem;
+            font-weight: 400;
+            color: var(--t-brand-fg-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            font-size: 1.125rem;
+            color: var(--t-text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .rooms-count-badge {
+            display: inline-flex;
+            align-items: center;
+            background: var(--t-brand-primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .filter-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--t-text-primary);
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: 4px;
+            background: white;
+            font-size: 0.875rem;
+            color: var(--t-text-primary);
+        }
+
+        /* Room List Container */
+        .room-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Individual Room Row */
+        .room-row {
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .room-row:hover {
+            box-shadow: 0 4px 12px rgba(7, 130, 118, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .room-row.selected {
+            border-color: var(--t-brand-primary-color);
+            box-shadow: 0 4px 16px rgba(7, 130, 118, 0.15);
+        }
+
+        .room-content {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        /* Room Image */
+        .room-image-container {
+            flex: 0 0 200px;
+            height: 140px;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .room-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .room-row:hover .room-image {
+            transform: scale(1.05);
+        }
+
+        .room-status-badge {
+            position: absolute;
+            top: 0.5rem;
+            left: 0.5rem;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-available {
+            color: #059669;
+        }
+
+        .badge-limited {
+            color: #d97706;
+        }
+
+        .badge-sold-out {
+            color: #dc2626;
+        }
+
+        /* Room Details */
+        .room-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .room-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .room-name {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.25rem;
+            font-weight: 400;
+            color: var(--t-brand-fg-color);
+            margin-bottom: 0.25rem;
+            line-height: 1.3;
+        }
+
+        .room-type {
+            font-size: 0.875rem;
+            color: var(--t-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .room-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-tag {
+            background: #f1f5f9;
+            color: var(--t-text-secondary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .room-description {
+            font-size: 0.875rem;
+            color: var(--t-text-secondary);
+            line-height: 1.5;
+            margin-bottom: 0.5rem;
+        }
+
+        .room-amenities {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--t-text-muted);
+        }
+
+        .amenity-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .amenity-icon {
+            width: 12px;
+            height: 12px;
+            background: var(--t-brand-tertiary-color);
+            border-radius: 50%;
+        }
+
+        /* Pricing Section */
+        .room-pricing {
+            flex: 0 0 200px;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 140px;
+        }
+
+        .price-container {
+            margin-bottom: 1rem;
+        }
+
+        .price-label {
+            font-size: 0.75rem;
+            color: var(--t-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .price-amount {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--t-brand-fg-color);
+            line-height: 1.2;
+        }
+
+        .price-unit {
+            font-size: 0.875rem;
+            color: var(--t-text-secondary);
+            display: block;
+        }
+
+        .original-price {
+            font-size: 0.875rem;
+            color: var(--t-text-muted);
+            text-decoration: line-through;
+            margin-top: 0.25rem;
+        }
+
+        /* Action Buttons */
+        .room-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .btn-select-room {
+            background: var(--t-button-primary-bg);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-select-room:hover {
+            background: var(--t-button-primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-select-room.selected {
+            background: #059669;
+        }
+
+        .btn-view-details {
+            background: transparent;
+            color: var(--t-brand-primary-color);
+            border: 1px solid var(--t-brand-primary-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-view-details:hover {
+            background: var(--t-brand-primary-color);
+            color: white;
+        }
+
+        /* Summary Bar */
+        .summary-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--t-brand-bg-color);
+            border-top: 1px solid var(--t-horizontal-vertical-rule);
+            padding: 1rem 0;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .summary-bar.visible {
+            transform: translateY(0);
+        }
+
+        .summary-content {
+            max-width: var(--t-container-max-width);
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .selected-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .selected-room-name {
+            font-weight: 600;
+            color: var(--t-brand-fg-color);
+        }
+
+        .selected-price {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--t-brand-primary-color);
+        }
+
+        .btn-continue {
+            background: var(--t-button-primary-bg);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-continue:hover {
+            background: var(--t-button-primary-hover);
+            transform: translateY(-1px);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .room-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .room-image-container {
+                flex: none;
+                width: 100%;
+                height: 200px;
+            }
+            
+            .room-pricing {
+                flex: none;
+                text-align: center;
+                height: auto;
+            }
+            
+            .room-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+            
+            .filter-group {
+                justify-content: space-between;
+            }
+            
+            .page-title {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .page-header {
+                padding: 1.5rem;
+            }
+            
+            .room-content {
+                padding: 1rem;
+            }
+            
+            .room-features {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .summary-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <main class="main-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1 class="page-title">Available Rooms</h1>
+                <p class="page-subtitle">
+                    Choose from our collection of luxury rooms and suites, each designed for exceptional comfort and style.
+                </p>
+                <div class="rooms-count-badge">
+                    <span>8 Rooms Available</span>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <span class="filter-label">Sort by:</span>
+                    <select class="filter-select" id="sortBy">
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                        <option value="size">Room Size</option>
+                        <option value="popularity">Popularity</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Room Type:</span>
+                    <select class="filter-select" id="filterType">
+                        <option value="all">All Types</option>
+                        <option value="room">Standard Rooms</option>
+                        <option value="suite">Suites</option>
+                        <option value="villa">Villas</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Room List -->
+            <div class="room-list" id="roomList">
+                <!-- Deluxe King Room -->
+                <div class="room-row" data-room-type="room" data-price="1850000">
+                    <div class="room-content">
+                        <div class="room-image-container">
+                            <img class="room-image" src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0016-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300" alt="Deluxe King Room">
+                            <div class="room-status-badge badge-available">Available</div>
+                        </div>
+                        
+                        <div class="room-details">
+                            <div class="room-header">
+                                <div>
+                                    <h3 class="room-name">Deluxe King Room</h3>
+                                    <div class="room-type">Standard Room</div>
+                                </div>
+                            </div>
+                            
+                            <div class="room-features">
+                                <span class="feature-tag">King Bed</span>
+                                <span class="feature-tag">32m²</span>
+                                <span class="feature-tag">City View</span>
+                                <span class="feature-tag">Max 2 Guests</span>
+                            </div>
+                            
+                            <p class="room-description">
+                                Modern and elegant room featuring premium amenities, floor-to-ceiling windows, 
+                                and contemporary furnishings for a comfortable stay.
+                            </p>
+                            
+                            <div class="room-amenities">
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Free WiFi</span>
+                                </div>
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Air Conditioning</span>
+                                </div>
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Mini Bar</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="room-pricing">
+                            <div class="price-container">
+                                <div class="price-label">Per Night</div>
+                                <div class="price-amount">1.850.000</div>
+                                <div class="price-unit">IDR</div>
+                            </div>
+                            
+                            <div class="room-actions">
+                                <button class="btn-select-room">Select Room</button>
+                                <button class="btn-view-details">View Details</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Premium Suite -->
+                <div class="room-row" data-room-type="suite" data-price="2750000">
+                    <div class="room-content">
+                        <div class="room-image-container">
+                            <img class="room-image" src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0019-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300" alt="Premium Suite">
+                            <div class="room-status-badge badge-limited">Only 2 Left</div>
+                        </div>
+                        
+                        <div class="room-details">
+                            <div class="room-header">
+                                <div>
+                                    <h3 class="room-name">Premium Suite</h3>
+                                    <div class="room-type">Suite</div>
+                                </div>
+                            </div>
+                            
+                            <div class="room-features">
+                                <span class="feature-tag">King Bed</span>
+                                <span class="feature-tag">55m²</span>
+                                <span class="feature-tag">Ocean View</span>
+                                <span class="feature-tag">Living Area</span>
+                                <span class="feature-tag">Max 3 Guests</span>
+                            </div>
+                            
+                            <p class="room-description">
+                                Spacious suite with separate living area, panoramic ocean views, 
+                                premium amenities, and personalized service for an elevated experience.
+                            </p>
+                            
+                            <div class="room-amenities">
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Free WiFi</span>
+                                </div>
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Balcony</span>
+                                </div>
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Butler Service</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="room-pricing">
+                            <div class="price-container">
+                                <div class="price-label">Per Night</div>
+                                <div class="price-amount">2.750.000</div>
+                                <div class="price-unit">IDR</div>
+                                <div class="original-price">3.200.000 IDR</div>
+                            </div>
+                            
+                            <div class="room-actions">
+                                <button class="btn-select-room">Select Room</button>
+                                <button class="btn-view-details">View Details</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Executive Villa -->
+                <div class="room-row" data-room-type="villa" data-price="4250000">
+                    <div class="room-content">
+                        <div class="room-image-container">
+                            <img class="room-image" src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0037-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300" alt="Executive Villa">
+                            <div class="room-status-badge badge-available">Available</div>
+                        </div>
+                        
+                        <div class="room-details">
+                            <div class="room-header">
+                                <div>
+                                    <h3 class="room-name">Executive Villa</h3>
+                                    <div class="room-type">Villa</div>
+                                </div>
+                            </div>
+                            
+                            <div class="room-features">
+                                <span class="feature-tag">2 Bedrooms</span>
+                                <span class="feature-tag">120m²</span>
+                                <span class="feature-tag">Private Pool</span>
+                                <span class="feature-tag">Garden View</span>
+                                <span class="feature-tag">Max 6 Guests</span>
+                            </div>
+                            
+                            <p class="room-description">
+                                Luxurious villa with two bedrooms, private pool, full kitchen, 
+                                and dedicated concierge service for the ultimate privacy and comfort.
+                            </p>
+                            
+                            <div class="room-amenities">
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Private Pool</span>
+                                </div>
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Full Kitchen</span>
+                                </div>
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Concierge</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="room-pricing">
+                            <div class="price-container">
+                                <div class="price-label">Per Night</div>
+                                <div class="price-amount">4.250.000</div>
+                                <div class="price-unit">IDR</div>
+                            </div>
+                            
+                            <div class="room-actions">
+                                <button class="btn-select-room">Select Room</button>
+                                <button class="btn-view-details">View Details</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Garden View Suite -->
+                <div class="room-row" data-room-type="suite" data-price="2450000">
+                    <div class="room-content">
+                        <div class="room-image-container">
+                            <img class="room-image" src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0025-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300" alt="Garden View Suite">
+                            <div class="room-status-badge badge-available">Available</div>
+                        </div>
+                        
+                        <div class="room-details">
+                            <div class="room-header">
+                                <div>
+                                    <h3 class="room-name">Garden View Suite</h3>
+                                    <div class="room-type">Suite</div>
+                                </div>
+                            </div>
+                            
+                            <div class="room-features">
+                                <span class="feature-tag">King Bed</span>
+                                <span class="feature-tag">48m²</span>
+                                <span class="feature-tag">Garden View</span>
+                                <span class="feature-tag">Terrace</span>
+                                <span class="feature-tag">Max 2 Guests</span>
+                            </div>
+                            
+                            <p class="room-description">
+                                Tranquil suite overlooking lush gardens with private terrace, 
+                                perfect for guests seeking serenity and natural beauty.
+                            </p>
+                            
+                            <div class="room-amenities">
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Private Terrace</span>
+                                </div>
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Garden View</span>
+                                </div>
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Spa Bath</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="room-pricing">
+                            <div class="price-container">
+                                <div class="price-label">Per Night</div>
+                                <div class="price-amount">2.450.000</div>
+                                <div class="price-unit">IDR</div>
+                            </div>
+                            
+                            <div class="room-actions">
+                                <button class="btn-select-room">Select Room</button>
+                                <button class="btn-view-details">View Details</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Superior Twin Room -->
+                <div class="room-row" data-room-type="room" data-price="1650000">
+                    <div class="room-content">
+                        <div class="room-image-container">
+                            <img class="room-image" src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0016-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:300" alt="Superior Twin Room">
+                            <div class="room-status-badge badge-available">Available</div>
+                        </div>
+                        
+                        <div class="room-details">
+                            <div class="room-header">
+                                <div>
+                                    <h3 class="room-name">Superior Twin Room</h3>
+                                    <div class="room-type">Standard Room</div>
+                                </div>
+                            </div>
+                            
+                            <div class="room-features">
+                                <span class="feature-tag">Twin Beds</span>
+                                <span class="feature-tag">30m²</span>
+                                <span class="feature-tag">City View</span>
+                                <span class="feature-tag">Max 2 Guests</span>
+                            </div>
+                            
+                            <p class="room-description">
+                                Comfortable room with twin beds, modern amenities, and city views, 
+                                ideal for business travelers or friends sharing accommodation.
+                            </p>
+                            
+                            <div class="room-amenities">
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Work Desk</span>
+                                </div>
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Free WiFi</span>
+                                </div>
+                                <div class="amenity-item">
+                                    <div class="amenity-icon"></div>
+                                    <span>Coffee Maker</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="room-pricing">
+                            <div class="price-container">
+                                <div class="price-label">Per Night</div>
+                                <div class="price-amount">1.650.000</div>
+                                <div class="price-unit">IDR</div>
+                            </div>
+                            
+                            <div class="room-actions">
+                                <button class="btn-select-room">Select Room</button>
+                                <button class="btn-view-details">View Details</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Summary Bar -->
+    <div class="summary-bar" id="summaryBar">
+        <div class="summary-content">
+            <div class="selected-info">
+                <span class="selected-room-name" id="selectedRoomName">No room selected</span>
+                <span class="selected-price" id="selectedPrice">-</span>
+            </div>
+            <button class="btn-continue" id="continueBtn">Continue Booking</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const roomRows = document.querySelectorAll('.room-row');
+            const selectButtons = document.querySelectorAll('.btn-select-room');
+            const summaryBar = document.getElementById('summaryBar');
+            const selectedRoomName = document.getElementById('selectedRoomName');
+            const selectedPrice = document.getElementById('selectedPrice');
+            const continueBtn = document.getElementById('continueBtn');
+            const sortSelect = document.getElementById('sortBy');
+            const filterSelect = document.getElementById('filterType');
+            const roomList = document.getElementById('roomList');
+
+            let selectedRoom = null;
+
+            // Room selection functionality
+            selectButtons.forEach((button, index) => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    // Remove previous selections
+                    roomRows.forEach(row => row.classList.remove('selected'));
+                    selectButtons.forEach(btn => {
+                        btn.textContent = 'Select Room';
+                        btn.classList.remove('selected');
+                    });
+
+                    // Set current selection
+                    const roomRow = this.closest('.room-row');
+                    roomRow.classList.add('selected');
+                    this.textContent = 'Selected ✓';
+                    this.classList.add('selected');
+
+                    // Update selected room info
+                    const roomName = roomRow.querySelector('.room-name').textContent;
+                    const price = roomRow.querySelector('.price-amount').textContent + ' IDR';
+                    
+                    selectedRoom = {
+                        name: roomName,
+                        price: price,
+                        element: roomRow
+                    };
+
+                    selectedRoomName.textContent = roomName;
+                    selectedPrice.textContent = price;
+                    summaryBar.classList.add('visible');
+                });
+            });
+
+            // Row click to select
+            roomRows.forEach(row => {
+                row.addEventListener('click', function() {
+                    const selectBtn = this.querySelector('.btn-select-room');
+                    selectBtn.click();
+                });
+            });
+
+            // Continue booking
+            continueBtn.addEventListener('click', function() {
+                if (selectedRoom) {
+                    alert(`Proceeding to book: ${selectedRoom.name} for ${selectedRoom.price}`);
+                }
+            });
+
+            // Sorting functionality
+            sortSelect.addEventListener('change', function() {
+                const sortBy = this.value;
+                const rooms = Array.from(roomRows);
+
+                rooms.sort((a, b) => {
+                    const priceA = parseInt(a.dataset.price);
+                    const priceB = parseInt(b.dataset.price);
+
+                    switch (sortBy) {
+                        case 'price-low':
+                            return priceA - priceB;
+                        case 'price-high':
+                            return priceB - priceA;
+                        case 'size':
+                            const sizeA = parseInt(a.querySelector('.room-features').textContent.match(/\d+/)[0]);
+                            const sizeB = parseInt(b.querySelector('.room-features').textContent.match(/\d+/)[0]);
+                            return sizeB - sizeA;
+                        default:
+                            return 0;
+                    }
+                });
+
+                // Reorder DOM elements
+                rooms.forEach(room => roomList.appendChild(room));
+            });
+
+            // Filtering functionality
+            filterSelect.addEventListener('change', function() {
+                const filterType = this.value;
+
+                roomRows.forEach(row => {
+                    const roomType = row.dataset.roomType;
+                    
+                    if (filterType === 'all' || roomType === filterType) {
+                        row.style.display = 'block';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+
+            // View details buttons
+            document.querySelectorAll('.btn-view-details').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const roomName = this.closest('.room-row').querySelector('.room-name').textContent;
+                    alert(`Viewing details for: ${roomName}`);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

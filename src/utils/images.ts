@@ -2,7 +2,7 @@
  * Image utilities for the booking engine
  */
 
-import { imagePaths, getRoomImages, getAmenityIcon } from '@/config/images';
+import { imagePaths, getRoomImages, getRoomImagesFromDatabase, getAmenityIcon } from '@/config/images';
 
 /**
  * Check if an image exists (client-side check)
@@ -78,4 +78,4 @@ export const getImageProps = (
   return props;
 };
 
-export { imagePaths, getRoomImages, getAmenityIcon };
+export { imagePaths, getRoomImages, getRoomImagesFromDatabase, getAmenityIcon };

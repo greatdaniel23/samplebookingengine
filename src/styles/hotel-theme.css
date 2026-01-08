@@ -1,0 +1,315 @@
+/* Hotel Theme CSS Variables - Based on UI/UX Design System */
+
+:root {
+  /* Primary Hotel Theme Colors */
+  --hotel-gold: 42 87% 55%;           /* #E6A500 - Primary gold */
+  --hotel-gold-light: 45 85% 65%;    /* #F0B91A - Light gold accents */
+  --hotel-gold-dark: 40 90% 45%;     /* #CC9400 - Dark gold hovers */
+  
+  /* Supporting Colors */
+  --hotel-cream: 48 30% 94%;         /* #F5F2E8 - Warm background */
+  --hotel-bronze: 25 45% 35%;        /* #7A5C3F - Text emphasis */
+  --hotel-navy: 220 25% 25%;         /* #2F3A4F - Headers, navy text */
+  --hotel-sage: 85 25% 55%;          /* #8B9A7A - Success states */
+  --hotel-sage-light: 85 30% 70%;    /* #A8B89A - Light sage */
+  
+  /* Utility Colors */
+  --success: 142 71% 45%;             /* #22C55E - Success green */
+  --success-light: 142 50% 85%;      /* #DCFCE7 - Success backgrounds */
+  --error: 0 84% 60%;                /* #EF4444 - Error red */
+  --error-light: 0 93% 94%;          /* #FEF2F2 - Error backgrounds */
+  --warning: 38 92% 50%;              /* #F59E0B - Warning orange */
+  
+  /* Admin-specific colors */
+  --admin-bg: #f8fafc;               /* Light gray background */
+  --admin-card: #ffffff;             /* White cards */
+  --admin-border: #e2e8f0;           /* Light borders */
+  --admin-text: #334155;             /* Dark gray text */
+  --admin-accent: #3b82f6;           /* Blue for actions */
+}
+
+/* Hotel Theme Button Styles */
+.btn-hotel-primary {
+  @apply bg-hotel-gold text-white px-6 py-3 rounded-lg hover:bg-hotel-gold-dark transition-colors font-medium shadow-lg;
+}
+
+.btn-hotel-secondary {
+  @apply bg-white text-hotel-gold border border-hotel-gold px-6 py-3 rounded-lg hover:bg-hotel-cream transition-colors font-medium;
+}
+
+.btn-hotel-ghost {
+  @apply text-hotel-bronze hover:text-hotel-navy px-4 py-2 rounded transition-colors;
+}
+
+/* Hotel Theme Card Styles */
+.card-hotel {
+  @apply bg-white rounded-xl shadow-lg border border-hotel-gold-light;
+}
+
+.card-hotel-admin {
+  @apply bg-white rounded-lg shadow-sm border border-hotel-gold-light p-6;
+}
+
+/* Hotel Theme Form Styles */
+.input-hotel {
+  @apply w-full px-3 py-2 border border-hotel-gold-light rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold;
+}
+
+.label-hotel {
+  @apply block text-sm font-medium text-hotel-navy mb-1;
+}
+
+/* Hotel Theme Status Colors */
+.status-active {
+  @apply text-hotel-sage bg-hotel-cream px-2 py-1 text-xs rounded-full border border-hotel-sage;
+}
+
+.status-inactive {
+  @apply text-hotel-bronze bg-hotel-cream px-2 py-1 text-xs rounded-full border border-hotel-bronze;
+}
+
+/* Hotel Theme Text Colors */
+.text-hotel-gold {
+  color: hsl(var(--hotel-gold));
+}
+
+.text-hotel-gold-light {
+  color: hsl(var(--hotel-gold-light));
+}
+
+.text-hotel-gold-dark {
+  color: hsl(var(--hotel-gold-dark));
+}
+
+.text-hotel-cream {
+  color: hsl(var(--hotel-cream));
+}
+
+.text-hotel-bronze {
+  color: hsl(var(--hotel-bronze));
+}
+
+.text-hotel-navy {
+  color: hsl(var(--hotel-navy));
+}
+
+.text-hotel-sage {
+  color: hsl(var(--hotel-sage));
+}
+
+/* Hotel Theme Background Colors */
+.bg-hotel-gold {
+  background-color: hsl(var(--hotel-gold));
+}
+
+.bg-hotel-gold-light {
+  background-color: hsl(var(--hotel-gold-light));
+}
+
+.bg-hotel-gold-dark {
+  background-color: hsl(var(--hotel-gold-dark));
+}
+
+.bg-hotel-cream {
+  background-color: hsl(var(--hotel-cream));
+}
+
+.bg-hotel-bronze {
+  background-color: hsl(var(--hotel-bronze));
+}
+
+.bg-hotel-navy {
+  background-color: hsl(var(--hotel-navy));
+}
+
+.bg-hotel-sage {
+  background-color: hsl(var(--hotel-sage));
+}
+
+/* Hotel Theme Border Colors */
+.border-hotel-gold {
+  border-color: hsl(var(--hotel-gold));
+}
+
+.border-hotel-gold-light {
+  border-color: hsl(var(--hotel-gold-light));
+}
+
+.border-hotel-gold-dark {
+  border-color: hsl(var(--hotel-gold-dark));
+}
+
+.border-hotel-cream {
+  border-color: hsl(var(--hotel-cream));
+}
+
+.border-hotel-bronze {
+  border-color: hsl(var(--hotel-bronze));
+}
+
+.border-hotel-navy {
+  border-color: hsl(var(--hotel-navy));
+}
+
+.border-hotel-sage {
+  border-color: hsl(var(--hotel-sage));
+}
+
+/* Hover States */
+.hover\:bg-hotel-gold:hover {
+  background-color: hsl(var(--hotel-gold));
+}
+
+.hover\:bg-hotel-gold-dark:hover {
+  background-color: hsl(var(--hotel-gold-dark));
+}
+
+.hover\:bg-hotel-cream:hover {
+  background-color: hsl(var(--hotel-cream));
+}
+
+.hover\:text-hotel-gold:hover {
+  color: hsl(var(--hotel-gold));
+}
+
+.hover\:text-hotel-gold-dark:hover {
+  color: hsl(var(--hotel-gold-dark));
+}
+
+.hover\:text-hotel-navy:hover {
+  color: hsl(var(--hotel-navy));
+}
+
+/* Loading States */
+.skeleton-hotel {
+  @apply animate-pulse bg-hotel-cream rounded;
+}
+
+/* Focus States for Accessibility */
+.focus\:ring-hotel-gold:focus {
+  --tw-ring-color: hsl(var(--hotel-gold));
+}
+
+/* Package Type Colors (from packageService) */
+.package-romance {
+  @apply text-hotel-gold bg-hotel-cream;
+}
+
+.package-business {
+  @apply text-hotel-navy bg-hotel-cream;
+}
+
+.package-family {
+  @apply text-hotel-sage bg-hotel-cream;
+}
+
+.package-adventure {
+  @apply text-hotel-bronze bg-hotel-cream;
+}
+
+.package-wellness {
+  @apply text-hotel-gold bg-hotel-cream;
+}
+
+.package-culture {
+  @apply text-hotel-navy bg-hotel-cream;
+}
+
+/* Responsive Grid Patterns */
+.grid-hotel-packages {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+}
+
+.grid-hotel-admin {
+  @apply grid grid-cols-1 lg:grid-cols-2 gap-6;
+}
+
+/* Animation Classes */
+.transition-hotel {
+  @apply transition-all duration-300;
+}
+
+.hover-scale-hotel {
+  @apply hover:scale-[1.02] transition-transform duration-200;
+}
+
+/* Shadow Utilities */
+.shadow-hotel {
+  @apply shadow-lg hover:shadow-xl transition-shadow;
+}
+
+.shadow-hotel-admin {
+  @apply shadow-sm hover:shadow-md transition-shadow;
+}
+
+/* Admin Panel Specific Styles */
+.admin-header {
+  @apply bg-hotel-cream border-b border-hotel-gold-light p-4;
+}
+
+.admin-sidebar {
+  @apply w-64 bg-white shadow-lg border-r border-hotel-gold-light;
+}
+
+.admin-content {
+  @apply flex-1 p-6 bg-hotel-cream;
+}
+
+/* Calendar Integration Styles */
+.calendar-hotel {
+  @apply border border-hotel-gold-light rounded-lg overflow-hidden;
+}
+
+.calendar-day-available {
+  @apply bg-hotel-sage/20 text-hotel-sage;
+}
+
+.calendar-day-booked {
+  @apply bg-hotel-bronze/20 text-hotel-bronze;
+}
+
+.calendar-day-blocked {
+  @apply bg-red-100 text-red-600;
+}
+
+/* Error and Success States */
+.alert-hotel-success {
+  @apply bg-hotel-sage/20 border border-hotel-sage text-hotel-sage rounded-lg p-4;
+}
+
+.alert-hotel-error {
+  @apply bg-red-50 border border-red-200 text-red-600 rounded-lg p-4;
+}
+
+.alert-hotel-warning {
+  @apply bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg p-4;
+}
+
+/* Mobile-First Responsive Utilities */
+@media (max-width: 640px) {
+  .btn-hotel-primary,
+  .btn-hotel-secondary {
+    @apply px-4 py-2 text-sm;
+  }
+  
+  .card-hotel {
+    @apply rounded-lg shadow-md;
+  }
+}
+
+/* High-contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --hotel-gold: 30 90% 40%;
+    --hotel-navy: 220 40% 20%;
+    --hotel-bronze: 25 60% 30%;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .transition-hotel,
+  .hover-scale-hotel {
+    @apply transition-none;
+  }
+}

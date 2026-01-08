@@ -16,11 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 function sendBookingNotification($bookingData) {
     try {
-        // Determine email service URL based on environment
-        $email_service_url = 'http://localhost/fontend-bookingengine-100/frontend-booking-engine-1/email-service.php';
-        
-        // In production, uncomment this line:
-        // $email_service_url = 'https://booking.rumahdaisycantik.com/email-service.php';
+        // Determine email service URL based on current environment
+        // Prefer the API-hosted email service on the same domain to avoid hardcoded hosts.
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $email_service_url = $scheme . '://' . $host . '/email-service.php';
         
         // Prepare email data in the format expected by email-service.php
         $email_data = [
@@ -36,7 +36,7 @@ function sendBookingNotification($bookingData) {
                 'guests' => $bookingData['guests'] ?? 1,
                 'total_amount' => $bookingData['total_price'] ?? 0,
                 'special_requests' => $bookingData['special_requests'] ?? 'None',
-                'phone' => $bookingData['phone'] ?? '',
+                'guest_phone' => $bookingData['phone'] ?? '',
                 'booking_date' => date('Y-m-d H:i:s'),
                 'nights' => calculateNights($bookingData['check_in'], $bookingData['check_out'])
             ]

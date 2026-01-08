@@ -20,7 +20,7 @@ export interface Room {
 
 export interface Amenity {
   name: string;
-  icon: string;
+  icon?: string; // Made optional to support PackageAmenity extension
 }
 
 export interface Villa {
@@ -33,6 +33,12 @@ export interface Villa {
   images: string[];
   amenities: Amenity[];
   rooms: Room[];
+  // Additional fields for Marriott-style header
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  phone?: string;
 }
 
 // Dynamic Booking & User Types
@@ -69,6 +75,33 @@ export interface PackageRoomOption {
   priority: number;
 }
 
+// Enhanced Room Option from API (package_rooms table)
+export interface RoomOption {
+  room_id: string;
+  room_name: string;
+  is_default: boolean;
+  price_adjustment: number;
+  final_price: number;
+  adjustment_type: 'fixed' | 'percentage';
+  max_occupancy: number;
+  availability_priority: number;
+  description?: string;
+}
+
+export interface PackageAmenity extends Amenity {
+  id: number;
+  category: string;
+  description?: string;
+  icon?: string;
+  display_order?: number;
+  is_featured?: boolean;
+  is_active?: boolean;
+  is_highlighted?: boolean; // Package-specific flag
+  custom_note?: string; // Package-specific note
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Package {
   id: string;
   name: string;
@@ -76,7 +109,9 @@ export interface Package {
   type?: string; // Enhanced database uses 'type' field
   package_type?: 'romantic' | 'business' | 'family' | 'luxury' | 'weekend' | 'holiday' | 'spa' | 'adventure';
   price: string; // Enhanced database uses 'price' instead of 'base_price'
-  base_price?: string; // Legacy field - API returns as string
+  base_price?: string | number; // Legacy field - API returns as string or number
+  base_room_id?: string; // The base room for this package
+  room_id?: string; // Alternative room id field
   discount_percentage?: string; // API returns as string
   duration_days?: number; // Enhanced database field
   min_nights?: number;
@@ -100,9 +135,14 @@ export interface Package {
   sort_order?: number; // Enhanced database field
   created_at: string;
   updated_at: string;
-  room_options?: PackageRoomOption[]; // Can be undefined
+  room_options?: PackageRoomOption[]; // Can be undefined - Legacy support
+  available_rooms?: RoomOption[]; // Enhanced room options from API
+  room_selection_type?: 'single' | 'multiple' | 'upgrade'; // Room selection type
+  allow_room_upgrades?: boolean; // Allow room upgrades
+  upgrade_price_calculation?: 'fixed' | 'percentage' | 'per_night'; // Price calculation method
   discount_display?: string; // e.g., "25.00% OFF" - optional
   validity_period?: string; // e.g., "Nov 1, 2025 - Dec 31, 2026" - optional
+  amenities?: PackageAmenity[]; // Array of amenities assigned to this package
 }
 
 export interface PackagePricing {

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🖼️ Image Resizer & WebP Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .drop-zone {
+            border: 2px dashed #d1d5db;
+            transition: all 0.3s ease;
+        }
+        .drop-zone:hover { border-color: #3b82f6; background-color: #f8fafc; }
+        .drop-zone.dragover { border-color: #10b981; background-color: #f0fdf4; }
+        .processing { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .result-success { border-left: 4px solid #10b981; background-color: #f0fdf4; }
+        .result-error { border-left: 4px solid #ef4444; background-color: #fef2f2; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">🖼️ Image Resizer & WebP Converter</h1>
+            <p class="text-gray-600">Reduce image size and convert to WebP format for better web performance</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Upload Section -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">📤 Upload & Process Images</h2>
+                
+                <div class="mb-4">
+                    <div id="drop-zone" class="drop-zone p-8 text-center rounded-lg cursor-pointer">
+                        <div class="text-4xl mb-2">📁</div>
+                        <p class="text-gray-600">Drag & drop images here or <span class="text-blue-600 underline">click to select</span></p>
+                        <p class="text-sm text-gray-500 mt-2">Supports: JPG, PNG, GIF, WebP</p>
+                    </div>
+                    <input type="file" id="file-input" multiple accept="image/*" class="hidden">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Width (px)</label>
+                        <input type="number" id="width" class="w-full p-2 border border-gray-300 rounded-md" placeholder="800">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Height (px)</label>
+                        <input type="number" id="height" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Auto">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Quality (1-100)</label>
+                    <input type="range" id="quality" min="1" max="100" value="80" class="w-full">
+                    <div class="flex justify-between text-xs text-gray-500">
+                        <span>Lower filesize</span>
+                        <span id="quality-value">80</span>
+                        <span>Higher quality</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button id="process-btn" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        🔄 Process Selected
+                    </button>
+                    <button id="batch-btn" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
+                        📦 Process All Images
+                    </button>
+                </div>
+                
+                <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div class="flex items-start gap-2">
+                        <div class="text-blue-600 text-sm">ℹ️</div>
+                        <div class="text-sm text-blue-800">
+                            <strong>Process All Images:</strong> Automatically finds and processes all images in the /images folder with your current settings.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">⚡ Quick Actions</h2>
+                
+                <div class="space-y-3">
+                    <button onclick="quickResize(800, null, 80)" class="w-full text-left p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
+                        <div class="font-medium">📱 Mobile Optimized</div>
+                        <div class="text-sm text-gray-600">Width: 800px, Quality: 80%</div>
+                    </button>
+                    
+                    <button onclick="quickResize(1200, null, 85)" class="w-full text-left p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
+                        <div class="font-medium">💻 Desktop Optimized</div>
+                        <div class="text-sm text-gray-600">Width: 1200px, Quality: 85%</div>
+                    </button>
+                    
+                    <button onclick="quickResize(400, 400, 75)" class="w-full text-left p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
+                        <div class="font-medium">🖼️ Thumbnails</div>
+                        <div class="text-sm text-gray-600">400x400px, Quality: 75%</div>
+                    </button>
+                    
+                    <button onclick="quickResize(null, null, 60)" class="w-full text-left p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
+                        <div class="font-medium">💾 Maximum Compression</div>
+                        <div class="text-sm text-gray-600">50% size, Quality: 60%</div>
+                    </button>
+                </div>
+
+                <!-- API Usage -->
+                <div class="mt-6 p-4 bg-gray-50 rounded-md">
+                    <h3 class="font-semibold text-sm mb-2">🔗 API Usage</h3>
+                    <code class="text-xs text-gray-700 block">
+                        /image/resize-webp.php?src=photo.jpg&width=800&quality=80
+                    </code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="mt-8"></div>
+
+        <!-- Processing Status -->
+        <div id="processing" class="fixed inset-0 bg-black bg-opacity-50 z-50" style="display: none;">
+            <div class="flex items-center justify-center h-full">
+                <div class="bg-white rounded-lg p-6 max-w-sm mx-4">
+                    <div class="text-center">
+                        <div class="processing text-4xl mb-4">🔄</div>
+                        <div class="text-lg font-semibold">Processing Images...</div>
+                        <div class="text-sm text-gray-600 mt-2">Please wait while we optimize your images</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const widthInput = document.getElementById('width');
+        const heightInput = document.getElementById('height');
+        const qualityInput = document.getElementById('quality');
+        const qualityValue = document.getElementById('quality-value');
+        const processBtn = document.getElementById('process-btn');
+        const batchBtn = document.getElementById('batch-btn');
+        const results = document.getElementById('results');
+        const processing = document.getElementById('processing');
+
+        let selectedFiles = [];
+
+        // Quality slider update
+        qualityInput.addEventListener('input', () => {
+            qualityValue.textContent = qualityInput.value;
+        });
+
+        // Drop zone functionality
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            
+            if (selectedFiles.length === 0) {
+                alert('Please select valid image files.');
+                return;
+            }
+
+            dropZone.innerHTML = `
+                <div class="text-4xl mb-2">✅</div>
+                <p class="text-gray-600">${selectedFiles.length} image(s) selected</p>
+                <p class="text-sm text-gray-500 mt-2">Ready to process</p>
+            `;
+        }
+
+        // Process images
+        processBtn.addEventListener('click', processSelectedImages);
+        batchBtn.addEventListener('click', () => batchProcessAllImages());
+
+        async function processSelectedImages() {
+            if (selectedFiles.length === 0) {
+                alert('Please select images first.');
+                return;
+            }
+
+            showProcessing(true);
+            results.innerHTML = '';
+
+            for (const file of selectedFiles) {
+                try {
+                    const result = await processSingleImage(file);
+                    displayResult(file.name, result);
+                } catch (error) {
+                    displayResult(file.name, { success: false, error: error.message });
+                }
+            }
+
+            showProcessing(false);
+        }
+
+        async function batchProcessAllImages() {
+            const confirmed = confirm(
+                `This will process ALL images in the /images directory with current settings:\n\n` +
+                `• Width: ${widthInput.value || 'Auto'}\n` +
+                `• Height: ${heightInput.value || 'Auto'}\n` +
+                `• Quality: ${qualityInput.value}%\n\n` +
+                `Continue?`
+            );
+            
+            if (!confirmed) return;
+
+            showProcessing(true);
+            results.innerHTML = '';
+
+            try {
+                const params = new URLSearchParams();
+                params.append('batch', 'true');
+                
+                if (widthInput.value && widthInput.value.trim() !== '') {
+                    params.append('width', widthInput.value.trim());
+                }
+                if (heightInput.value && heightInput.value.trim() !== '') {
+                    params.append('height', heightInput.value.trim());
+                }
+                if (qualityInput.value && qualityInput.value.trim() !== '') {
+                    params.append('quality', qualityInput.value.trim());
+                }
+
+                const response = await fetch(`resize-webp.php?${params.toString()}`);
+                const result = await response.json();
+                
+                displayBatchResult(result);
+            } catch (error) {
+                displayResult('Batch Process All Images', { success: false, error: error.message });
+            }
+
+            showProcessing(false);
+        }
+
+        async function processSingleImage(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            // First upload the image
+            const uploadResponse = await fetch('upload-temp.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!uploadResponse.ok) {
+                throw new Error('Upload failed');
+            }
+
+            const uploadResult = await uploadResponse.json();
+            
+            // Then process it
+            const params = new URLSearchParams();
+            params.append('src', uploadResult.filename);
+            
+            if (widthInput.value && widthInput.value.trim() !== '') {
+                params.append('width', widthInput.value.trim());
+            }
+            if (heightInput.value && heightInput.value.trim() !== '') {
+                params.append('height', heightInput.value.trim());
+            }
+            if (qualityInput.value && qualityInput.value.trim() !== '') {
+                params.append('quality', qualityInput.value.trim());
+            }
+
+            const processResponse = await fetch(`resize-webp.php?${params.toString()}`);
+            return await processResponse.json();
+        }
+
+
+
+        function displayResult(filename, result) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `p-4 rounded-md mb-4 ${result.success ? 'result-success' : 'result-error'}`;
+            
+            if (result.success) {
+                const stats = result.data.stats;
+                resultDiv.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-semibold text-green-800">✅ ${filename}</h3>
+                        <span class="text-sm text-green-600">${stats.compression_ratio}% smaller</span>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                            <div class="text-gray-600">Original</div>
+                            <div class="font-medium">${stats.original_dimensions.width}x${stats.original_dimensions.height}</div>
+                            <div class="text-gray-500">${(stats.original_size / 1024).toFixed(1)} KB</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">New</div>
+                            <div class="font-medium">${result.data.dimensions.width}x${result.data.dimensions.height}</div>
+                            <div class="text-gray-500">${(stats.new_size / 1024).toFixed(1)} KB</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Format</div>
+                            <div class="font-medium">WebP</div>
+                            <div class="text-gray-500">Quality: ${result.data.quality}%</div>
+                        </div>
+                        <div>
+                            <a href="${result.data.url}" target="_blank" class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded text-sm hover:bg-green-200 transition-colors">
+                                📥 Download
+                            </a>
+                        </div>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <h3 class="font-semibold text-red-800">❌ ${filename}</h3>
+                    <p class="text-red-600 text-sm mt-1">${result.error}</p>
+                `;
+            }
+
+            results.appendChild(resultDiv);
+        }
+
+        function displayBatchResult(result) {
+            if (result.success) {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'result-success p-4 rounded-md mb-4';
+                
+                const successCount = result.batch_results.filter(item => item.result.success).length;
+                const failCount = result.batch_results.filter(item => !item.result.success).length;
+                
+                resultDiv.innerHTML = `
+                    <h3 class="font-semibold text-green-800 mb-2">🎉 Batch Process Complete</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
+                        <div class="text-center p-2 bg-green-100 rounded">
+                            <div class="font-bold text-green-800">${successCount}</div>
+                            <div class="text-green-600">Processed</div>
+                        </div>
+                        <div class="text-center p-2 bg-red-100 rounded">
+                            <div class="font-bold text-red-800">${failCount}</div>
+                            <div class="text-red-600">Failed</div>
+                        </div>
+                        <div class="text-center p-2 bg-gray-100 rounded">
+                            <div class="font-bold text-gray-800">${result.skipped_processed || 0}</div>
+                            <div class="text-gray-600">Skipped</div>
+                        </div>
+                        <div class="text-center p-2 bg-blue-100 rounded">
+                            <div class="font-bold text-blue-800">${result.total_processed}</div>
+                            <div class="text-blue-600">Total</div>
+                        </div>
+                    </div>
+                    
+                    ${result.settings_used ? `
+                    <div class="mb-4 p-3 bg-gray-50 rounded text-sm">
+                        <strong>Settings Used:</strong> 
+                        Width: ${result.settings_used.width || 'Auto'}, 
+                        Height: ${result.settings_used.height || 'Auto'}, 
+                        Quality: ${result.settings_used.quality}%
+                    </div>
+                    ` : ''}
+                    
+                    <div class="max-h-60 overflow-y-auto space-y-1">
+                        ${result.batch_results.map(item => {
+                            const success = item.result.success;
+                            const stats = success ? item.result.data?.stats : null;
+                            return `
+                                <div class="flex justify-between items-center text-sm p-2 ${success ? 'bg-green-50' : 'bg-red-50'} rounded">
+                                    <div class="flex-1">
+                                        <div class="font-medium">${item.file}</div>
+                                        ${stats ? `<div class="text-xs text-gray-600">
+                                            ${stats.original_dimensions.width}x${stats.original_dimensions.height} → 
+                                            ${item.result.data.dimensions.width}x${item.result.data.dimensions.height} 
+                                            (${stats.compression_ratio}% smaller)
+                                        </div>` : ''}
+                                        ${!success ? `<div class="text-xs text-red-600">${item.result.error}</div>` : ''}
+                                    </div>
+                                    <span class="${success ? 'text-green-600' : 'text-red-600'}">
+                                        ${success ? '✅' : '❌'}
+                                    </span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                results.appendChild(resultDiv);
+            } else {
+                displayResult('Batch Process All Images', result);
+            }
+        }
+
+        function quickResize(width, height, quality) {
+            if (width) widthInput.value = width;
+            if (height) heightInput.value = height;
+            if (quality) qualityInput.value = quality;
+            qualityValue.textContent = quality || qualityInput.value;
+            
+            if (selectedFiles.length > 0) {
+                processSelectedImages();
+            } else {
+                // If no files selected, offer to process all images
+                const processAll = confirm(
+                    `No files selected. Would you like to process ALL images in /images directory with these settings?\n\n` +
+                    `Width: ${width || 'Auto'}, Height: ${height || 'Auto'}, Quality: ${quality}%`
+                );
+                if (processAll) {
+                    batchProcessAllImages();
+                }
+            }
+        }
+
+        function showProcessing(show) {
+            processing.style.display = show ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>

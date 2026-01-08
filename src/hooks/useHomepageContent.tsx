@@ -76,7 +76,8 @@ export const useHomepageContent = (): UseHomepageContentResult => {
       setLoading(true);
       setError(null);
       
-      const apiUrl = paths.buildApiUrl('/homepage.php');
+      // Use working villa.php API instead of broken homepage.php
+      const apiUrl = paths.buildApiUrl('villa.php');
       
       
       const response = await fetch(apiUrl, {
@@ -94,53 +95,54 @@ export const useHomepageContent = (): UseHomepageContentResult => {
       
       
       if (result.success && result.data) {
-        // Transform API response to match frontend interface
+        // Transform villa API response to match frontend interface
+        // villa.php returns data from villa_info table with snake_case fields
         const transformedData: HomepageContent = {
-          // Hero section
-          hero_title: result.data.hero_title || 'Serene Mountain Retreat',
-          hero_subtitle: result.data.hero_subtitle || 'Luxury Villa Experience',
-          hero_description: result.data.hero_description || 'Experience unparalleled luxury and comfort',
+          // Hero section - derive from villa data
+          hero_title: result.data.name || 'Rumah Daisy Cantik',
+          hero_subtitle: 'Luxury Villa Experience in Bali',
+          hero_description: result.data.description || 'Experience unparalleled luxury and comfort',
           
-          // Map database fields to existing villa info structure for compatibility
-          name: result.data.property_name || 'Serene Mountain Retreat',
-          location: result.data.property_location || 'Aspen, Colorado',
-          description: result.data.property_description || '',
-          rating: parseFloat(result.data.property_rating) || 4.8,
-          reviews: parseInt(result.data.property_reviews) || 127,
+          // Map villa_info table fields correctly
+          name: result.data.name || 'Rumah Daisy Cantik',
+          location: result.data.location || `${result.data.city || ''}, ${result.data.state || ''}, ${result.data.country || ''}`.replace(/(^, |, $|, , )/g, '') || 'Bali, Indonesia',
+          description: result.data.description || '',
+          rating: parseFloat(result.data.rating) || 4.9,
+          reviews: parseInt(result.data.reviews) || 0,
           
-          // Contact information
-          phone: result.data.contact_phone || '+1 (555) 123-4567',
-          email: result.data.contact_email || 'info@sereneretreat.com',
-          website: result.data.contact_website || '',
+          // Contact information (villa_info fields)
+          phone: result.data.phone || '',
+          email: result.data.email || '',
+          website: result.data.website || '',
           
-          // Address details
-          address: result.data.address_street || '123 Luxury Avenue',
-          city: result.data.address_city || 'Aspen',
-          state: result.data.address_state || 'Colorado',
-          country: result.data.address_country || 'United States',
-          zipcode: result.data.address_zipcode || '',
+          // Address details (villa_info fields)
+          address: result.data.address || '',
+          city: result.data.city || '',
+          state: result.data.state || '',
+          country: result.data.country || '',
+          zipcode: result.data.zipCode || result.data.postal_code || '', // API maps postal_code to zipCode
           
-          // Property specifications
-          maxGuests: parseInt(result.data.spec_max_guests) || 8,
-          bedrooms: parseInt(result.data.spec_bedrooms) || 4,
-          bathrooms: parseInt(result.data.spec_bathrooms) || 3,
-          basePrice: parseFloat(result.data.spec_base_price) || 350,
+          // Property specifications (from villa_info, with defaults)
+          maxGuests: parseInt(result.data.max_guests) || 8,
+          bedrooms: parseInt(result.data.bedrooms) || 4,
+          bathrooms: parseInt(result.data.bathrooms) || 3,
+          basePrice: parseFloat(result.data.price_per_night) || 0,
           
-          // Timing
-          checkIn: result.data.timing_check_in || '3:00 PM',
-          checkOut: result.data.timing_check_out || '11:00 AM',
+          // Timing (villa_info fields - API maps to camelCase)
+          checkIn: result.data.checkInTime || result.data.check_in_time || '15:00',
+          checkOut: result.data.checkOutTime || result.data.check_out_time || '11:00',
           
-          // Policies
-          cancellationPolicy: result.data.policy_cancellation || '',
-          houseRules: result.data.policy_house_rules || '',
-          termsConditions: result.data.policy_terms_conditions || '',
+          // Policies (villa_info fields - API maps to camelCase)
+          cancellationPolicy: result.data.cancellationPolicy || result.data.cancellation_policy || '',
+          houseRules: result.data.houseRules || result.data.house_rules || '',
+          termsConditions: '', // Not in villa_info table
           
-          // Social media
-          facebook: result.data.social_facebook || '',
-          instagram: result.data.social_instagram || '',
-          twitter: result.data.social_twitter || '',
+          // Social media (from villa_info.social_media JSON)
+          facebook: result.data.socialMedia?.facebook || '',
+          instagram: result.data.socialMedia?.instagram || '',
+          twitter: result.data.socialMedia?.twitter || '',
           
-          // Media content
+          // Media content (villa_info fields)
           images: Array.isArray(result.data.images) ? result.data.images : [],
           amenities: Array.isArray(result.data.amenities) ? result.data.amenities : []
         };
@@ -196,62 +198,57 @@ export const useHomepageContent = (): UseHomepageContentResult => {
 
   const updateHomepageContent = async (data: Partial<HomepageContent>) => {
     try {
-      const apiUrl = paths.buildApiUrl('/homepage.php');
+      const apiUrl = paths.buildApiUrl('/villa.php');
       
       
       
-      // Transform frontend data to API format
-      const apiData = {
-        // Hero section
-        heroTitle: data.hero_title || data.name,
-        heroSubtitle: data.hero_subtitle,
-        heroDescription: data.hero_description || data.description,
-        
-        // Basic info
-        name: data.name,
-        location: data.location,
-        description: data.description,
-        rating: data.rating,
-        reviews: data.reviews,
-        
-        // Contact
-        phone: data.phone,
-        email: data.email,
-        website: data.website,
-        
-        // Address
-        address: data.address,
-        city: data.city,
-        state: data.state,
-        country: data.country,
-        zipcode: data.zipcode,
-        
-        // Specifications
-        maxGuests: data.maxGuests,
-        bedrooms: data.bedrooms,
-        bathrooms: data.bathrooms,
-        basePrice: data.basePrice,
-        
-        // Timing
-        checkIn: data.checkIn,
-        checkOut: data.checkOut,
-        
-        // Policies
-        cancellationPolicy: data.cancellationPolicy,
-        houseRules: data.houseRules,
-        termsConditions: data.termsConditions,
-        
-        // Social
-        facebook: data.facebook,
-        instagram: data.instagram,
-        twitter: data.twitter,
-        
-        // Media
-        images: data.images,
-        amenities: data.amenities
-      };
+      // SAFE UPDATE - Send all villa_info table fields that exist in production
+      const apiData: any = {};
+      
+      // Core basic info - these should always work
+      if (data.name !== undefined) apiData.name = data.name;
+      if (data.description !== undefined) apiData.description = data.description;
+      
+      // Contact info - basic fields
+      if (data.phone !== undefined) apiData.phone = data.phone;
+      if (data.email !== undefined) apiData.email = data.email;
+      if (data.website !== undefined) apiData.website = data.website;
+      
+      // Address fields - these exist in villa_info table
+      if (data.address !== undefined) apiData.address = data.address;
+      if (data.city !== undefined) apiData.city = data.city;
+      if (data.state !== undefined) apiData.state = data.state;
+      if (data.country !== undefined) apiData.country = data.country;
+      if (data.zipcode !== undefined) apiData.postal_code = data.zipcode; // Map zipcode to postal_code for database
+      
+      // Policies - should work since these are text fields
+      if (data.cancellationPolicy !== undefined) apiData.cancellationPolicy = data.cancellationPolicy;
+      if (data.houseRules !== undefined) apiData.houseRules = data.houseRules;
+      
+      // Property specifications - REMOVED: These columns don't exist in production villa_info table
+      // maxGuests, bedrooms, bathrooms, basePrice are not in production database
+      // if (data.maxGuests !== undefined) apiData.max_guests = data.maxGuests;
+      // if (data.bedrooms !== undefined) apiData.bedrooms = data.bedrooms; 
+      // if (data.bathrooms !== undefined) apiData.bathrooms = data.bathrooms;
+      // if (data.basePrice !== undefined) apiData.price_per_night = data.basePrice;
+      
+      // Rating and reviews (these DO exist in production)
+      if (data.rating !== undefined) apiData.rating = data.rating;
+      if (data.reviews !== undefined) apiData.reviews = data.reviews;
+      
+      // Timing - map to database field names
+      if (data.checkIn !== undefined) apiData.check_in_time = data.checkIn;
+      if (data.checkOut !== undefined) apiData.check_out_time = data.checkOut;
+      
+      // Ensure we always have required fields if nothing else is provided
+      if (Object.keys(apiData).length === 0) {
+        apiData.name = 'Rumah Daisy Cantik';
+        apiData.description = '';
+      }
       
       
+      
+      console.log('🔄 Sending update to API:', apiData);
       
       const response = await fetch(apiUrl, {
         method: 'PUT',
@@ -262,7 +259,16 @@ export const useHomepageContent = (): UseHomepageContentResult => {
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Get error details from response
+        let errorText = `HTTP error! status: ${response.status}`;
+        try {
+          const errorBody = await response.text();
+          console.error('🚨 API Error Response:', errorBody);
+          errorText += ` - ${errorBody}`;
+        } catch (e) {
+          console.error('🚨 Could not read error response');
+        }
+        throw new Error(errorText);
       }
       
       const result = await response.json();

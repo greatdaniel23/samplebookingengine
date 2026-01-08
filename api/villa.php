@@ -17,51 +17,23 @@ try {
     $database = new Database();
     $db = $database->getConnection();
     
-    // Create table if it doesn't exist
-    $createTable = "
-    CREATE TABLE IF NOT EXISTS villa_info (
-        id INT PRIMARY KEY DEFAULT 1,
-        name VARCHAR(255) NOT NULL,
-        location VARCHAR(255) NOT NULL,
-        description TEXT,
-        rating DECIMAL(2,1) DEFAULT 4.9,
-        reviews INT DEFAULT 0,
-        images JSON,
-        amenities JSON,
-        phone VARCHAR(50) DEFAULT '',
-        email VARCHAR(255) DEFAULT '',
-        website VARCHAR(255) DEFAULT '',
-        address TEXT DEFAULT '',
-        city VARCHAR(100) DEFAULT '',
-        state VARCHAR(100) DEFAULT '',
-        zip_code VARCHAR(20) DEFAULT '',
-        country VARCHAR(100) DEFAULT 'Indonesia',
-        check_in_time VARCHAR(20) DEFAULT '14:00',
-        check_out_time VARCHAR(20) DEFAULT '12:00',
-        max_guests INT DEFAULT 8,
-        bedrooms INT DEFAULT 4,
-        bathrooms INT DEFAULT 3,
-        price_per_night DECIMAL(10,2) DEFAULT 0.00,
-        currency VARCHAR(10) DEFAULT 'USD',
-        cancellation_policy TEXT DEFAULT '',
-        house_rules TEXT DEFAULT '',
-        social_media JSON,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )";
-    
-    $db->exec($createTable);
+    // REMOVED: CREATE TABLE statement - production database already exists with correct schema
+    // Don't create/alter existing production table structure
+    // Production villa_info table has: postal_code (not zip_code), TIME fields, no max_guests/bedrooms/bathrooms/price_per_night
+
     
     $method = $_SERVER['REQUEST_METHOD'];
     
     switch($method) {
         case 'GET':
-            // Get villa information
+            // Get villa information  
             $query = "SELECT * FROM villa_info WHERE id = 1 LIMIT 1";
             $stmt = $db->prepare($query);
             $stmt->execute();
             
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+
             
             if ($row) {
                 // Parse JSON fields
@@ -84,17 +56,17 @@ try {
                 ]);
                 $row['location'] = implode(', ', $locationParts) ?: 'Location not specified';
                 
-                // Set default values for fields
-                $row['phone'] = $row['phone'] ?? '';
-                $row['email'] = $row['email'] ?? '';
-                $row['website'] = $row['website'] ?? '';
-                $row['address'] = $row['address'] ?? '';
-                $row['city'] = $row['city'] ?? '';
-                $row['state'] = $row['state'] ?? '';
-                $row['country'] = $row['country'] ?? '';
-                $row['currency'] = $row['currency'] ?? 'USD';
-                $row['rating'] = 4.9; // Default rating since enhanced DB doesn't have this
-                $row['reviews'] = 128; // Default reviews since enhanced DB doesn't have this
+                // Keep actual database values - NO DEFAULTS
+                $row['phone'] = $row['phone'] ?: '';
+                $row['email'] = $row['email'] ?: '';
+                $row['website'] = $row['website'] ?: '';
+                $row['address'] = $row['address'] ?: '';
+                $row['city'] = $row['city'] ?: '';
+                $row['state'] = $row['state'] ?: '';
+                $row['country'] = $row['country'] ?: '';
+                $row['currency'] = $row['currency'] ?: 'USD';
+                $row['rating'] = (float)$row['rating'] ?: 4.9;
+                $row['reviews'] = (int)$row['reviews'] ?: 128;
                 
                 // Remove database field names that are different
                 unset($row['postal_code'], $row['check_in_time'], $row['check_out_time'], 
@@ -108,73 +80,11 @@ try {
                     'data' => $row
                 ]);
             } else {
-                // Return default data and initialize
-                $defaultData = [
-                    'id' => 1,
-                    'name' => 'Serene Mountain Retreat',
-                    'location' => 'Aspen, Colorado',
-                    'description' => 'Escape to this stunning mountain retreat where modern luxury meets rustic charm. Nestled in the heart of the Rockies, this villa offers breathtaking views, unparalleled comfort, and direct access to world-class ski slopes and hiking trails. Perfect for family vacations, romantic getaways, or corporate retreats.',
-                    'phone' => '+1 (555) 123-4567',
-                    'email' => 'info@serenemountainretreat.com',
-                    'website' => 'www.serenemountainretreat.com',
-                    'address' => '123 Mountain View Drive',
-                    'city' => 'Aspen',
-                    'state' => 'Colorado',
-                    'zipCode' => '81611',
-                    'country' => 'United States',
-                    'checkInTime' => '15:00',
-                    'checkOutTime' => '11:00',
-                    'maxGuests' => 8,
-                    'bedrooms' => 4,
-                    'bathrooms' => 3,
-                    'pricePerNight' => 550.00,
-                    'currency' => 'USD',
-                    'cancellationPolicy' => 'Free cancellation up to 48 hours before check-in. 50% refund for cancellations within 48 hours.',
-                    'houseRules' => 'No smoking • No pets • No parties or events • Check-in after 3:00 PM • Quiet hours 10:00 PM - 8:00 AM',
-                    'socialMedia' => [
-                        'facebook' => 'https://facebook.com/serenemountainretreat',
-                        'instagram' => 'https://instagram.com/serenemountainretreat',
-                        'twitter' => 'https://twitter.com/serenemountain'
-                    ],
-                    'rating' => 4.9,
-                    'reviews' => 128,
-                    'images' => [
-                        'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=2574&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=2670&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1613977257363-3116958f136b?q=80&w=2670&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1593696140826-c58b02198d4a?q=80&w=2670&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2670&auto=format&fit=crop'
-                    ],
-                    'amenities' => [
-                        ['name' => 'High-speed Wifi', 'icon' => 'Wifi'],
-                        ['name' => 'Private Hot Tub', 'icon' => 'Bath'],
-                        ['name' => 'Indoor Fireplace', 'icon' => 'Flame'],
-                        ['name' => 'Fully Equipped Kitchen', 'icon' => 'CookingPot'],
-                        ['name' => 'Free Parking on Premises', 'icon' => 'Car'],
-                        ['name' => 'Central Air & Heating', 'icon' => 'AirVent']
-                    ]
-                ];
-                
-                // Initialize with default data
-                $insertSQL = "
-                INSERT INTO villa_info (id, name, location, description, rating, reviews, images, amenities, created_at, updated_at) 
-                VALUES (1, :name, :location, :description, :rating, :reviews, :images, :amenities, NOW(), NOW())
-                ";
-                
-                $stmt = $db->prepare($insertSQL);
-                $stmt->execute([
-                    'name' => $defaultData['name'],
-                    'location' => $defaultData['location'],
-                    'description' => $defaultData['description'],
-                    'rating' => $defaultData['rating'],
-                    'reviews' => $defaultData['reviews'],
-                    'images' => json_encode($defaultData['images']),
-                    'amenities' => json_encode($defaultData['amenities'])
-                ]);
-                
+                // No villa data found - this shouldn't happen in production
+                http_response_code(404);
                 echo json_encode([
-                    'success' => true,
-                    'data' => $defaultData
+                    'success' => false,
+                    'error' => 'Villa information not found'
                 ]);
             }
             break;
@@ -183,6 +93,9 @@ try {
         case 'POST':
             // Update villa information
             $input = json_decode(file_get_contents('php://input'), true);
+            
+            // Debug: Log received data
+            error_log("Villa API received data: " . json_encode($input));
             
             if (!$input) {
                 http_response_code(400);
@@ -193,21 +106,8 @@ try {
                 break;
             }
             
-            // Validate required fields
-            $required = ['name', 'description'];
-            foreach ($required as $field) {
-                if (!isset($input[$field])) {
-                    http_response_code(400);
-                    echo json_encode([
-                        'success' => false,
-                        'error' => "Missing required field: $field"
-                    ]);
-                    exit;
-                }
-            }
-            
-            // Validate rating
-            if ($input['rating'] < 0 || $input['rating'] > 5) {
+            // Validate rating if provided
+            if (isset($input['rating']) && ($input['rating'] < 0 || $input['rating'] > 5)) {
                 http_response_code(400);
                 echo json_encode([
                     'success' => false,
@@ -216,56 +116,79 @@ try {
                 break;
             }
             
-            // Ensure images and amenities are arrays
-            if (!isset($input['images']) || !is_array($input['images'])) {
+            // Ensure images and amenities are arrays if provided
+            if (isset($input['images']) && !is_array($input['images'])) {
                 $input['images'] = [];
             }
-            if (!isset($input['amenities']) || !is_array($input['amenities'])) {
+            if (isset($input['amenities']) && !is_array($input['amenities'])) {
                 $input['amenities'] = [];
             }
             
-            $query = "UPDATE villa_info SET 
-                        name = :name,
-                        description = :description,
-                        phone = :phone,
-                        email = :email,
-                        website = :website,
-                        address = :address,
-                        city = :city,
-                        state = :state,
-                        postal_code = :postal_code,
-                        country = :country,
-                        check_in_time = :check_in_time,
-                        check_out_time = :check_out_time,
-                        currency = :currency,
-                        cancellation_policy = :cancellation_policy,
-                        house_rules = :house_rules,
-                        amenities = :amenities,
-                        images = :images,
-                        updated_at = NOW()
-                      WHERE id = 1";
+            // Build dynamic query - only update provided fields
+            $setParts = [];
+            $params = [];
+            
+            // Map frontend fields to database fields
+            // Only include fields that exist in production villa_info table
+            $fieldMap = [
+                'name' => 'name',
+                'description' => 'description', 
+                'phone' => 'phone',
+                'email' => 'email',
+                'website' => 'website',
+                'address' => 'address',
+                'city' => 'city',
+                'state' => 'state',
+                'country' => 'country',
+                'postal_code' => 'postal_code', // Updated: frontend sends postal_code
+                'zipCode' => 'postal_code', // Keep backward compatibility
+                // REMOVED: max_guests, bedrooms, bathrooms, price_per_night (don't exist in production)
+                'check_in_time' => 'check_in_time', // Updated: frontend sends check_in_time  
+                'check_out_time' => 'check_out_time', // Updated: frontend sends check_out_time
+                'checkInTime' => 'check_in_time', // Keep backward compatibility
+                'checkOutTime' => 'check_out_time', // Keep backward compatibility
+                'currency' => 'currency',
+                'rating' => 'rating', // This exists in production
+                'reviews' => 'reviews', // This exists in production
+                'cancellationPolicy' => 'cancellation_policy',
+                'houseRules' => 'house_rules',
+                'amenities' => 'amenities',
+                'images' => 'images'
+            ];
+            
+            foreach ($fieldMap as $inputField => $dbField) {
+                if (isset($input[$inputField])) {
+                    $setParts[] = "$dbField = :$dbField";
+                    
+                    if ($inputField === 'amenities' || $inputField === 'images') {
+                        $params[$dbField] = json_encode($input[$inputField]);
+                    } else {
+                        $params[$dbField] = htmlspecialchars(strip_tags($input[$inputField]));
+                    }
+                }
+            }
+            
+            if (empty($setParts)) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'No valid fields to update'
+                ]);
+                break;
+            }
+            
+            // Always update the timestamp
+            $setParts[] = 'updated_at = NOW()';
+            
+            $query = "UPDATE villa_info SET " . implode(', ', $setParts) . " WHERE id = 1";
 
             $stmt = $db->prepare($query);
             
-            $result = $stmt->execute([
-                'name' => htmlspecialchars(strip_tags($input['name'])),
-                'description' => htmlspecialchars(strip_tags($input['description'])),
-                'phone' => htmlspecialchars(strip_tags($input['phone'] ?? '')),
-                'email' => htmlspecialchars(strip_tags($input['email'] ?? '')),
-                'website' => htmlspecialchars(strip_tags($input['website'] ?? '')),
-                'address' => htmlspecialchars(strip_tags($input['address'] ?? '')),
-                'city' => htmlspecialchars(strip_tags($input['city'] ?? '')),
-                'state' => htmlspecialchars(strip_tags($input['state'] ?? '')),
-                'postal_code' => htmlspecialchars(strip_tags($input['zipCode'] ?? '')),
-                'country' => htmlspecialchars(strip_tags($input['country'] ?? '')),
-                'check_in_time' => htmlspecialchars(strip_tags($input['checkInTime'] ?? '15:00')),
-                'check_out_time' => htmlspecialchars(strip_tags($input['checkOutTime'] ?? '11:00')),
-                'currency' => htmlspecialchars(strip_tags($input['currency'] ?? 'USD')),
-                'cancellation_policy' => htmlspecialchars(strip_tags($input['cancellationPolicy'] ?? '')),
-                'house_rules' => htmlspecialchars(strip_tags($input['houseRules'] ?? '')),
-                'amenities' => json_encode($input['amenities'] ?? []),
-                'images' => json_encode($input['images'] ?? [])
-            ]);
+            // Debug: Log what we're trying to update
+            error_log("Villa API SQL: " . $query);
+            error_log("Villa API params: " . json_encode($params));
+            
+            $result = $stmt->execute($params);
             
             if ($result) {
                 echo json_encode([

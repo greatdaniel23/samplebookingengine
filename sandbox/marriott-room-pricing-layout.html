@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Package Details with Room Selection - Marriott</title>
+    <style>
+        /* Marriott Authentic Design System */
+        :root {
+            /* Brand Colors - Teal Theme */
+            --t-brand-primary-color: #078276;
+            --t-brand-secondary-color: #0a6359;
+            --t-brand-tertiary-color: #5fa59c;
+            --t-brand-bg-color: #ffffff;
+            --t-brand-fg-color: #1a1a1a;
+            
+            /* Typography Colors */
+            --t-text-primary: #1a1a1a;
+            --t-text-secondary: #666666;
+            --t-text-muted: #999999;
+            --t-link-text-color: #078276;
+            --t-link-border-color: #078276;
+            
+            /* UI Colors */
+            --t-horizontal-vertical-rule: #e5e7eb;
+            --t-border-light: #f1f5f9;
+            --t-button-primary-bg: #078276;
+            --t-button-primary-hover: #0a6359;
+            --t-button-tertiary-color: #5fa59c;
+            
+            /* Cards & Layout */
+            --t-cards-border-radius: 4px;
+            --t-container-max-width: 1400px;
+            
+            /* Font Families */
+            --t-font-family-primary: "BaskervilleBT", "Times New Roman", serif;
+            --t-font-family-secondary: "HelveticaNeue", "Arial", sans-serif;
+        }
+
+        /* Reset & Base */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--t-font-family-secondary);
+            line-height: 1.6;
+            color: var(--t-text-primary);
+            background-color: #f8fafc;
+        }
+
+        /* Typography System */
+        .t-title-xl {
+            font-family: var(--t-font-family-primary);
+            font-size: 2.75rem;
+            font-weight: 400;
+            line-height: 1.2;
+            color: var(--t-brand-fg-color);
+        }
+
+        .t-title-l {
+            font-family: var(--t-font-family-primary);
+            font-size: 2.25rem;
+            font-weight: 400;
+            line-height: 1.3;
+            color: var(--t-brand-fg-color);
+        }
+
+        .t-title-m {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.75rem;
+            font-weight: 400;
+            line-height: 1.3;
+            color: var(--t-brand-fg-color);
+        }
+
+        .t-body-l {
+            font-size: 1.125rem;
+            line-height: 1.6;
+            color: var(--t-text-secondary);
+        }
+
+        .t-body-m {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--t-text-secondary);
+        }
+
+        .t-caption {
+            font-size: 0.875rem;
+            line-height: 1.4;
+            color: var(--t-text-muted);
+        }
+
+        /* Layout Components */
+        .container {
+            max-width: var(--t-container-max-width);
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 3rem;
+            padding: 40px 0;
+            min-height: 100vh;
+            align-items: start;
+        }
+
+        /* Utility Classes */
+        .d-flex {
+            display: flex;
+        }
+
+        .align-items-center {
+            align-items: center;
+        }
+
+        .justify-content-between {
+            justify-content: space-between;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mb-4 {
+            margin-bottom: 1.5rem;
+        }
+
+        .mb-6 {
+            margin-bottom: 2rem;
+        }
+
+        /* Left Container - Main Content */
+        .main-content {
+            width: 100%;
+        }
+
+        /* Room Hero Section */
+        .room-hero {
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .room-image-gallery {
+            position: relative;
+            height: 400px;
+            background: #f1f5f9;
+            overflow: hidden;
+        }
+
+        .main-room-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .image-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            padding: 2rem;
+            color: white;
+        }
+
+        .room-badge {
+            position: absolute;
+            top: 1.5rem;
+            left: 1.5rem;
+            background: var(--t-brand-primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .room-info-header {
+            padding: 2rem;
+        }
+
+        .room-category {
+            font-size: 0.875rem;
+            color: var(--t-brand-primary-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .room-title {
+            font-family: var(--t-font-family-primary);
+            font-size: 2.5rem;
+            font-weight: 400;
+            color: var(--t-brand-fg-color);
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .room-subtitle {
+            font-size: 1.125rem;
+            color: var(--t-text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .room-features-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .feature-tag-large {
+            background: #f1f5f9;
+            color: var(--t-text-primary);
+            padding: 0.75rem 1.25rem;
+            border-radius: 25px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: 1px solid var(--t-horizontal-vertical-rule);
+        }
+
+        /* Room Details Sections */
+        .room-details-section {
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.75rem;
+            font-weight: 400;
+            color: var(--t-brand-fg-color);
+            margin-bottom: 0.75rem;
+        }
+
+        .section-description {
+            font-size: 1rem;
+            color: var(--t-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Room Description */
+        .room-description {
+            font-size: 1.125rem;
+            line-height: 1.7;
+            color: var(--t-text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        /* Amenities Grid */
+        .amenities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .amenity-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid var(--t-border-light);
+        }
+
+        .amenity-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--t-brand-primary-color);
+            border-radius: 6px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .amenity-icon::after {
+            content: '✓';
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .amenity-text {
+            font-size: 0.9375rem;
+            color: var(--t-text-primary);
+            font-weight: 500;
+        }
+
+        /* Compact Inclusion Tags */
+        .inclusion-tag {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.8125rem;
+            color: var(--t-text-secondary);
+            background: rgba(7, 130, 118, 0.08);
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            border: 1px solid rgba(7, 130, 118, 0.15);
+            font-weight: 500;
+            line-height: 1.2;
+        }
+
+        .inclusion-tag::before {
+            content: '';
+            margin-right: 0.375rem;
+        }
+
+        /* Gallery Thumbnails */
+        .image-thumbnails {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .thumbnail {
+            width: 80px;
+            height: 60px;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.3s ease;
+        }
+
+        .thumbnail.active {
+            border-color: var(--t-brand-primary-color);
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Right Container - Pricing Sidebar */
+        .pricing-sidebar {
+            position: sticky;
+            top: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Package Selection Card */
+        .package-selection-card {
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: var(--t-brand-primary-color);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .card-title {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.25rem;
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-subtitle {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Package Options */
+        .package-options {
+            padding: 0;
+        }
+
+        .package-option {
+            border-bottom: 1px solid var(--t-horizontal-vertical-rule);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .package-option:last-child {
+            border-bottom: none;
+        }
+
+        .package-option:hover {
+            background-color: #f8fafc;
+        }
+
+        .package-option.selected {
+            background-color: var(--t-brand-primary-color);
+            color: white;
+        }
+
+        .option-content {
+            padding: 1.5rem;
+        }
+
+        .package-name {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.125rem;
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .package-brief {
+            font-size: 0.8125rem;
+            color: var(--t-text-muted);
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .package-option.selected .package-brief {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .package-pricing {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .package-price {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--t-brand-primary-color);
+        }
+
+        .package-option.selected .package-price {
+            color: white;
+        }
+
+        .package-duration {
+            font-size: 0.75rem;
+            color: var(--t-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .package-option.selected .package-duration {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Booking Summary */
+        .booking-summary-card {
+            background: var(--t-brand-bg-color);
+            border: 1px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            padding: 2rem;
+        }
+
+        .summary-title {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.25rem;
+            font-weight: 400;
+            color: var(--t-brand-fg-color);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--t-horizontal-vertical-rule);
+        }
+
+        .summary-item:last-child {
+            border-bottom: 2px solid var(--t-brand-primary-color);
+            font-weight: 600;
+            color: var(--t-brand-primary-color);
+            margin-top: 0.5rem;
+            padding-top: 1rem;
+        }
+
+        .summary-label {
+            font-size: 0.875rem;
+            color: var(--t-text-secondary);
+        }
+
+        .summary-value {
+            font-size: 0.875rem;
+            color: var(--t-text-primary);
+            font-weight: 500;
+        }
+
+        .total-price {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--t-brand-primary-color);
+        }
+
+        /* Action Buttons */
+        .booking-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-book-now {
+            background: var(--t-button-primary-bg);
+            color: white;
+            border: none;
+            padding: 1.25rem 1.5rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-book-now:hover {
+            background: var(--t-button-primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(7, 130, 118, 0.3);
+        }
+
+        .btn-add-to-wishlist {
+            background: transparent;
+            color: var(--t-brand-primary-color);
+            border: 1px solid var(--t-brand-primary-color);
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add-to-wishlist:hover {
+            background: var(--t-brand-primary-color);
+            color: white;
+        }
+
+        /* Room Rows */
+        .room-row {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            background: var(--t-brand-bg-color);
+            border: 2px solid var(--t-horizontal-vertical-rule);
+            border-radius: var(--t-cards-border-radius);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .room-row:hover {
+            border-color: var(--t-brand-tertiary-color);
+            box-shadow: 0 4px 12px rgba(7, 130, 118, 0.1);
+        }
+
+        .room-row.selected {
+            border-color: var(--t-brand-primary-color);
+            background: rgba(7, 130, 118, 0.05);
+        }
+
+        .room-row-image {
+            flex-shrink: 0;
+            width: 120px;
+            height: 90px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .room-row-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .room-row-info {
+            flex: 1;
+        }
+
+        .room-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .room-row-title {
+            font-family: var(--t-font-family-primary);
+            font-size: 1.25rem;
+            font-weight: 400;
+            color: var(--t-brand-fg-color);
+            margin: 0;
+        }
+
+        .room-row-price {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--t-brand-primary-color);
+        }
+
+        .room-row-description {
+            font-size: 0.9375rem;
+            color: var(--t-text-secondary);
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+        }
+
+        .room-row-features {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .room-feature {
+            background: #f1f5f9;
+            color: var(--t-text-primary);
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid var(--t-horizontal-vertical-rule);
+        }
+
+        .room-row-actions {
+            flex-shrink: 0;
+        }
+
+        .btn-select-room {
+            background: transparent;
+            color: var(--t-brand-primary-color);
+            border: 2px solid var(--t-brand-primary-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .btn-select-room:hover {
+            background: var(--t-brand-primary-color);
+            color: white;
+        }
+
+        .btn-select-room.selected {
+            background: var(--t-brand-primary-color);
+            color: white;
+        }
+
+        /* Contact Card */
+        .contact-card {
+            background: #f8fafc;
+            border: 1px solid var(--t-border-light);
+            border-radius: var(--t-cards-border-radius);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .contact-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--t-brand-fg-color);
+            margin-bottom: 0.75rem;
+        }
+
+        .contact-text {
+            font-size: 0.875rem;
+            color: var(--t-text-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .contact-phone {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--t-brand-primary-color);
+            text-decoration: none;
+        }
+
+        .contact-phone:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr 350px;
+                gap: 2rem;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .pricing-sidebar {
+                position: static;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .room-title {
+                font-size: 2rem;
+            }
+            
+            .pricing-sidebar {
+                grid-template-columns: 1fr;
+            }
+            
+            .room-image-gallery {
+                height: 280px;
+            }
+            
+            .image-overlay {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .room-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .room-row-image {
+                width: 100%;
+                height: 150px;
+            }
+            
+            .room-row-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .room-details-section {
+                padding: 1.5rem;
+            }
+            
+            .room-info-header {
+                padding: 1.5rem;
+            }
+            
+            .booking-summary-card {
+                padding: 1.5rem;
+            }
+            
+            .room-row {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-layout">
+            <!-- Left Container - Main Content -->
+            <div class="main-content">
+                <!-- Package Hero Section -->
+                <div class="room-hero">
+                    <div class="room-image-gallery">
+                        <img class="main-room-image" src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-spa-0014-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:600" alt="Romantic Getaway Package">
+                        <div class="room-badge">Package Deal</div>
+                        <div class="image-overlay">
+                            <div class="overlay-content">
+                                <div style="font-size: 0.875rem; margin-bottom: 0.5rem;">Luxury Experience</div>
+                                <div style="font-size: 1.5rem; font-weight: 300;">Romantic Getaway Package</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="room-info-header">
+                        <div class="room-category">Romance Package</div>
+                        <h1 class="room-title">Romantic Getaway Package</h1>
+                        <p class="room-subtitle">
+                            An intimate escape designed for couples, featuring spa treatments, 
+                            romantic dining experiences, and luxury accommodations with special amenities.
+                        </p>
+                        
+                        <div class="room-features-tags">
+                            <span class="feature-tag-large">2-3 Days</span>
+                            <span class="feature-tag-large">Couples Spa</span>
+                            <span class="feature-tag-large">Fine Dining</span>
+                            <span class="feature-tag-large">Room Upgrade</span>
+                            <span class="feature-tag-large">Special Amenities</span>
+                        </div>
+                        
+                        <div class="image-thumbnails">
+                            <div class="thumbnail active">
+                                <img src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-spa-0014-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:150" alt="Spa Experience">
+                            </div>
+                            <div class="thumbnail">
+                                <img src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-dining-0025-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:150" alt="Romantic Dining">
+                            </div>
+                            <div class="thumbnail">
+                                <img src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0037-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:150" alt="Luxury Suite">
+                            </div>
+                            <div class="thumbnail">
+                                <img src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-beach-0018-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:150" alt="Beach Activities">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Package Description -->
+                <div class="room-details-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Package Overview</h2>
+                        <p class="section-description">
+                            A romantic escape crafted for unforgettable moments together
+                        </p>
+                    </div>
+                    
+                    <p class="room-description">
+                        Rekindle romance with our specially curated Romantic Getaway Package. This intimate experience 
+                        combines luxurious accommodations with thoughtful touches designed for couples seeking a 
+                        memorable escape. From couples spa treatments to private dining experiences, every moment 
+                        has been carefully orchestrated to create lasting memories. Enjoy premium room upgrades, 
+                        personalized service, and exclusive amenities that celebrate your special connection.
+                    </p>
+                    
+                    <!-- Package Inclusions (Compact) -->
+                    <div style="margin-top: 1.5rem; border-top: 1px solid var(--t-horizontal-vertical-rule); padding-top: 1.5rem;">
+                        <h4 style="font-size: 1rem; font-weight: 600; color: var(--t-brand-fg-color); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">What's Included</h4>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.375rem;">
+                            <span class="inclusion-tag">✓ Couples Spa Treatment</span>
+                            <span class="inclusion-tag">✓ Private Beach Dinner</span>
+                            <span class="inclusion-tag">✓ Welcome Champagne</span>
+                            <span class="inclusion-tag">✓ Rose Petal Turndown</span>
+                            <span class="inclusion-tag">✓ Sunset Cruise</span>
+                            <span class="inclusion-tag">✓ Airport Transfer</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Rooms Section -->
+                <div class="room-details-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Choose Your Room</h2>
+                        <p class="section-description">
+                            Select from our available room types for this package
+                        </p>
+                    </div>
+                    
+                    <!-- Room Row 1 -->
+                    <div class="room-row" data-room="deluxe">
+                        <div class="room-row-image">
+                            <img src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0035-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:200" alt="Deluxe Room">
+                        </div>
+                        <div class="room-row-info">
+                            <div class="room-row-header">
+                                <h3 class="room-row-title">Deluxe Garden Room</h3>
+                                <div class="room-row-price">+ 0 IDR</div>
+                            </div>
+                            <p class="room-row-description">Comfortable room with garden views, modern amenities and premium furnishing.</p>
+                            <div class="room-row-features">
+                                <span class="room-feature">32m²</span>
+                                <span class="room-feature">Garden View</span>
+                                <span class="room-feature">King Bed</span>
+                                <span class="room-feature">Max 2 Guests</span>
+                            </div>
+                        </div>
+                        <div class="room-row-actions">
+                            <button class="btn-select-room">Select Room</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Room Row 2 -->
+                    <div class="room-row" data-room="ocean">
+                        <div class="room-row-image">
+                            <img src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-guestroom-0016-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:200" alt="Ocean View Room">
+                        </div>
+                        <div class="room-row-info">
+                            <div class="room-row-header">
+                                <h3 class="room-row-title">Premium Ocean Room</h3>
+                                <div class="room-row-price">+ 800.000 IDR</div>
+                            </div>
+                            <p class="room-row-description">Spacious room with stunning ocean views and upgraded amenities.</p>
+                            <div class="room-row-features">
+                                <span class="room-feature">42m²</span>
+                                <span class="room-feature">Ocean View</span>
+                                <span class="room-feature">King Bed</span>
+                                <span class="room-feature">Max 3 Guests</span>
+                            </div>
+                        </div>
+                        <div class="room-row-actions">
+                            <button class="btn-select-room">Select Room</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Room Row 3 -->
+                    <div class="room-row selected" data-room="suite">
+                        <div class="room-row-image">
+                            <img src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-apartment-0019-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:200" alt="Ocean Suite">
+                        </div>
+                        <div class="room-row-info">
+                            <div class="room-row-header">
+                                <h3 class="room-row-title">Premium Ocean Suite</h3>
+                                <div class="room-row-price">+ 1.400.000 IDR</div>
+                            </div>
+                            <p class="room-row-description">Luxury suite with separate living area, ocean views and premium services.</p>
+                            <div class="room-row-features">
+                                <span class="room-feature">65m²</span>
+                                <span class="room-feature">Ocean View</span>
+                                <span class="room-feature">King Bed</span>
+                                <span class="room-feature">Max 4 Guests</span>
+                            </div>
+                        </div>
+                        <div class="room-row-actions">
+                            <button class="btn-select-room selected">Selected</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Room Row 4 -->
+                    <div class="room-row" data-room="villa">
+                        <div class="room-row-image">
+                            <img src="https://cache.marriott.com/content/dam/marriott-renditions/DPSMV/dpsmv-villa-0028-hor-wide.jpg?output-quality=70&interpolation=progressive-bilinear&downsize=*:200" alt="Beach Villa">
+                        </div>
+                        <div class="room-row-info">
+                            <div class="room-row-header">
+                                <h3 class="room-row-title">Beachfront Villa</h3>
+                                <div class="room-row-price">+ 2.200.000 IDR</div>
+                            </div>
+                            <p class="room-row-description">Private villa with direct beach access, pool and exclusive butler service.</p>
+                            <div class="room-row-features">
+                                <span class="room-feature">120m²</span>
+                                <span class="room-feature">Beachfront</span>
+                                <span class="room-feature">King Bed</span>
+                                <span class="room-feature">Max 6 Guests</span>
+                            </div>
+                        </div>
+                        <div class="room-row-actions">
+                            <button class="btn-select-room">Select Room</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Container - Pricing Sidebar -->
+            <div class="pricing-sidebar">
+                <!-- Booking Summary Card -->
+                <div class="booking-summary-card">
+                    <h3 class="summary-title">Booking Summary</h3>
+                    
+                    <div class="summary-item">
+                        <span class="summary-label">Package</span>
+                        <span class="summary-value" id="selectedPackageName">Romantic Getaway</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Room Type</span>
+                        <span class="summary-value" id="selectedRoomName">Premium Ocean Suite</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Nights</span>
+                        <span class="summary-value">2 nights</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Guests</span>
+                        <span class="summary-value">2 adults</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Subtotal</span>
+                        <span class="summary-value" id="subtotalAmount">5.700.000 IDR</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Taxes & Fees</span>
+                        <span class="summary-value">855.000 IDR</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Total Amount</span>
+                        <span class="total-price" id="totalAmount">6.555.000 IDR</span>
+                    </div>
+                    
+                    <div class="booking-actions">
+                        <button class="btn-book-now">Book Now</button>
+                        <button class="btn-add-to-wishlist">Add to Wishlist</button>
+                    </div>
+                </div>
+
+                <!-- Contact Card -->
+                <div class="contact-card">
+                    <h4 class="contact-title">Need Assistance?</h4>
+                    <p class="contact-text">
+                        Our concierge team is available 24/7 to help you plan your perfect stay.
+                    </p>
+                    <a href="tel:+621234567890" class="contact-phone">+62 123 456 7890</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const packageOptions = document.querySelectorAll('.package-option');
+            const roomRows = document.querySelectorAll('.room-row');
+            const selectedPackageName = document.getElementById('selectedPackageName');
+            const selectedRoomName = document.getElementById('selectedRoomName');
+            const subtotalAmount = document.getElementById('subtotalAmount');
+            const totalAmount = document.getElementById('totalAmount');
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            const mainImage = document.querySelector('.main-room-image');
+            
+            let currentPackage = 'romantic';
+            let currentRoom = 'suite';
+
+            // Package data for pricing calculations
+            const packageData = {
+                'room-only': { name: 'Room Only', price: 2850000 },
+                'romantic': { name: 'Romantic Getaway', price: 4250000 },
+                'wellness': { name: 'Wellness Retreat', price: 3750000 },
+                'gourmet': { name: 'Gourmet Experience', price: 3450000 },
+                'adventure': { name: 'Adventure Package', price: 3650000 }
+            };
+
+            // Room data for pricing calculations
+            const roomData = {
+                'deluxe': { name: 'Deluxe Garden Room', price: 0 },
+                'ocean': { name: 'Premium Ocean Room', price: 800000 },
+                'suite': { name: 'Premium Ocean Suite', price: 1400000 },
+                'villa': { name: 'Beachfront Villa', price: 2200000 }
+            };
+
+            const nights = 2;
+            const taxRate = 0.15;
+
+            // Package selection functionality
+            packageOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove active class from all options
+                    packageOptions.forEach(opt => opt.classList.remove('selected'));
+                    
+                    // Add active class to clicked option
+                    this.classList.add('selected');
+                    
+                    // Update current package
+                    currentPackage = this.dataset.package;
+                    const packageInfo = packageData[currentPackage];
+                    
+                    selectedPackageName.textContent = packageInfo.name;
+                    
+                    // Recalculate pricing
+                    updatePricing();
+                });
+            });
+
+            // Room selection functionality
+            roomRows.forEach(row => {
+                row.addEventListener('click', function() {
+                    // Remove selected class from all rows
+                    roomRows.forEach(r => {
+                        r.classList.remove('selected');
+                        const btn = r.querySelector('.btn-select-room');
+                        btn.classList.remove('selected');
+                        btn.textContent = 'Select Room';
+                    });
+                    
+                    // Add selected class to clicked row
+                    this.classList.add('selected');
+                    const btn = this.querySelector('.btn-select-room');
+                    btn.classList.add('selected');
+                    btn.textContent = 'Selected';
+                    
+                    // Update current room
+                    currentRoom = this.dataset.room;
+                    const roomInfo = roomData[currentRoom];
+                    
+                    selectedRoomName.textContent = roomInfo.name;
+                    
+                    // Recalculate pricing
+                    updatePricing();
+                });
+            });
+
+            // Function to update pricing
+            function updatePricing() {
+                const packagePrice = packageData[currentPackage].price;
+                const roomUpgrade = roomData[currentRoom].price;
+                const subtotal = (packagePrice + roomUpgrade) * nights;
+                const taxes = subtotal * taxRate;
+                const total = subtotal + taxes;
+                
+                subtotalAmount.textContent = subtotal.toLocaleString('id-ID') + ' IDR';
+                totalAmount.textContent = total.toLocaleString('id-ID') + ' IDR';
+            }
+
+            // Initial pricing calculation
+            updatePricing();
+
+            // Image gallery functionality
+            thumbnails.forEach(thumbnail => {
+                thumbnail.addEventListener('click', function() {
+                    // Remove active class from all thumbnails
+                    thumbnails.forEach(thumb => thumb.classList.remove('active'));
+                    
+                    // Add active class to clicked thumbnail
+                    this.classList.add('active');
+                    
+                    // Update main image
+                    const newImageSrc = this.querySelector('img').src.replace('150', '600');
+                    mainImage.src = newImageSrc;
+                });
+            });
+
+            // Booking functionality
+            document.querySelector('.btn-book-now').addEventListener('click', function() {
+                const packageName = packageData[currentPackage].name;
+                const roomName = roomData[currentRoom].name;
+                const total = document.getElementById('totalAmount').textContent;
+                
+                alert(`Booking ${roomName} with ${packageName}\nTotal: ${total}\n\nRedirecting to secure checkout...`);
+            });
+
+            // Wishlist functionality
+            document.querySelector('.btn-add-to-wishlist').addEventListener('click', function() {
+                const packageName = packageData[currentPackage].name;
+                alert(`${packageName} added to your wishlist!`);
+                this.textContent = 'Added to Wishlist ✓';
+                this.style.background = 'var(--t-brand-primary-color)';
+                this.style.color = 'white';
+            });
+
+            // Smooth hover effects for images
+            mainImage.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.02)';
+            });
+
+            mainImage.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>

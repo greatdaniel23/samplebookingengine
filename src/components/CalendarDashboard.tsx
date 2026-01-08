@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Calendar as DayCalendar } from './ui/calendar';
-import { fetchUnifiedCalendar, buildCalendarDateMap, calendarColorFor, CalendarItem } from '../services/calendarService';
-import { RefreshCw } from 'lucide-react';
+import { fetchUnifiedCalendar, buildCalendarDateMap, calendarColorFor, CalendarItem, calendarService } from '../services/calendarService';
+import { RefreshCw, Wifi, WifiOff, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface CalendarDashboardProps {
   monthCount?: number; // number of months to display
@@ -17,10 +17,60 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({ monthCount
   const [showBookings, setShowBookings] = useState(true);
   const [showExternal, setShowExternal] = useState(true);
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  
+  // 🔄 Automatic sync state
+  const [syncStatus, setSyncStatus] = useState<{
+    enabled: boolean;
+    lastSync: string | null;
+    syncing: boolean;
+    error: string | null;
+  }>({
+    enabled: false,
+    lastSync: null,
+    syncing: false,
+    error: null
+  });
 
   useEffect(() => {
     loadData();
+    initializeAutoSync();
   }, []);
+
+  // 🔄 Initialize automatic sync and subscribe to updates
+  async function initializeAutoSync() {
+    try {
+      // Initialize auto-sync service
+      await calendarService.initializeAutoSync();
+      
+      // Subscribe to sync status updates
+      const unsubscribe = calendarService.subscribe((state: any) => {
+        setSyncStatus(prev => ({
+          ...prev,
+          enabled: state.autoSyncEnabled || false,
+          lastSync: state.lastSync || prev.lastSync,
+          syncing: state.refreshing || false,
+          error: state.error || null
+        }));
+        
+        // Reload data if sync completed
+        if (state.syncResults && !state.refreshing) {
+          loadData();
+        }
+      });
+      
+      setSyncStatus(prev => ({ ...prev, enabled: true }));
+      
+      // Cleanup on unmount
+      return unsubscribe;
+    } catch (error) {
+      console.error('Failed to initialize auto-sync:', error);
+      setSyncStatus(prev => ({ 
+        ...prev, 
+        enabled: false, 
+        error: error instanceof Error ? error.message : 'Auto-sync failed' 
+      }));
+    }
+  }
 
   async function loadData() {
     try {
@@ -33,6 +83,27 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({ monthCount
     } catch (e: any) {
       setError(e.message || 'Failed to load calendar');
     } finally { setLoading(false); }
+  }
+
+  // 🔄 Manual refresh with external sync
+  async function refreshWithSync() {
+    try {
+      setSyncStatus(prev => ({ ...prev, syncing: true, error: null }));
+      await calendarService.refreshWithExternalSync();
+      await loadData();
+      setSyncStatus(prev => ({ 
+        ...prev, 
+        syncing: false, 
+        lastSync: new Date().toISOString() 
+      }));
+    } catch (error) {
+      console.error('Refresh with sync failed:', error);
+      setSyncStatus(prev => ({ 
+        ...prev, 
+        syncing: false, 
+        error: error instanceof Error ? error.message : 'Sync failed' 
+      }));
+    }
   }
 
   const filteredItems = useMemo(() => items.filter(i => {
@@ -88,10 +159,64 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({ monthCount
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Unified Availability Calendar</h2>
-        <button onClick={loadData} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1 disabled:opacity-50" disabled={loading}>
-          <RefreshCw className="w-4 h-4" /> {loading ? 'Refreshing...' : 'Refresh'}
-        </button>
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-semibold">Unified Availability Calendar</h2>
+          
+          {/* 🔄 Sync Status Indicator */}
+          <div className="flex items-center gap-2 text-sm">
+            {syncStatus.enabled ? (
+              <>
+                {syncStatus.syncing ? (
+                  <div className="flex items-center gap-1 text-blue-600">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Syncing...</span>
+                  </div>
+                ) : syncStatus.error ? (
+                  <div className="flex items-center gap-1 text-red-600">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Sync Error</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-green-600">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Auto-Sync Active</span>
+                  </div>
+                )}
+                {syncStatus.lastSync && (
+                  <span className="text-xs text-gray-500">
+                    Last: {new Date(syncStatus.lastSync).toLocaleTimeString()}
+                  </span>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center gap-1 text-gray-500">
+                <WifiOff className="w-4 h-4" />
+                <span>Auto-Sync Disabled</span>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={loadData} 
+            className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center gap-1 disabled:opacity-50" 
+            disabled={loading}
+          >
+            <RefreshCw className="w-4 h-4" /> 
+            {loading ? 'Loading...' : 'Refresh'}
+          </button>
+          
+          <button 
+            onClick={refreshWithSync} 
+            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1 disabled:opacity-50" 
+            disabled={syncStatus.syncing || loading}
+            title="Refresh with external calendar sync"
+          >
+            <Wifi className="w-4 h-4" />
+            {syncStatus.syncing ? 'Syncing...' : 'Sync & Refresh'}
+          </button>
+        </div>
       </div>
       {error && <div className="p-2 bg-red-100 border border-red-300 text-red-700 rounded text-sm">{error}</div>}
       <div className="flex gap-4 flex-wrap">
