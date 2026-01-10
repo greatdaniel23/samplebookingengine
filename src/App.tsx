@@ -29,6 +29,7 @@ const ApiDebug = lazy(() => import("./pages/debug/ApiDebug"));
 const DebugPackages = lazy(() => import("./components/DebugPackages"));
 const ComprehensiveDebug = lazy(() => import("./components/ComprehensiveDebug"));
 const ApiUrlTester = lazy(() => import("./components/ApiUrlTester"));
+const ApiTestComponent = lazy(() => import("./components/ApiTestComponent"));
 
 // Loading component for lazy-loaded routes
 const PageLoader = () => (
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="/images" element={<ImageGalleryPage />} />
               <Route path="/debug-packages" element={<DebugPackages />} />
               <Route path="/api-debug" element={<ApiDebug />} />
+              <Route path="/api-test" element={<ApiTestComponent />} />
               <Route path="/env-debug" element={<ComprehensiveDebug />} />
               <Route path="/api-url-test" element={<ApiUrlTester />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

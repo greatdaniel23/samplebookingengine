@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, Plus, X, Star } from 'lucide-react';
+import { paths } from '@/config/paths';
 
 interface RoomImageButtonProps {
   roomId: string | number;
@@ -36,7 +37,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
   const fetchRoomImages = async () => {
     try {
       // Use confirmed working rooms API to get room data with images
-      const response = await fetch(`https://api.rumahdaisycantik.com/rooms.php?id=${roomId}`);
+      const response = await fetch(paths.buildApiUrl(`rooms/${roomId}`));
       const data = await response.json();
       
       if (data.success && data.data && data.data.images) {
@@ -53,7 +54,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
   const loadAvailableFolders = async () => {
     try {
       // Use confirmed working image scanner API
-      const response = await fetch('https://api.rumahdaisycantik.com/image-scanner.php?action=folders&basePath=../images/rooms');
+      const response = await fetch(paths.buildApiUrl('image-scanner?action=folders&basePath=../images/rooms'));
       const data = await response.json();
       
       if (data.success && data.folders) {
@@ -82,7 +83,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
       console.log('API request:', requestBody);
       
       // Add new image to room using rooms API
-      const response = await fetch('https://api.rumahdaisycantik.com/rooms.php', {
+      const response = await fetch(paths.buildApiUrl('rooms'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +123,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
     
     try {
       // Remove image from room using rooms API
-      const response = await fetch(`https://api.rumahdaisycantik.com/rooms.php`, {
+      const response = await fetch(paths.buildApiUrl('rooms'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -157,7 +158,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
     
     try {
       // Set primary image using rooms API
-      const response = await fetch(`https://api.rumahdaisycantik.com/rooms.php`, {
+      const response = await fetch(paths.buildApiUrl('rooms'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -346,7 +347,7 @@ const MultipleImageGalleryModal: React.FC<MultipleImageGalleryModalProps> = ({
     setLoadingImages(true);
     try {
       // Use confirmed working rooms API to get folder images
-      const response = await fetch(`https://api.rumahdaisycantik.com/rooms.php?images=${folder}`);
+      const response = await fetch(paths.buildApiUrl(`rooms?images=${folder}`));
       const data = await response.json();
       
       if (data.success && data.data && data.data.images) {

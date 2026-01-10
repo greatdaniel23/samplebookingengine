@@ -51,7 +51,7 @@ export const useVillaInfo = () => {
     try {
       setLoading(true);
       
-      const response = await fetch(`${API_BASE_URL}/villa.php`, {
+      const response = await fetch(`${API_BASE_URL}/villa`, {
         cache: 'no-cache'
       });
       
@@ -87,7 +87,7 @@ export const useVillaInfo = () => {
       const errorMessage = `Failed to fetch villa information: ${err instanceof Error ? err.message : 'Unknown error'}`;
       setError(errorMessage);
       console.error('🚨 Villa info fetch error:', err);
-      console.error('🔗 API URL was:', `${API_BASE_URL}/villa.php`);
+      console.error('🔗 API URL was:', `${API_BASE_URL}/villa`);
     } finally {
       setLoading(false);
     }
@@ -95,7 +95,7 @@ export const useVillaInfo = () => {
 
   const updateVillaInfo = async (data: Partial<VillaInfo>) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/villa.php`, {
+      const response = await fetch(`${API_BASE_URL}/villa`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

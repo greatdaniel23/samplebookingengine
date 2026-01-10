@@ -37,18 +37,18 @@ const ComprehensiveDebug: React.FC = () => {
     // 3. Test actual API calls
     const apiTests = [];
     
-    // Test production API
+    // Test production API (Cloudflare Worker)
     try {
-      const prodResponse = await fetch('https://api.rumahdaisycantik.com/rooms.php');
+      const prodResponse = await fetch('https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms');
       apiTests.push({
-        url: 'https://api.rumahdaisycantik.com/rooms.php',
+        url: 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms',
         status: prodResponse.status,
         ok: prodResponse.ok,
         type: 'production'
       });
     } catch (error) {
       apiTests.push({
-        url: 'https://api.rumahdaisycantik.com/rooms.php',
+        url: 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms',
         error: error.message,
         type: 'production'
       });
@@ -57,7 +57,7 @@ const ComprehensiveDebug: React.FC = () => {
     // Test what buildApiUrl produces
     try {
       const pathsModule = await import('../config/paths');
-      const apiUrl = pathsModule.paths.buildApiUrl('rooms.php');
+      const apiUrl = pathsModule.paths.buildApiUrl('rooms');
       const response = await fetch(apiUrl);
       apiTests.push({
         url: apiUrl,
@@ -67,7 +67,7 @@ const ComprehensiveDebug: React.FC = () => {
       });
     } catch (error) {
       const pathsModule = await import('../config/paths');
-      const apiUrl = pathsModule.paths.buildApiUrl('rooms.php');
+      const apiUrl = pathsModule.paths.buildApiUrl('rooms');
       apiTests.push({
         url: apiUrl,
         error: error.message,
@@ -81,8 +81,8 @@ const ComprehensiveDebug: React.FC = () => {
     diagnostics.environmentCheck = {
       hasViteApiBase: 'VITE_API_BASE' in import.meta.env,
       actualValue: import.meta.env.VITE_API_BASE,
-      expectedValue: 'https://api.rumahdaisycantik.com',
-      matches: import.meta.env.VITE_API_BASE === 'https://api.rumahdaisycantik.com'
+      expectedValue: 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api',
+      matches: import.meta.env.VITE_API_BASE === 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api'
     };
 
     setResults(diagnostics);

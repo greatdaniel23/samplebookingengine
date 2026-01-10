@@ -76,7 +76,7 @@ const PackagesSection: React.FC = () => {
 
   const fetchMarketingCategories = async () => {
     try {
-      const response = await fetch(paths.buildApiUrl('marketing-categories.php'));
+      const response = await fetch(paths.buildApiUrl('marketing-categories'));
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const data = await response.json();
@@ -119,7 +119,7 @@ const PackagesSection: React.FC = () => {
 
   const fetchRooms = async () => {
     try {
-      const apiUrl = paths.buildApiUrl('rooms.php');
+      const apiUrl = paths.buildApiUrl('rooms');
       const response = await fetch(apiUrl);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
@@ -134,7 +134,7 @@ const PackagesSection: React.FC = () => {
 
   const fetchAmenities = async () => {
     try {
-      const apiUrl = paths.buildApiUrl('amenities.php');
+      const apiUrl = paths.buildApiUrl('amenities');
       const response = await fetch(apiUrl);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
@@ -152,7 +152,7 @@ const PackagesSection: React.FC = () => {
 
   const fetchInclusions = async () => {
     try {
-      const apiUrl = paths.buildApiUrl('inclusions.php');
+      const apiUrl = paths.buildApiUrl('inclusions');
       const response = await fetch(apiUrl);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
@@ -170,8 +170,8 @@ const PackagesSection: React.FC = () => {
 
   const fetchPackageAmenities = async (packageId: number) => {
     try {
-      // Use the package-amenities.php endpoint with package_id parameter
-      const apiUrl = `https://api.rumahdaisycantik.com/package-amenities.php?package_id=${packageId}`;
+      // Use Cloudflare Worker API
+      const apiUrl = `https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/packages/${packageId}/amenities`;
       console.log('Fetching package amenities from:', apiUrl);
 
       const response = await fetch(apiUrl);
@@ -194,12 +194,14 @@ const PackagesSection: React.FC = () => {
 
   const addAmenityToPackage = async (packageId: number, amenityId: number, isHighlighted: boolean = false) => {
     try {
-      // Use package-amenities.php with action=add
-      const apiUrl = `https://api.rumahdaisycantik.com/package-amenities.php?action=add&package_id=${packageId}&amenity_id=${amenityId}&is_highlighted=${isHighlighted ? 1 : 0}`;
+      // Use Cloudflare Worker API
+      const apiUrl = `https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/packages/${packageId}/amenities`;
       console.log('Adding amenity to package:', apiUrl);
 
       const response = await fetch(apiUrl, {
-        method: 'GET'
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amenity_id: amenityId, is_highlighted: isHighlighted })
       });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -219,10 +221,10 @@ const PackagesSection: React.FC = () => {
 
   const removeAmenityFromPackage = async (packageId: number, amenityId: number) => {
     try {
-      // Use package-amenities.php with action=remove
-      const apiUrl = `https://api.rumahdaisycantik.com/package-amenities.php?action=remove&package_id=${packageId}&amenity_id=${amenityId}`;
+      // Use Cloudflare Worker API
+      const apiUrl = `https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/packages/${packageId}/amenities/${amenityId}`;
       console.log('Removing amenity from package:', apiUrl);
-      const response = await fetch(apiUrl, { method: 'GET' });
+      const response = await fetch(apiUrl, { method: 'DELETE' });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
@@ -240,7 +242,7 @@ const PackagesSection: React.FC = () => {
 
   const fetchPackageInclusions = async (packageId: number) => {
     try {
-      const apiUrl = `https://api.rumahdaisycantik.com/package-inclusions.php?action=list&package_id=${packageId}`;
+      const apiUrl = `https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/packages/${packageId}/inclusions`;
       console.log('Fetching package inclusions from:', apiUrl);
 
       const response = await fetch(apiUrl);
@@ -263,11 +265,13 @@ const PackagesSection: React.FC = () => {
 
   const addInclusionToPackage = async (packageId: number, inclusionId: number) => {
     try {
-      const apiUrl = `https://api.rumahdaisycantik.com/package-inclusions.php?action=add&package_id=${packageId}&inclusion_id=${inclusionId}`;
+      const apiUrl = `https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/packages/${packageId}/inclusions`;
       console.log('Adding inclusion to package:', apiUrl);
 
       const response = await fetch(apiUrl, {
-        method: 'GET'
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inclusion_id: inclusionId })
       });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -287,9 +291,9 @@ const PackagesSection: React.FC = () => {
 
   const removeInclusionFromPackage = async (packageId: number, inclusionId: number) => {
     try {
-      const apiUrl = `https://api.rumahdaisycantik.com/package-inclusions.php?action=remove&package_id=${packageId}&inclusion_id=${inclusionId}`;
+      const apiUrl = `https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/packages/${packageId}/inclusions/${inclusionId}`;
       console.log('Removing inclusion from package:', apiUrl);
-      const response = await fetch(apiUrl, { method: 'GET' });
+      const response = await fetch(apiUrl, { method: 'DELETE' });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
@@ -308,7 +312,7 @@ const PackagesSection: React.FC = () => {
   const fetchPackages = async () => {
     try {
       setLoading(true);
-      const apiUrl = paths.buildApiUrl('packages.php');
+      const apiUrl = paths.buildApiUrl('packages');
       console.log('Fetching packages from:', apiUrl);
 
       const response = await fetch(apiUrl);
@@ -336,7 +340,7 @@ const PackagesSection: React.FC = () => {
   const handleCreatePackage = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch(paths.buildApiUrl('packages.php'), {
+      const response = await fetch(paths.buildApiUrl('packages'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -412,7 +416,7 @@ const PackagesSection: React.FC = () => {
 
 
 
-      const response = await fetch(paths.buildApiUrl('packages.php'), {
+      const response = await fetch(paths.buildApiUrl('packages'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -463,7 +467,7 @@ const PackagesSection: React.FC = () => {
     if (!confirm('Are you sure you want to delete this sales tool?')) return;
 
     try {
-      const response = await fetch(paths.buildApiUrl('packages.php'), {
+      const response = await fetch(paths.buildApiUrl('packages'), {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

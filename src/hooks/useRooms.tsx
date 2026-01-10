@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import ApiService from '../services/api';
+import { paths } from '../config/paths';
 import { Room } from '@/types';
 
 export const useRooms = () => {
@@ -10,7 +10,10 @@ export const useRooms = () => {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const data = await ApiService.getRooms();
+        const response = await fetch(paths.buildApiUrl('rooms'));
+        if (!response.ok) throw new Error('Failed to fetch rooms');
+        const result = await response.json();
+        const data = result.success ? result.data : result;
          // Debug log
         if (Array.isArray(data)) {
           setRooms(data);

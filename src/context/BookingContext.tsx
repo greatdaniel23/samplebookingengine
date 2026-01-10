@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useCallback, useState } from "react";
 import { Booking, BookingContextValue } from "@/types";
-// @ts-ignore
-import ApiService from "@/services/api.js";
+import { paths } from "@/config/paths";
 
 const STORAGE_KEY = "bookings";
 
@@ -26,7 +25,10 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const data = await ApiService.getBookings();
+        const response = await fetch(paths.buildApiUrl('bookings'));
+        if (!response.ok) throw new Error('Failed to fetch bookings');
+        const result = await response.json();
+        const data = result.success ? result.data : result;
         if (Array.isArray(data)) {
           // Transform database bookings to match frontend format
           const transformedBookings: Booking[] = data.map((dbBooking: any) => ({

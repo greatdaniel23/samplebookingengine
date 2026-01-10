@@ -282,7 +282,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ setActiveTab }) => {
         setError(null);
 
         // Fetch bookings data
-        const bookingsResponse = await fetch(paths.buildApiUrl('bookings.php'));
+        const bookingsResponse = await fetch(paths.buildApiUrl('bookings/list'));
         if (!bookingsResponse.ok) {
           throw new Error(`Bookings API error: ${bookingsResponse.status}`);
         }
@@ -290,7 +290,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ setActiveTab }) => {
 
 
         // Fetch rooms data
-        const roomsResponse = await fetch(paths.buildApiUrl('rooms.php'));
+        const roomsResponse = await fetch(paths.buildApiUrl('rooms'));
         if (!roomsResponse.ok) {
           throw new Error(`Rooms API error: ${roomsResponse.status}`);
         }
@@ -298,7 +298,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ setActiveTab }) => {
 
 
         // Fetch packages data
-        const packagesResponse = await fetch(paths.buildApiUrl('packages.php'));
+        const packagesResponse = await fetch(paths.buildApiUrl('packages'));
         if (!packagesResponse.ok) {
           throw new Error(`Packages API error: ${packagesResponse.status}`);
         }
@@ -680,11 +680,11 @@ const AnalyticsSection: React.FC = () => {
 
 
       // Fetch bookings data for analytics
-      const bookingsResponse = await fetch(paths.buildApiUrl('bookings.php'));
+      const bookingsResponse = await fetch(paths.buildApiUrl('bookings/list'));
       const bookingsData = await bookingsResponse.json();
 
       // Fetch rooms data for occupancy
-      const roomsResponse = await fetch(paths.buildApiUrl('rooms.php'));
+      const roomsResponse = await fetch(paths.buildApiUrl('rooms'));
       const roomsData = await roomsResponse.json();
 
       // Extract data from wrapped format
@@ -1018,7 +1018,7 @@ const PackageAvailabilityVisualization: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(paths.buildApiUrl('packages.php'));
+      const response = await fetch(paths.buildApiUrl('packages'));
       const result = await response.json();
 
       if (result.success) {
@@ -1217,8 +1217,8 @@ const EnhancedBookingCalendar: React.FC = () => {
 
       // Load bookings, packages, and calendar data in parallel
       const [bookingsResponse, packagesResponse] = await Promise.all([
-        fetch(paths.buildApiUrl('bookings.php')),
-        fetch(paths.buildApiUrl('packages.php'))
+        fetch(paths.buildApiUrl('bookings/list')),
+        fetch(paths.buildApiUrl('packages'))
       ]);
 
       const bookingsResult = await bookingsResponse.json();

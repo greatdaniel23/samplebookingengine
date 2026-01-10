@@ -5,18 +5,18 @@ const CONFIG = {
     // API Configuration
     API: {
         // Production URL (only active endpoint)
-        PRODUCTION_BASE_URL: 'https://api.rumahdaisycantik.com',
+        PRODUCTION_BASE_URL: 'https://api.bookingengine.com',
         // Environment fixed to production
         ENVIRONMENT: 'production'
     },
-    
+
     // Application Settings
     APP: {
         NAME: 'Villa Daisy Cantik - Booking System',
         VERSION: '1.0.0',
         DEBUG: false // Set to false in production for security
     },
-    
+
     // Villa Information
     VILLA: {
         NAME: 'Villa Daisy Cantik',
@@ -25,7 +25,7 @@ const CONFIG = {
         PHONE: '+62 361 234 5678',
         WEBSITE: 'https://booking.rumahdaisycantik.com'
     },
-    
+
     // Database Configuration (for reference only)
     DATABASE: {
         LOCAL: {
@@ -41,14 +41,14 @@ const CONFIG = {
             PASSWORD: '[CONFIGURED_ON_SERVER]'
         }
     },
-    
+
     // Admin Settings
     ADMIN: {
         DEFAULT_USERNAME: 'villa_manager',
         SESSION_TIMEOUT: 60, // minutes - longer for production
         MAX_LOGIN_ATTEMPTS: 3
     },
-    
+
     // Business Settings for Admin Dashboard
     BUSINESS: {
         NAME: 'Villa Daisy Cantik',

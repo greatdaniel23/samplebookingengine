@@ -1,0 +1,13 @@
+name = "booking-engine-frontend"
+type = "javascript"
+account_id = "a7c31e21d2be1cc19f8cf5ec6a6e3ae2"
+workers_dev = true
+
+# Build configuration for Vite
+build = { command = "npm run build", cwd = ".", root_dir = "dist" }
+
+# Environment configuration
+[env.production]
+routes = [
+  { pattern = "booking-engine-frontend.pages.dev", zone_name = "pages.dev" }
+]

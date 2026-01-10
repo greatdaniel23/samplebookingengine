@@ -74,7 +74,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
         const fetchPackageInclusions = async () => {
             try {
                 setInclusionsLoading(true);
-                const response = await fetch(paths.buildApiUrl(`package-inclusions.php?action=list&package_id=${pkg.id}`));
+                const response = await fetch(paths.buildApiUrl(`packages/${pkg.id}/inclusions`));
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {

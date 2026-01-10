@@ -101,7 +101,7 @@ const RoomDetails: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(paths.buildApiUrl(`rooms.php?id=${id}`));
+      const response = await fetch(paths.buildApiUrl(`rooms/${id}`));
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -124,7 +124,7 @@ const RoomDetails: React.FC = () => {
 
   const fetchRoomAmenities = async (roomId: string) => {
     try {
-      const response = await fetch(paths.buildApiUrl(`room-amenities.php?room_id=${roomId}`));
+      const response = await fetch(paths.buildApiUrl(`rooms/${roomId}/amenities`));
 
       if (!response.ok) {
         console.warn('Could not fetch room amenities');
@@ -144,7 +144,7 @@ const RoomDetails: React.FC = () => {
 
   const fetchVillaInfo = async () => {
     try {
-      const response = await fetch(paths.buildApiUrl('villa.php'));
+      const response = await fetch(paths.buildApiUrl('villa'));
 
       if (!response.ok) {
         console.warn('Could not fetch villa info');

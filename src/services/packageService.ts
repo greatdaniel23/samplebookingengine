@@ -26,7 +26,7 @@ export const packageService = {
       });
     }
 
-    const url = `${API_BASE_URL}/packages.php${params.toString() ? '?' + params.toString() : ''}`;
+    const url = `${API_BASE_URL}/packages${params.toString() ? '?' + params.toString() : ''}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -46,7 +46,7 @@ export const packageService = {
         ...(includeRooms && { include_rooms: 'true' })
       });
       
-      const response = await fetch(`${API_BASE_URL}/packages.php?${params.toString()}`);
+      const response = await fetch(`${API_BASE_URL}/packages?${params.toString()}`);
       
       if (!response.ok) {
         // If including rooms fails with 500, try without rooms
@@ -142,7 +142,7 @@ export const packageService = {
    * Get available package types
    */
   async getPackageTypes(): Promise<{ success: boolean; data: Array<{ package_type: string; count: number }>; message: string }> {
-    const response = await fetch(`${API_BASE_URL}/packages.php?action=types`);
+    const response = await fetch(`${API_BASE_URL}/packages?action=types`);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch package types: ${response.status}`);

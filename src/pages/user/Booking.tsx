@@ -188,7 +188,7 @@ const BookingPage = () => {
       console.log('selectedRoom:', selectedRoom);
       console.log('Sending booking data:', bookingData);
 
-      const response = await fetch(`https://api.rumahdaisycantik.com/bookings.php`, {
+      const response = await fetch(paths.api.bookings, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

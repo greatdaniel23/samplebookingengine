@@ -51,7 +51,7 @@ const BookingsSection: React.FC = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const apiUrl = paths.buildApiUrl('bookings.php');
+      const apiUrl = paths.buildApiUrl('bookings/list');
 
 
       const response = await fetch(apiUrl);
@@ -96,20 +96,15 @@ const BookingsSection: React.FC = () => {
     if (!confirm('Are you sure you want to delete this booking?')) return;
 
     try {
-      const apiUrl = paths.buildApiUrl('bookings.php');
-      console.log('DELETE (via POST) URL:', apiUrl); // Debug logging
+      const apiUrl = paths.buildApiUrl('bookings');
+      console.log('DELETE URL:', apiUrl); // Debug logging
 
-      // Use POST with action=delete instead of DELETE method
-      // This is more compatible with various server configurations
-      const response = await fetch(apiUrl, {
-        method: 'POST',
+      // Use DELETE method for Cloudflare Worker
+      const response = await fetch(`${apiUrl}/${id}`, {
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          id: id
-        })
+        }
       });
 
       if (!response.ok) {
@@ -146,7 +141,7 @@ const BookingsSection: React.FC = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch(paths.buildApiUrl('bookings.php'), {
+      const response = await fetch(paths.buildApiUrl('bookings'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -196,7 +191,7 @@ const BookingsSection: React.FC = () => {
         id: editingBooking.id
       };
 
-      const response = await fetch(paths.buildApiUrl(`bookings.php`), {
+      const response = await fetch(paths.buildApiUrl(`bookings/${editingBooking.id}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

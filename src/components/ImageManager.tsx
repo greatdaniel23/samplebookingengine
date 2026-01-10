@@ -32,7 +32,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({ roomId, onImagesUpda
   const fetchRoomData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(paths.buildApiUrl('rooms.php'));
+      const response = await fetch(paths.buildApiUrl('rooms'));
       const data = await response.json();
       
       if (data.success && data.rooms) {
@@ -60,7 +60,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({ roomId, onImagesUpda
     console.log('Scanning images for room:', roomId);
 
     try {
-      const apiUrl = paths.buildApiUrl('scan-room-images.php');
+      const apiUrl = paths.buildApiUrl('images/scan');
       console.log('Scanning folder via:', apiUrl);
 
       const response = await fetch(apiUrl, {
@@ -119,7 +119,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({ roomId, onImagesUpda
     setSuccess(null);
 
     try {
-      const apiUrl = paths.buildApiUrl('save-selected-images.php');
+      const apiUrl = paths.buildApiUrl('images/save');
       console.log('Saving selected images:', selectedImages);
 
       const response = await fetch(apiUrl, {

@@ -89,11 +89,11 @@ const AmenitiesSection: React.FC = () => {
   const fetchUsageStats = async (amenitiesList: any[]) => {
     try {
       // Count amenities used in rooms and packages
-      const roomUsagePromise = fetch(paths.buildApiUrl('room-amenities.php'))
+      const roomUsagePromise = fetch(paths.buildApiUrl('room-amenities'))
         .then(res => res.json())
         .catch(() => ({ success: false, relationships: [] }));
 
-      const packageUsagePromise = fetch(paths.buildApiUrl('package-amenities.php'))
+      const packageUsagePromise = fetch(paths.buildApiUrl('package-amenities'))
         .then(res => res.json())
         .catch(() => ({ success: false, amenities: [] }));
 
@@ -122,7 +122,7 @@ const AmenitiesSection: React.FC = () => {
       setError(null);
 
       // Use simplified amenities endpoint (backend now defaults to 'amenities' when no explicit endpoint provided)
-      const apiUrl = paths.buildApiUrl('amenities.php');
+      const apiUrl = paths.buildApiUrl('amenities');
 
 
       const response = await fetch(apiUrl);
@@ -166,7 +166,7 @@ const AmenitiesSection: React.FC = () => {
   const handleCreateAmenity = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const apiUrl = paths.buildApiUrl('amenities.php');
+      const apiUrl = paths.buildApiUrl('amenities');
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -217,7 +217,7 @@ const AmenitiesSection: React.FC = () => {
     if (!editingAmenity) return;
 
     try {
-      const apiUrl = paths.buildApiUrl('amenities.php');
+      const apiUrl = paths.buildApiUrl('amenities');
       const response = await fetch(apiUrl, {
         method: 'PUT',
         headers: {
@@ -250,7 +250,7 @@ const AmenitiesSection: React.FC = () => {
     if (!confirm('Are you sure you want to delete this amenity?')) return;
 
     try {
-      const apiUrl = paths.buildApiUrl(`amenities.php?id=${amenityId}`);
+      const apiUrl = paths.buildApiUrl(`amenities/${amenityId}`);
       const response = await fetch(apiUrl, {
         method: 'DELETE',
         headers: {
@@ -475,7 +475,7 @@ const AmenitiesSection: React.FC = () => {
   const fetchInclusions = async () => {
     try {
       setInclusionsLoading(true);
-      const response = await fetch('https://api.rumahdaisycantik.com/inclusions.php');
+      const response = await fetch(paths.buildApiUrl('inclusions'));
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -493,8 +493,8 @@ const AmenitiesSection: React.FC = () => {
     e.preventDefault();
     try {
       const url = editingInclusion
-        ? `https://api.rumahdaisycantik.com/inclusions.php?id=${editingInclusion.id}`
-        : 'https://api.rumahdaisycantik.com/inclusions.php';
+        ? paths.buildApiUrl(`inclusions/${editingInclusion.id}`)
+        : paths.buildApiUrl('inclusions');
 
       const method = editingInclusion ? 'PUT' : 'POST';
 
@@ -537,7 +537,7 @@ const AmenitiesSection: React.FC = () => {
     if (!confirm('Are you sure you want to delete this inclusion?')) return;
 
     try {
-      const response = await fetch(`https://api.rumahdaisycantik.com/inclusions.php?id=${id}`, {
+      const response = await fetch(paths.buildApiUrl(`inclusions/${id}`), {
         method: 'DELETE'
       });
 
