@@ -1,0 +1,38 @@
+-- Insert default villa information
+INSERT INTO villa_info (
+  name, 
+  description, 
+  tagline,
+  location,
+  address,
+  phone,
+  email,
+  website,
+  check_in_time,
+  check_out_time,
+  min_stay_nights,
+  max_guests,
+  total_rooms,
+  total_bathrooms,
+  property_size_sqm,
+  amenities_summary,
+  policies
+) VALUES (
+  'Rumah Daisy Cantik',
+  'A beautiful villa in Bali offering luxury accommodation with stunning views and premium amenities.',
+  'Your Perfect Bali Getaway',
+  'Bali, Indonesia',
+  'Jl. Raya Seminyak, Bali 80361',
+  '+62 361 1234567',
+  'info@rumahdaisycantik.com',
+  'https://booking.rumahdaisycantik.com',
+  '14:00',
+  '12:00',
+  1,
+  10,
+  5,
+  5,
+  500.00,
+  'Swimming Pool, Wi-Fi, Air Conditioning, Kitchen, Parking, Garden',
+  'No smoking indoors. No pets allowed. Cancellation: 7 days notice for full refund.'
+);

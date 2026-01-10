@@ -80,7 +80,7 @@ export const PackageCalendarManager: React.FC<PackageCalendarManagerProps> = ({
 
   const loadPackageDetails = async () => {
     try {
-      const response = await fetch(paths.buildApiUrl(`packages.php?id=${packageId}`));
+      const response = await fetch(paths.buildApiUrl(`packages/${packageId}`));
       const result = await response.json();
       
       if (result.success && result.data) {

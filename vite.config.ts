@@ -30,6 +30,9 @@ export default defineConfig(({ mode }) => ({
     // Minification settings
     minify: mode === 'production' ? 'esbuild' : false,
 
+    // Exclude large image files from build (use R2 instead)
+    copyPublicDir: false,
+
     rollupOptions: {
       output: {
         // Manual chunk splitting for better caching and loading performance

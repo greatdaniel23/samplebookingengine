@@ -134,7 +134,7 @@ const PackageDetails = () => {
 
     try {
       // Try fetching from room API first
-      const response = await fetch(`https://api.rumahdaisycantik.com/rooms.php?id=${room.room_id}`);
+      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/${room.room_id}`);
       const data = await response.json();
 
       if (data.success && data.data?.images?.length > 0) {
@@ -150,13 +150,13 @@ const PackageDetails = () => {
         // Fallback: try room type folder
         const roomType = room.type || room.room_type || '';
         const folder = roomType.replace(/\s+/g, '');
-        const fallbackResp = await fetch(`https://api.rumahdaisycantik.com/rooms.php?images=${encodeURIComponent(folder)}`);
+        const fallbackResp = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/images/${encodeURIComponent(folder)}`);
         const fallbackData = await fallbackResp.json();
 
         if (fallbackData.success && fallbackData.data?.images?.length > 0) {
           const imageUrls = fallbackData.data.images.map((img: any) => {
             const filename = img.filename || img;
-            return `https://rumahdaisycantik.com/images/rooms/${folder}/${filename}`;
+            return img.url || `/images/rooms/${folder}/${filename}`;
           });
           setLightboxImages(imageUrls);
         } else {
@@ -204,7 +204,7 @@ const PackageDetails = () => {
       if (!packageId) return;
       try {
         setRoomsLoading(true);
-        const response = await fetch(paths.buildApiUrl(`package-rooms.php?package_id=${packageId}`));
+        const response = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms`));
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
@@ -239,7 +239,7 @@ const PackageDetails = () => {
       if (!packageId) return;
       try {
         setInclusionsLoading(true);
-        const response = await fetch(paths.buildApiUrl(`package-inclusions.php?action=list&package_id=${packageId}`));
+        const response = await fetch(paths.buildApiUrl(`packages/${packageId}/inclusions`));
         if (response.ok) {
           const data = await response.json();
           if (data.success) {

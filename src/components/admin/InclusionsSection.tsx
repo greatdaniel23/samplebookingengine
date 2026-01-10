@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { paths } from '@/config/paths';
 import { 
   Check, 
   Plus, 
@@ -106,7 +107,7 @@ const InclusionsSection: React.FC = () => {
   const fetchInclusions = async () => {
     try {
       setLoading(true);
-      const response = await fetch('https://api.rumahdaisycantik.com/inclusions.php');
+      const response = await fetch(paths.buildApiUrl('inclusions'));
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -124,8 +125,8 @@ const InclusionsSection: React.FC = () => {
     e.preventDefault();
     try {
       const url = editingInclusion 
-        ? `https://api.rumahdaisycantik.com/inclusions.php/${editingInclusion.id}`
-        : 'https://api.rumahdaisycantik.com/inclusions.php';
+        ? paths.buildApiUrl(`inclusions/${editingInclusion.id}`)
+        : paths.buildApiUrl('inclusions');
       
       const method = editingInclusion ? 'PUT' : 'POST';
       
@@ -168,7 +169,7 @@ const InclusionsSection: React.FC = () => {
     if (!confirm('Are you sure you want to delete this inclusion?')) return;
     
     try {
-      const response = await fetch(`https://api.rumahdaisycantik.com/inclusions.php/${id}`, {
+      const response = await fetch(paths.buildApiUrl(`inclusions/${id}`), {
         method: 'DELETE'
       });
       

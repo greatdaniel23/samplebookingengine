@@ -11,7 +11,7 @@ export const villaService = {
    * Get villa information
    */
   async getVillaInfo(): Promise<{ success: boolean; data: VillaInfo; message?: string }> {
-    const response = await fetch(`${API_BASE_URL}/villa.php`);
+    const response = await fetch(`${API_BASE_URL}/villa`);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch villa info: ${response.status}`);
@@ -24,7 +24,7 @@ export const villaService = {
    * Update villa information (for admin use)
    */
   async updateVillaInfo(villaData: Partial<VillaInfo>): Promise<{ success: boolean; message: string }> {
-    const response = await fetch(`${API_BASE_URL}/villa.php`, {
+    const response = await fetch(`${API_BASE_URL}/villa`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

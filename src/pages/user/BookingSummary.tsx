@@ -10,7 +10,7 @@ import { packageService } from '@/services/packageService';
 import { useVillaInfo } from '@/hooks/useVillaInfo';
 import { API_BASE_URL } from '@/config/paths';
 // @ts-ignore
-import ApiService from '@/services/api.js';
+import { paths } from '@/config/paths';
 import {
   CheckCircle2,
   Calendar,
@@ -121,6 +121,7 @@ const BookingSummary = () => {
   };
 
   const getContactEmail = () => {
+    // Use villa info email or default
     return villaInfo?.email || "support@villa.com";
   };
 
@@ -151,8 +152,8 @@ const BookingSummary = () => {
         // Use ID parameter if bookingRef is numeric (from route), otherwise use reference parameter
         const isNumericId = /^\d+$/.test(bookingRef);
         const apiUrl = isNumericId
-          ? `${API_BASE_URL}/bookings.php?id=${bookingRef}`
-          : `${API_BASE_URL}/bookings.php?reference=${bookingRef}`;
+          ? `${API_BASE_URL}/bookings/${bookingRef}`
+          : `${API_BASE_URL}/bookings/reference/${bookingRef}`;
 
         const response = await fetch(apiUrl);
 
@@ -263,8 +264,11 @@ const BookingSummary = () => {
 
       if (actualRoomId) {
         try {
-          const roomResponse = await ApiService.getRoom(actualRoomId);
-          setRoomData(roomResponse);
+          const roomResponse = await fetch(paths.buildApiUrl(`rooms/${actualRoomId}`));
+          if (!roomResponse.ok) throw new Error('Failed to fetch room');
+          const roomResult = await roomResponse.json();
+          setRoomData(roomResult.success ? roomResult.data : roomResult);
+
 
         } catch (roomError) {
           console.error('📄 [BookingSummary] Failed to load room data:', roomError);

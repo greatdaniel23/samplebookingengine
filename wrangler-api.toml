@@ -1,0 +1,41 @@
+name = "booking-engine-api"
+main = "src/workers/index.ts"
+compatibility_date = "2024-12-16"
+tsconfig = "tsconfig.workers.json"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "booking-engine"
+database_id = "71df7f17-943b-46dd-8870-2e7769a3c202"
+
+# R2 bucket binding (for images)
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "imageroom"
+
+# KV namespace for sessions/cache
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "91b758e307d8444091e468f6caa9ead3"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "ec304060e11b4215888430acdee7aafa"
+
+# Environment configuration
+[vars]
+RESEND_API_KEY = "re_ggeu4gUr_B5wJcjrNv2zUVSTmGu8t7hhN"
+ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com"
+VILLA_NAME = "Best Villa Bali"
+FROM_EMAIL = "danielsantosomarketing2017@gmail.com"
+FROM_NAME = "Best Villa Bali"
+
+[env.production]
+vars = { ENVIRONMENT = "production", RESEND_API_KEY = "re_ggeu4gUr_B5wJcjrNv2zUVSTmGu8t7hhN", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali" }
+routes = [
+  { pattern = "api.bookingengine.com/api/*", zone_name = "bookingengine.com" }
+]
+
+[env.development]
+vars = { ENVIRONMENT = "development", RESEND_API_KEY = "re_ggeu4gUr_B5wJcjrNv2zUVSTmGu8t7hhN", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali" }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useVillaInfo } from '@/hooks/useVillaInfo';
+import R2ImagePicker from './R2ImagePicker';
 
 const PropertySection: React.FC = () => {
   const { villaInfo, loading, updateVillaInfo } = useVillaInfo();
@@ -9,7 +10,12 @@ const PropertySection: React.FC = () => {
 
   useEffect(() => {
     if (villaInfo) {
-      setFormData(villaInfo);
+      // Ensure images array exists and has at least one empty slot for picker
+      const updatedVillaInfo = {
+        ...villaInfo,
+        images: villaInfo.images && villaInfo.images.length > 0 ? villaInfo.images : ['']
+      };
+      setFormData(updatedVillaInfo);
     }
   }, [villaInfo]);
 
@@ -58,7 +64,7 @@ const PropertySection: React.FC = () => {
 
   const handleSave = async () => {
     if (!formData) return;
-    
+
     setSaving(true);
     try {
       const result = await updateVillaInfo(formData);
@@ -109,7 +115,7 @@ const PropertySection: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-900">Property Management</h2>
         <div className="flex gap-2">
           {!isEditing ? (
-            <button 
+            <button
               onClick={() => setIsEditing(true)}
               className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 flex items-center gap-2"
             >
@@ -120,13 +126,13 @@ const PropertySection: React.FC = () => {
             </button>
           ) : (
             <>
-              <button 
+              <button
                 onClick={() => setIsEditing(false)}
                 className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSave}
                 disabled={saving}
                 className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
@@ -255,36 +261,45 @@ const PropertySection: React.FC = () => {
             </div>
             <div className="space-y-3">
               {formData.images.map((image, index) => (
-                <div key={index} className="flex items-center gap-2">
+                <div key={index} className="border border-gray-200 rounded-lg p-3">
                   {isEditing ? (
-                    <>
-                      <input
-                        type="url"
-                        value={image}
-                        onChange={(e) => handleImageChange(index, e.target.value)}
-                        placeholder="Image URL"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <R2ImagePicker
+                          currentImage={image}
+                          onSelect={(imageKey) => handleImageChange(index, imageKey)}
+                          prefix="villa/"
+                        />
+                      </div>
                       <button
                         onClick={() => removeImage(index)}
-                        className="bg-gray-600 text-white px-2 py-2 rounded text-sm hover:bg-gray-700"
+                        className="bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 mt-1"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
-                    </>
+                    </div>
                   ) : (
-                    <div className="flex items-center gap-3 w-full p-2 bg-gray-50 rounded-md">
-                      <img 
-                        src={image} 
-                        alt={`Villa image ${index + 1}`} 
-                        className="w-16 h-16 object-cover rounded"
-                        onError={(e) => {
-                          e.currentTarget.src = '/api/placeholder/64/64';
-                        }}
-                      />
-                      <p className="text-sm text-gray-600 truncate flex-1">{image}</p>
+                    <div className="flex items-center gap-3">
+                      {image ? (
+                        <>
+                          <img
+                            src={`https://bookingengine.com/${image}`}
+                            alt={`Villa image ${index + 1}`}
+                            className="w-20 h-20 object-cover rounded border"
+                            onError={(e) => {
+                              e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect fill="%23ddd"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999">Error</text></svg>';
+                            }}
+                          />
+                          <div className="flex-1">
+                            <p className="text-sm text-gray-600 font-medium truncate">Image {index + 1}</p>
+                            <p className="text-xs text-gray-400 truncate">{image}</p>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-sm text-gray-400 italic">No image selected</p>
+                      )}
                     </div>
                   )}
                 </div>

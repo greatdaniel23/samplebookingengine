@@ -69,19 +69,19 @@ export const PackageRoomsManager: React.FC<PackageRoomsManagerProps> = ({ packag
       setError(null);
       try {
         // Load all rooms
-        const roomsResp = await fetch(paths.buildApiUrl('rooms.php'));
+        const roomsResp = await fetch(paths.buildApiUrl('rooms'));
         const roomsJson = await roomsResp.json();
         const rooms = roomsJson?.data ?? roomsJson ?? [];
         setAllRooms(Array.isArray(rooms) ? rooms : []);
 
         // Load existing relationships
-        const relResp = await fetch(paths.buildApiUrl(`package-rooms.php?package_id=${packageId}&include_inactive=${showInactive ? '1' : '0'}`));
+        const relResp = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms?include_inactive=${showInactive ? '1' : '0'}`));
         const relJson = await relResp.json();
         let relData = Array.isArray(relJson?.data) ? relJson.data : (Array.isArray(relJson) ? relJson : []);
 
         // Fallback: if no relationships, derive from base_room_id in packages.php
         if (!relData || relData.length === 0) {
-          const pkgResp = await fetch(paths.buildApiUrl(`packages.php?id=${packageId}`));
+          const pkgResp = await fetch(paths.buildApiUrl(`packages/${packageId}`));
           const pkgJson = await pkgResp.json();
           const pkg = pkgJson?.data ?? null;
           if (pkg && pkg.base_room_id) {
@@ -116,7 +116,7 @@ export const PackageRoomsManager: React.FC<PackageRoomsManagerProps> = ({ packag
     try {
       setLoading(true);
       setError(null);
-      const resp = await fetch(paths.buildApiUrl('package-rooms.php'), {
+      const resp = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -152,7 +152,7 @@ export const PackageRoomsManager: React.FC<PackageRoomsManagerProps> = ({ packag
         }
       }
       // Reload relationships
-      const relResp = await fetch(paths.buildApiUrl(`package-rooms.php?package_id=${packageId}&include_inactive=${showInactive ? '1' : '0'}`));
+      const relResp = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms?include_inactive=${showInactive ? '1' : '0'}`));
       const relJson = await relResp.json();
       const relData = Array.isArray(relJson?.data) ? relJson.data : (Array.isArray(relJson) ? relJson : []);
       setRelationships(relData);
@@ -169,14 +169,14 @@ export const PackageRoomsManager: React.FC<PackageRoomsManagerProps> = ({ packag
     try {
       setLoading(true);
       setError(null);
-      const resp = await fetch(paths.buildApiUrl(`package-rooms.php?id=${id}`), {
+      const resp = await fetch(paths.buildApiUrl(`packages/rooms/${id}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(changes)
       });
       const json = await resp.json();
       if (!json.success) throw new Error(json.error || 'Failed to update');
-      const relResp = await fetch(paths.buildApiUrl(`package-rooms.php?package_id=${packageId}&include_inactive=${showInactive ? '1' : '0'}`));
+      const relResp = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms?include_inactive=${showInactive ? '1' : '0'}`));
       const relJson = await relResp.json();
       const relData = Array.isArray(relJson?.data) ? relJson.data : (Array.isArray(relJson) ? relJson : []);
       setRelationships(relData);
@@ -191,10 +191,10 @@ export const PackageRoomsManager: React.FC<PackageRoomsManagerProps> = ({ packag
     try {
       setLoading(true);
       setError(null);
-      const resp = await fetch(paths.buildApiUrl(`package-rooms.php?id=${id}`), { method: 'DELETE' });
+      const resp = await fetch(paths.buildApiUrl(`packages/rooms/${id}`), { method: 'DELETE' });
       const json = await resp.json();
       if (!json.success) throw new Error(json.error || 'Failed to remove');
-      const relResp = await fetch(paths.buildApiUrl(`package-rooms.php?package_id=${packageId}`));
+      const relResp = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms`));
       const relJson = await relResp.json();
       setRelationships(relJson?.data ?? []);
     } catch (e: any) {
@@ -210,7 +210,7 @@ export const PackageRoomsManager: React.FC<PackageRoomsManagerProps> = ({ packag
       if (!base) return;
       setLoading(true);
       setError(null);
-      const resp = await fetch(paths.buildApiUrl('package-rooms.php'), {
+      const resp = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -228,14 +228,14 @@ export const PackageRoomsManager: React.FC<PackageRoomsManagerProps> = ({ packag
       if (!json.success && resp.status !== 409) throw new Error(json.error || 'Failed to link base room');
       // On 409, ensure it is active and default
       if (resp.status === 409) {
-        const relResp = await fetch(paths.buildApiUrl(`package-rooms.php?package_id=${packageId}&include_inactive=1`));
+        const relResp = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms?include_inactive=1`));
         const relJson = await relResp.json();
         const existing = (relJson?.data ?? []).find((r: any) => r.room_id === base.room_id);
         if (existing) {
           await updateRelationship(existing.id, { is_active: 1, is_default: 1, availability_priority: 1 });
         }
       }
-      const relResp = await fetch(paths.buildApiUrl(`package-rooms.php?package_id=${packageId}&include_inactive=${showInactive ? '1' : '0'}`));
+      const relResp = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms?include_inactive=${showInactive ? '1' : '0'}`));
       const relJson = await relResp.json();
       const relData = Array.isArray(relJson?.data) ? relJson.data : (Array.isArray(relJson) ? relJson : []);
       setRelationships(relData);

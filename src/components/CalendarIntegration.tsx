@@ -58,7 +58,7 @@ export const CalendarIntegration: React.FC<CalendarIntegrationProps> = ({
 
   const loadPackages = async () => {
     try {
-      const response = await fetch(paths.buildApiUrl('packages.php'));
+      const response = await fetch(paths.buildApiUrl('packages'));
       const result = await response.json();
       if (result.success) {
         setPackages(result.data || []);

@@ -76,8 +76,8 @@ export const useHomepageContent = (): UseHomepageContentResult => {
       setLoading(true);
       setError(null);
       
-      // Use working villa.php API instead of broken homepage.php
-      const apiUrl = paths.buildApiUrl('villa.php');
+      // Use working villa API instead of broken homepage
+      const apiUrl = paths.buildApiUrl('villa');
       
       
       const response = await fetch(apiUrl, {
@@ -198,7 +198,7 @@ export const useHomepageContent = (): UseHomepageContentResult => {
 
   const updateHomepageContent = async (data: Partial<HomepageContent>) => {
     try {
-      const apiUrl = paths.buildApiUrl('/villa.php');
+      const apiUrl = paths.buildApiUrl('villa');
       
       
       

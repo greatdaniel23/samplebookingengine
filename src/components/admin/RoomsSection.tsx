@@ -54,7 +54,7 @@ const RoomsSection: React.FC = () => {
   const fetchRooms = async () => {
     try {
       setLoading(true);
-      const apiUrl = paths.buildApiUrl('rooms.php');
+      const apiUrl = paths.buildApiUrl('rooms');
 
 
       const response = await fetch(apiUrl);
@@ -95,7 +95,7 @@ const RoomsSection: React.FC = () => {
 
   const fetchAmenities = async () => {
     try {
-      const apiUrl = paths.buildApiUrl('amenities.php');
+      const apiUrl = paths.buildApiUrl('amenities');
       const response = await fetch(apiUrl);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
@@ -113,7 +113,7 @@ const RoomsSection: React.FC = () => {
 
   const fetchRoomAmenities = async (roomId: number) => {
     try {
-      const apiUrl = paths.buildApiUrl(`room-amenities.php?room_id=${roomId}`);
+      const apiUrl = paths.buildApiUrl(`room-amenities?room_id=${roomId}`);
       const response = await fetch(apiUrl);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
@@ -131,7 +131,7 @@ const RoomsSection: React.FC = () => {
 
   const addRoomAmenity = async (roomId: number, amenityId: number) => {
     try {
-      const apiUrl = paths.buildApiUrl(`room-amenities.php?action=add&room_id=${roomId}&amenity_id=${amenityId}`);
+      const apiUrl = paths.buildApiUrl(`room-amenities?action=add&room_id=${roomId}&amenity_id=${amenityId}`);
       const response = await fetch(apiUrl, {
         method: 'GET'
       });
@@ -155,7 +155,7 @@ const RoomsSection: React.FC = () => {
 
   const removeRoomAmenity = async (roomAmenityId: number) => {
     try {
-      const apiUrl = paths.buildApiUrl(`room-amenities.php?action=remove&id=${roomAmenityId}`);
+      const apiUrl = paths.buildApiUrl(`room-amenities?action=remove&id=${roomAmenityId}`);
       const response = await fetch(apiUrl, {
         method: 'GET'
       });
@@ -188,7 +188,7 @@ const RoomsSection: React.FC = () => {
         id: editingRoom.id
       };
 
-      const response = await fetch(paths.buildApiUrl('rooms.php'), {
+      const response = await fetch(paths.buildApiUrl('rooms'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -216,7 +216,7 @@ const RoomsSection: React.FC = () => {
     if (!confirm('Are you sure you want to delete this room?')) return;
 
     try {
-      const response = await fetch(paths.buildApiUrl('rooms.php'), {
+      const response = await fetch(paths.buildApiUrl('rooms'), {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -242,7 +242,7 @@ const RoomsSection: React.FC = () => {
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const apiUrl = paths.buildApiUrl('rooms.php');
+      const apiUrl = paths.buildApiUrl('rooms');
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {

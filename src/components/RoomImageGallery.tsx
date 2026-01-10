@@ -34,7 +34,8 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
   }, [roomId]);
 
   const buildImageUrl = (folder: string, filename: string) => {
-    return `https://rumahdaisycantik.com/images/rooms/${folder}/${filename}`;
+    // Use R2 storage URL or relative path
+    return `/images/rooms/${folder}/${filename}`;
   };
 
   const normalizeRoomTypeToFolder = (type?: string) => {
@@ -48,7 +49,7 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
 
   const fetchFirstImageFromFolder = async (folder: string): Promise<RoomImage[] | null> => {
     try {
-      const resp = await fetch(`https://api.rumahdaisycantik.com/rooms.php?images=${encodeURIComponent(folder)}`);
+      const resp = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/images/${encodeURIComponent(folder)}`);
       const json = await resp.json();
       if (json && json.success && json.data && Array.isArray(json.data.images) && json.data.images.length > 0) {
         // Use first image as fallback
@@ -93,7 +94,7 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
   const fetchRoomImages = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`https://api.rumahdaisycantik.com/rooms.php?id=${roomId}`);
+      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/${roomId}`);
       const data = await response.json();
       
       if (data.success && data.data && data.data.images && data.data.images.length > 0) {

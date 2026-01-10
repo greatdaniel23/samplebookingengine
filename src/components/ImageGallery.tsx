@@ -58,7 +58,7 @@ const ImageGallery: React.FC = () => {
     const fetchImages = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/images.php`);
+        const response = await fetch(`${API_BASE_URL}/images`);
         const data: ApiResponse = await response.json();
 
         if (data.success) {
@@ -240,7 +240,7 @@ const ImageGallery: React.FC = () => {
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <img
-              src="https://rumahdaisycantik.com/images/rooms/logo.png"
+              src="https://bookingengine.com/logo.png"
               alt="Logo"
               className="h-16 w-auto object-contain cursor-pointer"
               onClick={() => navigate('/')}

@@ -31,8 +31,8 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
 
   const fetchRoomImage = async () => {
     try {
-      // Use confirmed working rooms API to get room data with images
-      const response = await fetch(`https://api.rumahdaisycantik.com/rooms.php?id=${roomId}`);
+      // Use Cloudflare Worker API
+      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/${roomId}`);
       const data = await response.json();
       
       if (data.success && data.data && data.data.images && data.data.images.length > 0) {
@@ -53,14 +53,13 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
     setLoading(true);
     
     try {
-      // Update room with selected image using confirmed rooms API
-      const response = await fetch('https://api.rumahdaisycantik.com/rooms.php', {
+      // Update room with selected image using Cloudflare Worker API
+      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/${roomId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: roomId,
           images: [imagePath] // Set the selected image as the room's image array
         })
       });
@@ -68,8 +67,8 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
       const data = await response.json();
       
       if (data.success) {
-        // Build the correct image URL using confirmed structure
-        const imageUrl = `https://rumahdaisycantik.com/images/rooms/${imageFolder}/${imagePath}`;
+        // Build the correct image URL (use R2 or relative path)
+        const imageUrl = `/images/rooms/${imageFolder}/${imagePath}`;
         
         const imageData: RoomImageData = {
           image_path: imagePath,
@@ -103,12 +102,11 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
     setLoading(true);
     
     try {
-      // Update room to remove images using rooms API
-      const response = await fetch(`https://api.rumahdaisycantik.com/rooms.php`, {
+      // Update room to remove images using Cloudflare Worker API
+      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/${roomId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: roomId,
           images: [] // Clear images array
         })
       });
@@ -241,8 +239,8 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
   const loadAvailableFolders = async () => {
     setLoadingFolders(true);
     try {
-      // Use confirmed working API endpoint
-      const response = await fetch(`https://api.rumahdaisycantik.com/image-scanner.php?action=folders&basePath=../images/rooms`);
+      // Use Cloudflare Worker API
+      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/images/folders`);
       const data = await response.json();
       
       if (data.success && data.folders) {
@@ -273,9 +271,8 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
   const loadFolderImages = async (folder: string) => {
     setLoading(true);
     try {
-      // Use confirmed working API endpoint
-      const response = await fetch(`https://api.rumahdaisycantik.com/image-scanner.php?folder=${folder}&basePath=../images/rooms`);
-      const data = await response.json();
+      // Use Cloudflare Worker API
+      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/images/folder/${folder}`);\n      const data = await response.json();
       
       if (data.success && data.images) {
         setImages(data.images);

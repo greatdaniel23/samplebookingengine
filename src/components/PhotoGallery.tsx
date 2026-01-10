@@ -1,4 +1,5 @@
 "use client";
+import { getImageUrl } from '@/config/r2';
 
 interface PhotoGalleryProps {
   images: string[];
@@ -14,7 +15,10 @@ export const PhotoGallery = ({ images }: PhotoGalleryProps) => {
     'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2670&auto=format&fit=crop',
   ];
   
-  const displayImages = images && images.length > 0 ? images : defaultImages;
+  // Convert all image paths to R2 URLs
+  const displayImages = images && images.length > 0 
+    ? images.map(img => getImageUrl(img))
+    : defaultImages;
   const [firstImage, secondImage, thirdImage, fourthImage, fifthImage] = displayImages;
 
   return (

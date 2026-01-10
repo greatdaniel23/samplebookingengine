@@ -31,8 +31,8 @@ const env: AppPaths['env'] = import.meta.env.PROD ? 'production' : 'development'
 const PUBLIC_BASE = import.meta.env.VITE_PUBLIC_BASE || '/';
 
 // PRODUCTION-ONLY CONFIGURATION
-// All API calls are routed directly to production server
-const PRODUCTION_API = 'https://api.rumahdaisycantik.com';
+// All API calls are routed to Cloudflare Worker
+const PRODUCTION_API = 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api';
 
 // Always use production API URL - no local development
 let API_BASE = import.meta.env.VITE_API_BASE || PRODUCTION_API;
@@ -72,9 +72,9 @@ export const paths: AppPaths = {
   host,
   apiBase: API_BASE,
   api: {
-    bookings: buildApiUrl('bookings.php'),
-    bookingById: (id) => buildApiUrl(`bookings.php?id=${id}`),
-    rooms: buildApiUrl('rooms.php')
+    bookings: buildApiUrl('bookings'),
+    bookingById: (id) => buildApiUrl(`bookings/${id}`),
+    rooms: buildApiUrl('rooms')
   },
   confirmation: (id: number | string) => `/confirmation/${id}`,
   frontendBase: PUBLIC_BASE,
