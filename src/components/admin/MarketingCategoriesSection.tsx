@@ -29,9 +29,9 @@ const MarketingCategoriesSection: React.FC = () => {
     try {
       setLoading(true);
       // Use Cloudflare Worker API
-      const response = await fetch('https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/marketing-categories');
+      const response = await fetch('https://bookingengine-8g1-boe-kxn.pages.dev/api/marketing-categories');
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
+
       const data = await response.json();
       if (data.success) {
         setCategories(data.data || []);
@@ -61,12 +61,12 @@ const MarketingCategoriesSection: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       // Use Cloudflare Worker API
-      const url = 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/marketing-categories';
+      const url = 'https://bookingengine-8g1-boe-kxn.pages.dev/api/marketing-categories';
       const method = editingCategory ? 'PUT' : 'POST';
-      const payload = editingCategory 
+      const payload = editingCategory
         ? { ...formData, id: editingCategory.id }
         : formData;
 
@@ -77,7 +77,7 @@ const MarketingCategoriesSection: React.FC = () => {
       });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
+
       const result = await response.json();
       if (result.success) {
         alert(`Marketing category ${editingCategory ? 'updated' : 'created'} successfully!`);
@@ -100,14 +100,14 @@ const MarketingCategoriesSection: React.FC = () => {
     }
 
     try {
-      const response = await fetch('https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/marketing-categories', {
+      const response = await fetch('https://bookingengine-8g1-boe-kxn.pages.dev/api/marketing-categories', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: categoryId })
       });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
+
       const result = await response.json();
       if (result.success) {
         alert('Marketing category deleted successfully!');
@@ -165,7 +165,7 @@ const MarketingCategoriesSection: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-800">Marketing Categories</h2>
           <p className="text-sm text-gray-600 mt-1">Manage package categories for better organization and filtering</p>
         </div>
-        <button 
+        <button
           onClick={() => {
             setEditingCategory(null);
             resetForm();
@@ -185,7 +185,7 @@ const MarketingCategoriesSection: React.FC = () => {
           <div>
             <h3 className="text-sm font-medium text-blue-900 mb-1">Marketing Categories</h3>
             <p className="text-sm text-blue-800">
-              Categories help organize your packages and make it easier for customers to find what they're looking for. 
+              Categories help organize your packages and make it easier for customers to find what they're looking for.
               They're used in package filtering and display across your booking system.
             </p>
           </div>
@@ -197,7 +197,7 @@ const MarketingCategoriesSection: React.FC = () => {
         <div className="text-center py-8 bg-white rounded-lg shadow">
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Categories Yet</h3>
           <p className="text-gray-500 mb-4">Create your first marketing category.</p>
-          <button 
+          <button
             onClick={() => {
               setEditingCategory(null);
               resetForm();
@@ -237,9 +237,8 @@ const MarketingCategoriesSection: React.FC = () => {
                     {category.sort_order}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      category.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${category.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
                       {category.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>

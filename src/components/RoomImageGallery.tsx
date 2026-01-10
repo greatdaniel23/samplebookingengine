@@ -17,9 +17,9 @@ interface RoomImage {
   caption?: string;
 }
 
-const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({ 
-  roomId, 
-  roomName, 
+const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
+  roomId,
+  roomName,
   className = '',
   fallbackStrategy,
   roomType
@@ -49,7 +49,7 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
 
   const fetchFirstImageFromFolder = async (folder: string): Promise<RoomImage[] | null> => {
     try {
-      const resp = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/images/${encodeURIComponent(folder)}`);
+      const resp = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/images/${encodeURIComponent(folder)}`);
       const json = await resp.json();
       if (json && json.success && json.data && Array.isArray(json.data.images) && json.data.images.length > 0) {
         // Use first image as fallback
@@ -94,9 +94,9 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
   const fetchRoomImages = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/${roomId}`);
+      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/${roomId}`);
       const data = await response.json();
-      
+
       if (data.success && data.data && data.data.images && data.data.images.length > 0) {
         // Sort images so primary image is first
         const sortedImages = [...data.data.images].sort((a, b) => {
@@ -104,7 +104,7 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
           if (!a.is_primary && b.is_primary) return 1;
           return 0;
         });
-        
+
         setImages(sortedImages);
         setCurrentImageIndex(0);
         setImageError(false);
@@ -178,21 +178,21 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
           className="w-full h-full object-cover transition-opacity duration-300"
           onError={handleImageError}
         />
-        
+
         {/* Primary Image Indicator */}
         {currentImage.is_primary && (
           <div className="absolute top-2 left-2">
             <Star size={12} className="text-yellow-400 fill-current drop-shadow-sm" />
           </div>
         )}
-        
+
         {/* Image Counter */}
         {images.length > 1 && (
           <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
             {currentImageIndex + 1} / {images.length}
           </div>
         )}
-        
+
         {/* Navigation Arrows */}
         {images.length > 1 && (
           <>
@@ -206,7 +206,7 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
             >
               <ChevronLeft size={14} />
             </button>
-            
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -220,7 +220,7 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
           </>
         )}
       </div>
-      
+
       {/* Thumbnail Navigation */}
       {images.length > 1 && (
         <div className="flex gap-1 mt-2 overflow-x-auto pb-1">
@@ -231,17 +231,16 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
                 e.stopPropagation();
                 goToImage(index);
               }}
-              className={`flex-shrink-0 w-8 h-6 rounded overflow-hidden border transition-all ${
-                index === currentImageIndex 
-                  ? 'border-blue-500 ring-1 ring-blue-500' 
+              className={`flex-shrink-0 w-8 h-6 rounded overflow-hidden border transition-all ${index === currentImageIndex
+                  ? 'border-blue-500 ring-1 ring-blue-500'
                   : 'border-gray-300 hover:border-gray-400'
-              }`}
+                }`}
             >
               <img
                 src={image.url}
                 alt={`${roomName} thumbnail ${index + 1}`}
                 className="w-full h-full object-cover"
-                onError={() => {}} // Don't handle errors for thumbnails to avoid layout shifts
+                onError={() => { }} // Don't handle errors for thumbnails to avoid layout shifts
               />
               {image.is_primary && (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -252,7 +251,7 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
           ))}
         </div>
       )}
-      
+
       {/* Image Caption */}
       {currentImage.caption && (
         <div className="mt-1">

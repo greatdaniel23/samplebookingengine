@@ -134,7 +134,7 @@ const PackageDetails = () => {
 
     try {
       // Try fetching from room API first
-      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/${room.room_id}`);
+      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/${room.room_id}`);
       const data = await response.json();
 
       if (data.success && data.data?.images?.length > 0) {
@@ -150,7 +150,7 @@ const PackageDetails = () => {
         // Fallback: try room type folder
         const roomType = room.type || room.room_type || '';
         const folder = roomType.replace(/\s+/g, '');
-        const fallbackResp = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/images/${encodeURIComponent(folder)}`);
+        const fallbackResp = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/images/${encodeURIComponent(folder)}`);
         const fallbackData = await fallbackResp.json();
 
         if (fallbackData.success && fallbackData.data?.images?.length > 0) {

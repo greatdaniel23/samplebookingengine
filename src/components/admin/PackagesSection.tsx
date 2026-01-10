@@ -171,7 +171,7 @@ const PackagesSection: React.FC = () => {
   const fetchPackageAmenities = async (packageId: number) => {
     try {
       // Use Cloudflare Worker API
-      const apiUrl = `https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/packages/${packageId}/amenities`;
+      const apiUrl = `https://bookingengine-8g1-boe-kxn.pages.dev/api/packages/${packageId}/amenities`;
       console.log('Fetching package amenities from:', apiUrl);
 
       const response = await fetch(apiUrl);
@@ -195,7 +195,7 @@ const PackagesSection: React.FC = () => {
   const addAmenityToPackage = async (packageId: number, amenityId: number, isHighlighted: boolean = false) => {
     try {
       // Use Cloudflare Worker API
-      const apiUrl = `https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/packages/${packageId}/amenities`;
+      const apiUrl = `https://bookingengine-8g1-boe-kxn.pages.dev/api/packages/${packageId}/amenities`;
       console.log('Adding amenity to package:', apiUrl);
 
       const response = await fetch(apiUrl, {
@@ -222,7 +222,7 @@ const PackagesSection: React.FC = () => {
   const removeAmenityFromPackage = async (packageId: number, amenityId: number) => {
     try {
       // Use Cloudflare Worker API
-      const apiUrl = `https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/packages/${packageId}/amenities/${amenityId}`;
+      const apiUrl = `https://bookingengine-8g1-boe-kxn.pages.dev/api/packages/${packageId}/amenities/${amenityId}`;
       console.log('Removing amenity from package:', apiUrl);
       const response = await fetch(apiUrl, { method: 'DELETE' });
 
@@ -242,7 +242,7 @@ const PackagesSection: React.FC = () => {
 
   const fetchPackageInclusions = async (packageId: number) => {
     try {
-      const apiUrl = `https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/packages/${packageId}/inclusions`;
+      const apiUrl = `https://bookingengine-8g1-boe-kxn.pages.dev/api/packages/${packageId}/inclusions`;
       console.log('Fetching package inclusions from:', apiUrl);
 
       const response = await fetch(apiUrl);
@@ -265,7 +265,7 @@ const PackagesSection: React.FC = () => {
 
   const addInclusionToPackage = async (packageId: number, inclusionId: number) => {
     try {
-      const apiUrl = `https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/packages/${packageId}/inclusions`;
+      const apiUrl = `https://bookingengine-8g1-boe-kxn.pages.dev/api/packages/${packageId}/inclusions`;
       console.log('Adding inclusion to package:', apiUrl);
 
       const response = await fetch(apiUrl, {
@@ -291,7 +291,7 @@ const PackagesSection: React.FC = () => {
 
   const removeInclusionFromPackage = async (packageId: number, inclusionId: number) => {
     try {
-      const apiUrl = `https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/packages/${packageId}/inclusions/${inclusionId}`;
+      const apiUrl = `https://bookingengine-8g1-boe-kxn.pages.dev/api/packages/${packageId}/inclusions/${inclusionId}`;
       console.log('Removing inclusion from package:', apiUrl);
       const response = await fetch(apiUrl, { method: 'DELETE' });
 

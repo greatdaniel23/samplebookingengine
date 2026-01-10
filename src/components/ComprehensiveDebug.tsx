@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 const ComprehensiveDebug: React.FC = () => {
   const [results, setResults] = useState<any>({});
   const [isRunning, setIsRunning] = useState(false);
-  
+
   useEffect(() => {
     runDiagnostics();
   }, []);
@@ -36,19 +36,19 @@ const ComprehensiveDebug: React.FC = () => {
 
     // 3. Test actual API calls
     const apiTests = [];
-    
+
     // Test production API (Cloudflare Worker)
     try {
-      const prodResponse = await fetch('https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms');
+      const prodResponse = await fetch('https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms');
       apiTests.push({
-        url: 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms',
+        url: 'https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms',
         status: prodResponse.status,
         ok: prodResponse.ok,
         type: 'production'
       });
     } catch (error) {
       apiTests.push({
-        url: 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms',
+        url: 'https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms',
         error: error.message,
         type: 'production'
       });
@@ -81,8 +81,8 @@ const ComprehensiveDebug: React.FC = () => {
     diagnostics.environmentCheck = {
       hasViteApiBase: 'VITE_API_BASE' in import.meta.env,
       actualValue: import.meta.env.VITE_API_BASE,
-      expectedValue: 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api',
-      matches: import.meta.env.VITE_API_BASE === 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api'
+      expectedValue: 'https://bookingengine-8g1-boe-kxn.pages.dev/api',
+      matches: import.meta.env.VITE_API_BASE === 'https://bookingengine-8g1-boe-kxn.pages.dev/api'
     };
 
     setResults(diagnostics);
@@ -91,7 +91,7 @@ const ComprehensiveDebug: React.FC = () => {
 
   const renderObject = (obj: any, depth = 0) => {
     if (depth > 3) return '[Max depth reached]';
-    
+
     if (typeof obj === 'object' && obj !== null) {
       return (
         <ul style={{ marginLeft: depth * 20 }}>
@@ -103,11 +103,11 @@ const ComprehensiveDebug: React.FC = () => {
         </ul>
       );
     }
-    
-    return <span style={{ 
-      color: typeof obj === 'string' && obj.includes('localhost') ? '#dc3545' : 
-             typeof obj === 'string' && obj.includes('api.rumahdaisycantik.com') ? '#28a745' : 
-             'inherit'
+
+    return <span style={{
+      color: typeof obj === 'string' && obj.includes('localhost') ? '#dc3545' :
+        typeof obj === 'string' && obj.includes('api.rumahdaisycantik.com') ? '#28a745' :
+          'inherit'
     }}>{String(obj)}</span>;
   };
 
@@ -121,10 +121,10 @@ const ComprehensiveDebug: React.FC = () => {
       borderRadius: '8px'
     }}>
       <h1>🔍 Comprehensive React Environment Debug</h1>
-      
+
       <div style={{ marginBottom: '20px' }}>
-        <button 
-          onClick={runDiagnostics} 
+        <button
+          onClick={runDiagnostics}
           disabled={isRunning}
           style={{
             padding: '10px 20px',
@@ -142,7 +142,7 @@ const ComprehensiveDebug: React.FC = () => {
       {Object.keys(results).length > 0 && (
         <div>
           <h2>📊 Diagnostic Results</h2>
-          
+
           <div style={{ background: 'white', padding: '15px', margin: '10px 0', borderRadius: '4px' }}>
             <h3>1. Environment Variables (import.meta.env)</h3>
             {renderObject(results.importMetaEnv)}
@@ -161,15 +161,15 @@ const ComprehensiveDebug: React.FC = () => {
           <div style={{ background: 'white', padding: '15px', margin: '10px 0', borderRadius: '4px' }}>
             <h3>4. API Tests</h3>
             {results.apiTests?.map((test: any, index: number) => (
-              <div key={index} style={{ 
-                background: test.error ? '#f8d7da' : '#d4edda', 
-                padding: '10px', 
-                margin: '5px 0', 
-                borderRadius: '4px' 
+              <div key={index} style={{
+                background: test.error ? '#f8d7da' : '#d4edda',
+                padding: '10px',
+                margin: '5px 0',
+                borderRadius: '4px'
               }}>
                 <div><strong>Type:</strong> {test.type}</div>
-                <div><strong>URL:</strong> <span style={{ 
-                  color: test.url.includes('localhost') ? '#dc3545' : '#28a745' 
+                <div><strong>URL:</strong> <span style={{
+                  color: test.url.includes('localhost') ? '#dc3545' : '#28a745'
                 }}>{test.url}</span></div>
                 {test.status && <div><strong>Status:</strong> {test.status}</div>}
                 {test.ok !== undefined && <div><strong>Success:</strong> {test.ok ? '✅' : '❌'}</div>}
