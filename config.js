@@ -5,7 +5,7 @@ const CONFIG = {
     // API Configuration
     API: {
         // Production URL (only active endpoint)
-        PRODUCTION_BASE_URL: 'https://api.bookingengine.com',
+        PRODUCTION_BASE_URL: 'https://bookingengine-8g1-boe-kxn.pages.dev/api',
         // Environment fixed to production
         ENVIRONMENT: 'production'
     },
