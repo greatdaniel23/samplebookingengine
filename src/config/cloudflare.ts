@@ -5,11 +5,11 @@
 
 export const API_CONFIG = {
   // Main Worker API
-  WORKER_API_BASE: 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api',
-  
+  WORKER_API_BASE: 'https://bookingengine-8g1-boe-kxn.pages.dev/api',
+
   // R2 Image Storage
   IMAGE_BUCKET_URL: 'https://imageroom.s3.us-east-1.amazonaws.com',
-  
+
   // Endpoints
   BOOKINGS: '/bookings',
   AMENITIES: '/amenities',
@@ -17,7 +17,7 @@ export const API_CONFIG = {
   IMAGES: '/images',
   ADMIN: '/admin',
   HEALTH: '/health',
-  
+
   // Timeouts
   REQUEST_TIMEOUT: 30000,
 };

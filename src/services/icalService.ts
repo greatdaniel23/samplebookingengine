@@ -50,9 +50,9 @@ export interface PlatformConfig {
  * Main iCal Service Class
  */
 class IcalService {
-  private baseUrl: string = 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api';
+  private baseUrl: string = 'https://bookingengine-8g1-boe-kxn.pages.dev/api';
   private syncIntervals: Map<string, NodeJS.Timeout> = new Map();
-  
+
   // Platform configurations
   private platforms: Record<string, PlatformConfig> = {
     airbnb: {
@@ -86,13 +86,13 @@ class IcalService {
    */
   async initializeAutoSync(): Promise<void> {
     console.log('🔄 Initializing automatic iCal sync...');
-    
+
     // Perform initial sync for all platforms
     await this.syncAllPlatforms();
-    
+
     // Set up periodic sync intervals
     this.startPeriodicSync();
-    
+
     console.log('✅ Automatic iCal sync initialized successfully');
   }
 
@@ -105,7 +105,7 @@ class IcalService {
         const intervalId = setInterval(async () => {
           await this.syncPlatform(platform);
         }, config.interval);
-        
+
         this.syncIntervals.set(platform, intervalId);
         console.log(`⏰ Scheduled ${config.name} sync every ${config.interval / 60000} minutes`);
       }
@@ -128,7 +128,7 @@ class IcalService {
    */
   async syncAllPlatforms(): Promise<Record<string, IcalSyncResult>> {
     const results: Record<string, IcalSyncResult> = {};
-    
+
     for (const [platform, config] of Object.entries(this.platforms)) {
       if (config.enabled && config.url) {
         try {
@@ -147,7 +147,7 @@ class IcalService {
         }
       }
     }
-    
+
     return results;
   }
 
@@ -156,30 +156,30 @@ class IcalService {
    */
   async syncPlatform(platform: string): Promise<IcalSyncResult> {
     const config = this.platforms[platform];
-    
+
     if (!config || !config.enabled || !config.url) {
       throw new Error(`Platform ${platform} is not configured or enabled`);
     }
 
     console.log(`🔄 Syncing ${config.name}...`);
-    
+
     try {
       const response = await fetch(`${this.baseUrl}/ical_import_airbnb.php?source=${encodeURIComponent(config.url)}`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const result: IcalSyncResult = await response.json();
       result.sync_timestamp = new Date().toISOString();
-      
+
       console.log(`✅ ${config.name} sync completed:`, {
         events_processed: result.events_processed,
         inserted: result.inserted,
         updated: result.updated,
         skipped: result.skipped
       });
-      
+
       return result;
     } catch (error) {
       console.error(`❌ ${config.name} sync failed:`, error);
@@ -200,19 +200,19 @@ class IcalService {
   async getExternalBlocks(startDate?: string, endDate?: string): Promise<ExternalBlock[]> {
     try {
       let url = `${this.baseUrl}/external_blocks.php`;
-      
+
       if (startDate && endDate) {
         url += `?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
       }
-      
+
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         // If external_blocks endpoint doesn't exist, return empty array
         console.warn('External blocks endpoint not available, returning empty array');
         return [];
       }
-      
+
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     } catch (error) {
@@ -228,17 +228,17 @@ class IcalService {
     try {
       // Get external blocks for the date range
       const externalBlocks = await this.getExternalBlocks(checkIn, checkOut);
-      
+
       // Generate all dates in the booking range
       const bookingDates = this.getDateRange(checkIn, checkOut);
-      
+
       // Find conflicts
       const conflicts: ConflictDetection['conflicts'] = [];
       const blockedDates: string[] = [];
-      
+
       externalBlocks.forEach(block => {
         const blockDates = this.getDateRange(block.start_date, block.end_date);
-        
+
         blockDates.forEach(date => {
           if (bookingDates.includes(date)) {
             conflicts.push({
@@ -246,14 +246,14 @@ class IcalService {
               source: block.source,
               summary: block.summary
             });
-            
+
             if (!blockedDates.includes(date)) {
               blockedDates.push(date);
             }
           }
         });
       });
-      
+
       return {
         hasConflicts: conflicts.length > 0,
         conflicts,
@@ -276,7 +276,7 @@ class IcalService {
    */
   async validateBooking(checkIn: string, checkOut: string): Promise<{ valid: boolean; conflicts: ConflictDetection }> {
     const conflicts = await this.checkConflicts(checkIn, checkOut);
-    
+
     return {
       valid: !conflicts.hasConflicts,
       conflicts
@@ -296,20 +296,20 @@ class IcalService {
     const activePlatforms: string[] = [];
     const syncIntervals: Record<string, number> = {};
     const enabledPlatforms: string[] = [];
-    
+
     Object.entries(this.platforms).forEach(([platform, config]) => {
       lastSync[platform] = null; // Would be retrieved from storage
       syncIntervals[platform] = config.interval;
-      
+
       if (config.enabled) {
         enabledPlatforms.push(platform);
-        
+
         if (this.syncIntervals.has(platform)) {
           activePlatforms.push(platform);
         }
       }
     });
-    
+
     return {
       lastSync,
       activePlatforms,
@@ -331,17 +331,17 @@ class IcalService {
   updatePlatformConfig(platform: string, updates: Partial<PlatformConfig>): void {
     if (this.platforms[platform]) {
       this.platforms[platform] = { ...this.platforms[platform], ...updates };
-      
+
       // Restart sync if interval changed and platform is enabled
       if (updates.interval && this.platforms[platform].enabled) {
         if (this.syncIntervals.has(platform)) {
           clearInterval(this.syncIntervals.get(platform)!);
         }
-        
+
         const intervalId = setInterval(async () => {
           await this.syncPlatform(platform);
         }, this.platforms[platform].interval);
-        
+
         this.syncIntervals.set(platform, intervalId);
       }
     }
@@ -354,13 +354,13 @@ class IcalService {
     const dates: string[] = [];
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+
     const current = new Date(start);
     while (current <= end) {
       dates.push(current.toISOString().split('T')[0]);
       current.setDate(current.getDate() + 1);
     }
-    
+
     return dates;
   }
 
@@ -377,22 +377,22 @@ class IcalService {
   async testIcalUrl(url: string): Promise<{ valid: boolean; eventCount?: number; error?: string }> {
     try {
       const response = await fetch(`${this.baseUrl}/ical_proxy.php?source=${encodeURIComponent(url)}`);
-      
+
       if (!response.ok) {
         return { valid: false, error: `HTTP ${response.status}` };
       }
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         return { valid: true, eventCount: data.event_count };
       } else {
         return { valid: false, error: data.error || 'Unknown error' };
       }
     } catch (error) {
-      return { 
-        valid: false, 
-        error: error instanceof Error ? error.message : 'Network error' 
+      return {
+        valid: false,
+        error: error instanceof Error ? error.message : 'Network error'
       };
     }
   }

@@ -13,10 +13,10 @@ interface RoomImageData {
   image_url: string;
 }
 
-const RoomImageButton: React.FC<RoomImageButtonProps> = ({ 
-  roomId, 
-  className = '', 
-  onImageSelect 
+const RoomImageButton: React.FC<RoomImageButtonProps> = ({
+  roomId,
+  className = '',
+  onImageSelect
 }) => {
   const [currentImage, setCurrentImage] = useState<RoomImageData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,9 +32,9 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
   const fetchRoomImage = async () => {
     try {
       // Use Cloudflare Worker API
-      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/${roomId}`);
+      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/${roomId}`);
       const data = await response.json();
-      
+
       if (data.success && data.data && data.data.images && data.data.images.length > 0) {
         // Use first image from processed room images
         const firstImage = data.data.images[0];
@@ -51,10 +51,10 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
 
   const handleImageSelection = async (imagePath: string, imageFolder: string) => {
     setLoading(true);
-    
+
     try {
       // Update room with selected image using Cloudflare Worker API
-      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/${roomId}`, {
+      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/${roomId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -65,20 +65,20 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         // Build the correct image URL (use R2 or relative path)
         const imageUrl = `/images/rooms/${imageFolder}/${imagePath}`;
-        
+
         const imageData: RoomImageData = {
           image_path: imagePath,
           image_folder: imageFolder,
           image_url: imageUrl
         };
-        
+
         setCurrentImage(imageData);
         setShowModal(false);
-        
+
         // Notify parent component
         if (onImageSelect) {
           onImageSelect(imageData);
@@ -100,10 +100,10 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
     }
 
     setLoading(true);
-    
+
     try {
       // Update room to remove images using Cloudflare Worker API
-      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms/${roomId}`, {
+      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/${roomId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -112,10 +112,10 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setCurrentImage(null);
-        
+
         // Notify parent component
         if (onImageSelect) {
           onImageSelect(null as any);
@@ -138,8 +138,8 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
           // Display current image with options to change/remove
           <div className="flex flex-col gap-2">
             <div className="relative inline-block group">
-              <img 
-                src={currentImage.image_url} 
+              <img
+                src={currentImage.image_url}
                 alt="Room image"
                 className="w-20 h-20 object-cover rounded-lg border-2 border-[var(--hotel-gold)]"
                 onError={(e) => {
@@ -240,9 +240,9 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
     setLoadingFolders(true);
     try {
       // Use Cloudflare Worker API
-      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/images/folders`);
+      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/images/folders`);
       const data = await response.json();
-      
+
       if (data.success && data.folders) {
         // Filter out 'upload' folder for room selection
         const roomFolders = data.folders.filter((folder: string) => folder !== 'upload');
@@ -272,8 +272,9 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
     setLoading(true);
     try {
       // Use Cloudflare Worker API
-      const response = await fetch(`https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/images/folder/${folder}`);\n      const data = await response.json();
-      
+      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/images/folder/${folder}`);
+      const data = await response.json();
+
       if (data.success && data.images) {
         setImages(data.images);
       } else {
@@ -357,11 +358,10 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
               {images.map((image, index) => (
                 <div
                   key={index}
-                  className={`bg-white rounded-xl overflow-hidden shadow-md transition-all duration-300 cursor-pointer ${
-                    selectedImage === image
-                      ? 'ring-4 ring-[var(--hotel-gold)] ring-opacity-50 transform scale-[1.02]'
-                      : 'hover:shadow-lg hover:transform hover:scale-[1.02]'
-                  }`}
+                  className={`bg-white rounded-xl overflow-hidden shadow-md transition-all duration-300 cursor-pointer ${selectedImage === image
+                    ? 'ring-4 ring-[var(--hotel-gold)] ring-opacity-50 transform scale-[1.02]'
+                    : 'hover:shadow-lg hover:transform hover:scale-[1.02]'
+                    }`}
                   onClick={() => handleImageClick(image)}
                 >
                   <div className="relative">
@@ -375,7 +375,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         console.log(`❌ Image failed from main domain: ${target.src}`);
-                        
+
                         // Show elegant placeholder
                         target.style.display = 'none';
                         const parent = target.parentElement;
@@ -392,7 +392,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
                         }
                       }}
                     />
-                    
+
                     {/* Selection Indicator */}
                     {selectedImage === image && (
                       <div className="absolute top-3 right-3">
@@ -402,7 +402,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Image Info Card */}
                   <div className="p-4">
                     <div className="font-semibold text-[var(--hotel-navy)] text-sm mb-1 truncate" title={image}>
