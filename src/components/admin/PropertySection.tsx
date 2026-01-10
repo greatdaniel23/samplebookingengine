@@ -285,7 +285,7 @@ const PropertySection: React.FC = () => {
                       {image ? (
                         <>
                           <img
-                            src={`https://bookingengine.com/${image}`}
+                            src={`https://bookingengine-8g1-boe-kxn.pages.dev/${image}`}
                             alt={`Villa image ${index + 1}`}
                             className="w-20 h-20 object-cover rounded border"
                             onError={(e) => {

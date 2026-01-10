@@ -19,7 +19,7 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
   const [selectedImage, setSelectedImage] = useState<string>(currentImage || '');
   const [dragActive, setDragActive] = useState(false);
 
-  const R2_PUBLIC_URL = 'https://bookingengine.com';
+  const R2_PUBLIC_URL = 'https://bookingengine-8g1-boe-kxn.pages.dev';
   const API_BASE_URL = paths.apiBase;
 
   useEffect(() => {
@@ -276,8 +276,8 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
                       key={image.id}
                       onClick={() => setSelectedImage(image.id)}
                       className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${selectedImage === image.id
-                          ? 'border-blue-500 ring-2 ring-blue-300'
-                          : 'border-gray-200 hover:border-blue-300'
+                        ? 'border-blue-500 ring-2 ring-blue-300'
+                        : 'border-gray-200 hover:border-blue-300'
                         }`}
                     >
                       <img

@@ -396,7 +396,7 @@ async function handleAuth(url: URL, method: string, body: any, env: Env): Promis
 
 // ==================== IMAGES ====================
 async function handleImages(url: URL, method: string, request: Request, env: Env): Promise<Response> {
-  const R2_PUBLIC_URL = 'https://bookingengine.com';
+  const R2_PUBLIC_URL = 'https://bookingengine-8g1-boe-kxn.pages.dev';
 
   // GET /api/images/list
   if (url.pathname === '/api/images/list' && method === 'GET') {
