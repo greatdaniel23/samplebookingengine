@@ -748,7 +748,7 @@ async function handleAuth(url, method, body, env) {
 }
 __name(handleAuth, "handleAuth");
 async function handleImages(url, method, request, env) {
-  const R2_PUBLIC_URL = "https://bookingengine.com";
+  const R2_PUBLIC_URL = "https://bookingengine-8g1-boe-kxn.pages.dev";
   if (url.pathname === "/api/images/list" && method === "GET") {
     try {
       const prefix = url.searchParams.get("prefix") || "";

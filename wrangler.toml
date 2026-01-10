@@ -27,7 +27,7 @@ id = "ec304060e11b4215888430acdee7aafa"
 [env.production]
 vars = { ENVIRONMENT = "production", RESEND_API_KEY = "re_ggeu4gUr_B5wJcjrNv2zUVSTmGu8t7hhN", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali" }
 routes = [
-  { pattern = "api.bookingengine.com/api/*", zone_name = "bookingengine.com" }
+  { pattern = "bookingengine-8g1-boe-kxn.pages.dev/api/*", zone_name = "bookingengine-8g1-boe-kxn.pages.dev" }
 ]
 
 # Bind D1 database to production
