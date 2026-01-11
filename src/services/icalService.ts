@@ -50,7 +50,7 @@ export interface PlatformConfig {
  * Main iCal Service Class
  */
 class IcalService {
-  private baseUrl: string = 'https://bookingengine-8g1-boe-kxn.pages.dev/api';
+  private baseUrl: string = 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api';
   private syncIntervals: Map<string, NodeJS.Timeout> = new Map();
 
   // Platform configurations

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useVillaInfo } from '@/hooks/useVillaInfo';
 import R2ImagePicker from './R2ImagePicker';
+import { getImageUrl } from '@/config/r2';
 
 const PropertySection: React.FC = () => {
   const { villaInfo, loading, updateVillaInfo } = useVillaInfo();
@@ -285,7 +286,7 @@ const PropertySection: React.FC = () => {
                       {image ? (
                         <>
                           <img
-                            src={`https://bookingengine-8g1-boe-kxn.pages.dev/${image}`}
+                            src={getImageUrl(image)}
                             alt={`Villa image ${index + 1}`}
                             className="w-20 h-20 object-cover rounded border"
                             onError={(e) => {

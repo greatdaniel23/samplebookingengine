@@ -39,16 +39,16 @@ const ComprehensiveDebug: React.FC = () => {
 
     // Test production API (Cloudflare Worker)
     try {
-      const prodResponse = await fetch('https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms');
+      const prodResponse = await fetch('https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms');
       apiTests.push({
-        url: 'https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms',
+        url: 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms',
         status: prodResponse.status,
         ok: prodResponse.ok,
         type: 'production'
       });
     } catch (error) {
       apiTests.push({
-        url: 'https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms',
+        url: 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/rooms',
         error: error.message,
         type: 'production'
       });
@@ -81,8 +81,8 @@ const ComprehensiveDebug: React.FC = () => {
     diagnostics.environmentCheck = {
       hasViteApiBase: 'VITE_API_BASE' in import.meta.env,
       actualValue: import.meta.env.VITE_API_BASE,
-      expectedValue: 'https://bookingengine-8g1-boe-kxn.pages.dev/api',
-      matches: import.meta.env.VITE_API_BASE === 'https://bookingengine-8g1-boe-kxn.pages.dev/api'
+      expectedValue: 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api',
+      matches: import.meta.env.VITE_API_BASE === 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api'
     };
 
     setResults(diagnostics);

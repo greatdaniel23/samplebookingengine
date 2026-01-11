@@ -20,7 +20,7 @@ export const checkImageExists = async (url: string): Promise<boolean> => {
  * Get image with fallback
  */
 export const getImageWithFallback = async (
-  primaryUrl: string, 
+  primaryUrl: string,
   fallbackUrl: string = imagePaths.ui.placeholder
 ): Promise<string> => {
   const exists = await checkImageExists(primaryUrl);
@@ -32,7 +32,7 @@ export const getImageWithFallback = async (
  */
 export const preloadImages = (urls: string[]): Promise<void[]> => {
   return Promise.all(
-    urls.map(url => 
+    urls.map(url =>
       new Promise<void>((resolve, reject) => {
         const img = new Image();
         img.onload = () => resolve();
@@ -49,7 +49,7 @@ export const preloadImages = (urls: string[]): Promise<void[]> => {
 export const generateSrcSet = (basePath: string, sizes: string[] = ['small', 'medium', 'large']): string => {
   const ext = basePath.split('.').pop();
   const base = basePath.replace(`.${ext}`, '');
-  
+
   return sizes
     .map(size => `${base}-${size}.${ext}`)
     .join(', ');
@@ -69,12 +69,15 @@ export const getImageProps = (
     loading: 'lazy' as const,
     decoding: 'async' as const
   };
-  
-  if (responsive) {
+
+  // Only generate srcSet for local images, not external URLs (like R2)
+  const isExternal = src.startsWith('http') || src.startsWith('//');
+
+  if (responsive && !isExternal) {
     props.srcSet = generateSrcSet(src);
     props.sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw';
   }
-  
+
   return props;
 };
 

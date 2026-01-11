@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Camera } from 'lucide-react';
+import { paths } from '@/config/paths';
 
 interface RoomImageButtonProps {
   roomId: string | number;
@@ -32,7 +33,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
   const fetchRoomImage = async () => {
     try {
       // Use Cloudflare Worker API
-      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/${roomId}`);
+      const response = await fetch(paths.buildApiUrl(`rooms/${roomId}`));
       const data = await response.json();
 
       if (data.success && data.data && data.data.images && data.data.images.length > 0) {
@@ -54,7 +55,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
 
     try {
       // Update room with selected image using Cloudflare Worker API
-      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/${roomId}`, {
+      const response = await fetch(paths.buildApiUrl(`rooms/${roomId}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +104,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
 
     try {
       // Update room to remove images using Cloudflare Worker API
-      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/${roomId}`, {
+      const response = await fetch(paths.buildApiUrl(`rooms/${roomId}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -240,7 +241,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
     setLoadingFolders(true);
     try {
       // Use Cloudflare Worker API
-      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/images/folders`);
+      const response = await fetch(paths.buildApiUrl('images/folders'));
       const data = await response.json();
 
       if (data.success && data.folders) {
@@ -272,7 +273,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
     setLoading(true);
     try {
       // Use Cloudflare Worker API
-      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/images/folder/${folder}`);
+      const response = await fetch(paths.buildApiUrl(`images/folder/${folder}`));
       const data = await response.json();
 
       if (data.success && data.images) {

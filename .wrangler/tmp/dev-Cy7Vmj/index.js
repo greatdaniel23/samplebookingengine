@@ -4,14 +4,29 @@ var __name = (target, value) => __defProp(target, "name", { value, configurable:
 // src/workers/routes/rooms.ts
 async function handleRooms(url, method, body, env) {
   const pathParts = url.pathname.split("/").filter(Boolean);
+  const parseRoom = /* @__PURE__ */ __name((room) => {
+    try {
+      if (room.amenities && typeof room.amenities === "string") room.amenities = JSON.parse(room.amenities);
+      if (room.images && typeof room.images === "string") room.images = JSON.parse(room.images);
+      if (room.features && typeof room.features === "string") room.features = JSON.parse(room.features);
+    } catch (e) {
+      console.error("Error parsing room data:", e);
+      if (typeof room.amenities === "string") room.amenities = [];
+      if (typeof room.images === "string") room.images = [];
+      if (typeof room.features === "string") room.features = [];
+    }
+    return room;
+  }, "parseRoom");
   if (pathParts.length === 2 && method === "GET") {
     try {
-      const result = await env.DB.prepare(
-        "SELECT * FROM rooms WHERE is_active = 1 ORDER BY name"
-      ).all();
+      const { searchParams } = url;
+      const includeAll = searchParams.get("all") === "true";
+      const query = includeAll ? "SELECT * FROM rooms ORDER BY name" : "SELECT * FROM rooms WHERE is_active = 1 ORDER BY name";
+      const result = await env.DB.prepare(query).all();
+      const rooms = result.results.map(parseRoom);
       return new Response(JSON.stringify({
         success: true,
-        data: result.results
+        data: rooms
       }), {
         headers: {
           "Content-Type": "application/json",
@@ -51,7 +66,151 @@ async function handleRooms(url, method, body, env) {
       }
       return new Response(JSON.stringify({
         success: true,
-        data: result
+        data: parseRoom(result)
+      }), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    }
+  }
+  if (pathParts.length === 2 && method === "POST") {
+    try {
+      const { name, type, description, price_per_night, max_guests, amenities, images } = body;
+      if (!name) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Room name is required"
+        }), {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      }
+      const result = await env.DB.prepare(
+        `INSERT INTO rooms (name, type, description, price_per_night, max_guests, amenities, images, is_active, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'), datetime('now'))`
+      ).bind(
+        name,
+        type || "Standard",
+        description || "",
+        price_per_night || 0,
+        max_guests || 2,
+        JSON.stringify(amenities || []),
+        JSON.stringify(images || [])
+      ).run();
+      return new Response(JSON.stringify({
+        success: true,
+        data: { id: result.meta.last_row_id, name, type },
+        message: "Room created successfully"
+      }), {
+        status: 201,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    }
+  }
+  if (pathParts.length === 3 && method === "PUT") {
+    try {
+      const id = parseInt(pathParts[2]);
+      const { name, type, description, price_per_night, max_guests, amenities, images, is_active } = body;
+      const updates = [];
+      const values = [];
+      if (name !== void 0) {
+        updates.push("name = ?");
+        values.push(name);
+      }
+      if (type !== void 0) {
+        updates.push("type = ?");
+        values.push(type);
+      }
+      if (description !== void 0) {
+        updates.push("description = ?");
+        values.push(description);
+      }
+      if (price_per_night !== void 0) {
+        updates.push("price_per_night = ?");
+        values.push(price_per_night);
+      }
+      if (max_guests !== void 0) {
+        updates.push("max_guests = ?");
+        values.push(max_guests);
+      }
+      if (amenities !== void 0) {
+        updates.push("amenities = ?");
+        values.push(JSON.stringify(amenities));
+      }
+      if (images !== void 0) {
+        updates.push("images = ?");
+        values.push(JSON.stringify(images));
+      }
+      if (is_active !== void 0) {
+        updates.push("is_active = ?");
+        values.push(is_active ? 1 : 0);
+      }
+      updates.push("updated_at = datetime('now')");
+      values.push(id);
+      await env.DB.prepare(
+        `UPDATE rooms SET ${updates.join(", ")} WHERE id = ?`
+      ).bind(...values).run();
+      return new Response(JSON.stringify({
+        success: true,
+        message: "Room updated successfully"
+      }), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    }
+  }
+  if (pathParts.length === 3 && method === "DELETE") {
+    try {
+      const id = parseInt(pathParts[2]);
+      await env.DB.prepare(
+        "UPDATE rooms SET is_active = 0, updated_at = datetime('now') WHERE id = ?"
+      ).bind(id).run();
+      return new Response(JSON.stringify({
+        success: true,
+        message: "Room deleted successfully"
       }), {
         headers: {
           "Content-Type": "application/json",
@@ -87,14 +246,24 @@ __name(handleRooms, "handleRooms");
 // src/workers/routes/packages.ts
 async function handlePackages(url, method, body, env) {
   const pathParts = url.pathname.split("/").filter(Boolean);
+  const parsePackage = /* @__PURE__ */ __name((pkg) => {
+    try {
+      if (pkg.images && typeof pkg.images === "string") pkg.images = JSON.parse(pkg.images);
+    } catch (e) {
+      console.error("Error parsing package data:", e);
+      if (typeof pkg.images === "string") pkg.images = [];
+    }
+    return pkg;
+  }, "parsePackage");
   if (pathParts.length === 2 && method === "GET") {
     try {
       const result = await env.DB.prepare(
         "SELECT * FROM packages WHERE is_active = 1 ORDER BY name"
       ).all();
+      const packages = result.results.map(parsePackage);
       return new Response(JSON.stringify({
         success: true,
-        data: result.results
+        data: packages
       }), {
         headers: {
           "Content-Type": "application/json",
@@ -134,7 +303,7 @@ async function handlePackages(url, method, body, env) {
       }
       return new Response(JSON.stringify({
         success: true,
-        data: result
+        data: parsePackage(result)
       }), {
         headers: {
           "Content-Type": "application/json",
@@ -199,6 +368,241 @@ async function handlePackages(url, method, body, env) {
       return new Response(JSON.stringify({
         success: true,
         data: result.results
+      }), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    }
+  }
+  if (pathParts.length === 2 && method === "POST") {
+    try {
+      const {
+        name,
+        description,
+        type,
+        base_room_id,
+        base_price,
+        min_nights,
+        max_nights,
+        max_guests,
+        discount_percentage,
+        is_active,
+        inclusions,
+        exclusions,
+        featured
+      } = body;
+      if (!name) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Package name is required"
+        }), {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      }
+      const result = await env.DB.prepare(
+        `INSERT INTO packages (name, description, package_type, base_price, discount_percentage, min_nights, max_nights, max_guests, base_room_id, is_active, is_featured, inclusions, exclusions, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+      ).bind(
+        name,
+        description || "",
+        type || "Romance",
+        base_price || 0,
+        discount_percentage || 0,
+        min_nights || 1,
+        max_nights || 30,
+        max_guests || 2,
+        base_room_id || null,
+        is_active !== false ? 1 : 0,
+        featured ? 1 : 0,
+        JSON.stringify(inclusions || []),
+        JSON.stringify(exclusions || [])
+      ).run();
+      return new Response(JSON.stringify({
+        success: true,
+        data: { id: result.meta.last_row_id, name },
+        message: "Package created successfully"
+      }), {
+        status: 201,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    }
+  }
+  if (pathParts.length === 2 && method === "PUT") {
+    try {
+      const { id, ...fields } = body;
+      if (!id) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Package ID is required"
+        }), {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      }
+      const updates = [];
+      const values = [];
+      if (fields.name !== void 0) {
+        updates.push("name = ?");
+        values.push(fields.name);
+      }
+      if (fields.description !== void 0) {
+        updates.push("description = ?");
+        values.push(fields.description);
+      }
+      if (fields.package_type !== void 0) {
+        updates.push("package_type = ?");
+        values.push(fields.package_type);
+      }
+      if (fields.base_price !== void 0) {
+        updates.push("base_price = ?");
+        values.push(fields.base_price);
+      }
+      if (fields.discount_percentage !== void 0) {
+        updates.push("discount_percentage = ?");
+        values.push(fields.discount_percentage);
+      }
+      if (fields.min_nights !== void 0) {
+        updates.push("min_nights = ?");
+        values.push(fields.min_nights);
+      }
+      if (fields.max_nights !== void 0) {
+        updates.push("max_nights = ?");
+        values.push(fields.max_nights);
+      }
+      if (fields.max_guests !== void 0) {
+        updates.push("max_guests = ?");
+        values.push(fields.max_guests);
+      }
+      if (fields.base_room_id !== void 0) {
+        updates.push("base_room_id = ?");
+        values.push(fields.base_room_id || null);
+      }
+      if (fields.is_active !== void 0) {
+        updates.push("is_active = ?");
+        values.push(fields.is_active ? 1 : 0);
+      }
+      if (fields.is_featured !== void 0) {
+        updates.push("is_featured = ?");
+        values.push(fields.is_featured ? 1 : 0);
+      }
+      if (fields.includes !== void 0) {
+        updates.push("inclusions = ?");
+        values.push(fields.includes);
+      }
+      if (fields.exclusions !== void 0) {
+        updates.push("exclusions = ?");
+        values.push(fields.exclusions);
+      }
+      if (fields.images !== void 0) {
+        updates.push("images = ?");
+        values.push(fields.images);
+      }
+      if (fields.valid_from !== void 0) {
+        updates.push("valid_from = ?");
+        values.push(fields.valid_from);
+      }
+      if (fields.valid_until !== void 0) {
+        updates.push("valid_until = ?");
+        values.push(fields.valid_until);
+      }
+      if (fields.terms_conditions !== void 0) {
+        updates.push("terms_conditions = ?");
+        values.push(fields.terms_conditions);
+      }
+      if (updates.length === 0) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "No fields to update"
+        }), {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      }
+      updates.push("updated_at = datetime('now')");
+      values.push(id);
+      await env.DB.prepare(
+        `UPDATE packages SET ${updates.join(", ")} WHERE id = ?`
+      ).bind(...values).run();
+      return new Response(JSON.stringify({
+        success: true,
+        message: "Package updated successfully"
+      }), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    }
+  }
+  if (pathParts.length === 2 && method === "DELETE") {
+    try {
+      const { id } = body;
+      if (!id) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Package ID is required"
+        }), {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      }
+      await env.DB.prepare(
+        "UPDATE packages SET is_active = 0, updated_at = datetime('now') WHERE id = ?"
+      ).bind(id).run();
+      return new Response(JSON.stringify({
+        success: true,
+        message: "Package deleted successfully"
       }), {
         headers: {
           "Content-Type": "application/json",
@@ -446,6 +850,16 @@ async function handleRequest(request, env) {
   const method = request.method;
   const path = url.pathname;
   let body = null;
+  if (method === "OPTIONS") {
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Max-Age": "86400"
+      }
+    });
+  }
   if ((method === "POST" || method === "PUT") && path !== "/api/images/upload") {
     try {
       body = await request.json();
@@ -515,6 +929,18 @@ async function handleRequest(request, env) {
     }
     if (path.startsWith("/api/email")) {
       return handleEmail(url, method, body, env);
+    }
+    if (path.startsWith("/api/marketing-categories")) {
+      return handleMarketingCategories(url, method, body, env);
+    }
+    if (path.startsWith("/api/inclusions")) {
+      return handleInclusions(url, method, body, env);
+    }
+    if (path.startsWith("/api/homepage-settings")) {
+      return handleHomepageSettings(url, method, body, env);
+    }
+    if (path.startsWith("/api/blackout-dates")) {
+      return handleBlackoutDates(url, method, body, env);
     }
     return errorResponse("Endpoint not found", 404);
   } catch (error) {

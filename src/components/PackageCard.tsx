@@ -6,6 +6,7 @@ import { Package } from '@/types';
 import { packageService } from '@/services/packageService';
 import { useNavigate } from 'react-router-dom';
 import { paths } from '@/config/paths';
+import { getImageUrl } from "@/config/r2";
 import {
     Clock,
     Users,
@@ -110,7 +111,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
     const inclusions = parseInclusions(pkg.inclusions || pkg.includes);
     const discountPercentage = parseFloat(pkg.discount_percentage);
 
-    let basePrice = parseFloat(pkg.price || pkg.base_price || '0');
+    let basePrice = parseFloat(String(pkg.price || pkg.base_price || '0'));
 
     if (basePrice === 0 && pkg.room_options && pkg.room_options.length > 0) {
         const roomPrices = pkg.room_options
@@ -142,9 +143,9 @@ export const PackageCard: React.FC<PackageCardProps> = ({
 
     const getPackageImageUrl = () => {
         if (pkg.images && Array.isArray(pkg.images) && pkg.images.length > 0) {
-            return pkg.images[0];
+            return getImageUrl(pkg.images[0]);
         }
-        if (pkg.image_url) return pkg.image_url;
+        if (pkg.image_url) return getImageUrl(pkg.image_url);
         return '/images/ui/placeholder.svg';
     };
 

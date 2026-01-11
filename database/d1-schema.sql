@@ -87,6 +87,117 @@ CREATE TABLE IF NOT EXISTS marketing_categories (
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Rooms Table (Physical Inventory)
+CREATE TABLE IF NOT EXISTS rooms (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  max_occupancy INTEGER DEFAULT 2,
+  base_price REAL DEFAULT 0,
+  size_sqm REAL,
+  bed_type TEXT,
+  view_type TEXT,
+  is_active INTEGER DEFAULT 1,
+  display_order INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Packages Table (Marketing Bundles)
+CREATE TABLE IF NOT EXISTS packages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  package_type TEXT,
+  base_price REAL DEFAULT 0,
+  discount_percentage REAL DEFAULT 0,
+  duration_days INTEGER DEFAULT 1,
+  max_guests INTEGER DEFAULT 2,
+  is_active INTEGER DEFAULT 1,
+  is_featured INTEGER DEFAULT 0,
+  display_order INTEGER DEFAULT 0,
+  base_room_id INTEGER,
+  marketing_category_id INTEGER,
+  valid_from TEXT,
+  valid_until TEXT,
+  min_nights INTEGER,
+  max_nights INTEGER,
+  images TEXT,
+  inclusions TEXT,
+  exclusions TEXT,
+  terms_conditions TEXT,
+  cancellation_policy TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (base_room_id) REFERENCES rooms(id) ON DELETE SET NULL,
+  FOREIGN KEY (marketing_category_id) REFERENCES marketing_categories(id)
+);
+
+-- Room Images Table
+CREATE TABLE IF NOT EXISTS room_images (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  room_id INTEGER NOT NULL,
+  image_url TEXT NOT NULL,
+  caption TEXT,
+  display_order INTEGER DEFAULT 0,
+  is_primary INTEGER DEFAULT 0,
+  is_active INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
+);
+
+-- Package-Room Relationship (Many-to-Many)
+CREATE TABLE IF NOT EXISTS package_rooms (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  package_id INTEGER NOT NULL,
+  room_id INTEGER NOT NULL,
+  is_default INTEGER DEFAULT 0,
+  is_active INTEGER DEFAULT 1,
+  price_adjustment REAL DEFAULT 0,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE,
+  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
+);
+
+-- Package Inclusions relationships
+CREATE TABLE IF NOT EXISTS package_inclusions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  package_id INTEGER NOT NULL,
+  inclusion_id INTEGER NOT NULL,
+  quantity INTEGER DEFAULT 1,
+  is_active INTEGER DEFAULT 1,
+  custom_description TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE,
+  FOREIGN KEY (inclusion_id) REFERENCES inclusions(id) ON DELETE CASCADE
+);
+
+-- Room Amenities relationships
+CREATE TABLE IF NOT EXISTS room_amenities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  room_id INTEGER NOT NULL,
+  amenity_id INTEGER NOT NULL,
+  quantity INTEGER DEFAULT 1,
+  is_active INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
+  FOREIGN KEY (amenity_id) REFERENCES amenities(id) ON DELETE CASCADE
+);
+
+-- Package Amenities relationships  
+CREATE TABLE IF NOT EXISTS package_amenities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  package_id INTEGER NOT NULL,
+  amenity_id INTEGER NOT NULL,
+  quantity INTEGER DEFAULT 1,
+  is_active INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE,
+  FOREIGN KEY (amenity_id) REFERENCES amenities(id) ON DELETE CASCADE
+);
+
 -- Homepage Settings table
 CREATE TABLE IF NOT EXISTS homepage_settings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -288,3 +399,6 @@ CREATE INDEX IF NOT EXISTS idx_amenities_active ON amenities(is_active);
 CREATE INDEX IF NOT EXISTS idx_inclusions_active ON inclusions(is_active);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_api_logs_timestamp ON api_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_rooms_active ON rooms(is_active);
+CREATE INDEX IF NOT EXISTS idx_packages_active ON packages(is_active);
+CREATE INDEX IF NOT EXISTS idx_packages_base_room ON packages(base_room_id);

@@ -5,10 +5,10 @@
 
 export const API_CONFIG = {
   // Main Worker API
-  WORKER_API_BASE: 'https://bookingengine-8g1-boe-kxn.pages.dev/api',
+  WORKER_API_BASE: 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api',
 
   // R2 Image Storage
-  IMAGE_BUCKET_URL: 'https://imageroom.s3.us-east-1.amazonaws.com',
+  IMAGE_BUCKET_URL: 'https://pub-e303ec878512482fa87c065266e6bedd.r2.dev',
 
   // Endpoints
   BOOKINGS: '/bookings',

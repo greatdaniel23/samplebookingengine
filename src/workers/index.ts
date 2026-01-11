@@ -3,7 +3,7 @@ import { handleRooms } from './routes/rooms';
 import { handlePackages } from './routes/packages';
 import { handleVilla } from './routes/villa';
 
-// FORCE REBUILD - Timestamp: 2026-01-09 02:37
+// FORCE REBUILD - Timestamp: 2026-01-11 10:10
 // This comment exists only to force Wrangler to rebuild the Worker
 
 async function handleRequest(request: Request, env: Env): Promise<Response> {
@@ -12,6 +12,19 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
   const path = url.pathname;
 
   let body = null;
+
+  // Handle CORS preflight requests
+  if (method === 'OPTIONS') {
+    return new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400',
+      },
+    });
+  }
+
   // Skip JSON parsing for image upload (needs formData)
   if ((method === 'POST' || method === 'PUT') && path !== '/api/images/upload') {
     try {
@@ -111,6 +124,26 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     // Email routes
     if (path.startsWith('/api/email')) {
       return handleEmail(url, method, body, env);
+    }
+
+    // Marketing Categories routes
+    if (path.startsWith('/api/marketing-categories')) {
+      return handleMarketingCategories(url, method, body, env);
+    }
+
+    // Inclusions routes
+    if (path.startsWith('/api/inclusions')) {
+      return handleInclusions(url, method, body, env);
+    }
+
+    // Homepage Settings routes
+    if (path.startsWith('/api/homepage-settings')) {
+      return handleHomepageSettings(url, method, body, env);
+    }
+
+    // Calendar / Blackout Dates routes
+    if (path.startsWith('/api/blackout-dates')) {
+      return handleBlackoutDates(url, method, body, env);
     }
 
     return errorResponse('Endpoint not found', 404);

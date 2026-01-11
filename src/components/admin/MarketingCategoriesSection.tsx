@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Save, Tag } from 'lucide-react';
+import { paths } from '@/config/paths';
 
 interface MarketingCategory {
   id: number;
@@ -29,7 +30,7 @@ const MarketingCategoriesSection: React.FC = () => {
     try {
       setLoading(true);
       // Use Cloudflare Worker API
-      const response = await fetch('https://bookingengine-8g1-boe-kxn.pages.dev/api/marketing-categories');
+      const response = await fetch(paths.buildApiUrl('marketing-categories'));
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const data = await response.json();
@@ -64,7 +65,7 @@ const MarketingCategoriesSection: React.FC = () => {
 
     try {
       // Use Cloudflare Worker API
-      const url = 'https://bookingengine-8g1-boe-kxn.pages.dev/api/marketing-categories';
+      const url = paths.buildApiUrl('marketing-categories');
       const method = editingCategory ? 'PUT' : 'POST';
       const payload = editingCategory
         ? { ...formData, id: editingCategory.id }
@@ -100,7 +101,7 @@ const MarketingCategoriesSection: React.FC = () => {
     }
 
     try {
-      const response = await fetch('https://bookingengine-8g1-boe-kxn.pages.dev/api/marketing-categories', {
+      const response = await fetch(paths.buildApiUrl('marketing-categories'), {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: categoryId })

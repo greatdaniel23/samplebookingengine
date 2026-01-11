@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { paths } from '@/config/paths';
+import { getImageUrl } from "@/config/r2";
 
 interface RoomImageGalleryProps {
   roomId: string | number;
@@ -49,7 +51,7 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
 
   const fetchFirstImageFromFolder = async (folder: string): Promise<RoomImage[] | null> => {
     try {
-      const resp = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/images/${encodeURIComponent(folder)}`);
+      const resp = await fetch(paths.buildApiUrl(`rooms/images/${encodeURIComponent(folder)}`));
       const json = await resp.json();
       if (json && json.success && json.data && Array.isArray(json.data.images) && json.data.images.length > 0) {
         // Use first image as fallback
@@ -94,12 +96,30 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
   const fetchRoomImages = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/${roomId}`);
+      const response = await fetch(paths.buildApiUrl(`rooms/${roomId}`));
       const data = await response.json();
 
       if (data.success && data.data && data.data.images && data.data.images.length > 0) {
+        // Normalize images (handle both strings and objects)
+        const normalizeImages = data.data.images.map((img: any) => {
+          if (typeof img === 'string') {
+            return {
+              url: getImageUrl(img),
+              filename: img.split('/').pop() || 'image',
+              folder: '',
+              is_primary: false,
+              caption: ''
+            };
+          }
+          // Also normalize object url if it's relative
+          return {
+            ...img,
+            url: getImageUrl(img.url)
+          };
+        });
+
         // Sort images so primary image is first
-        const sortedImages = [...data.data.images].sort((a, b) => {
+        const sortedImages = normalizeImages.sort((a: any, b: any) => {
           if (a.is_primary && !b.is_primary) return -1;
           if (!a.is_primary && b.is_primary) return 1;
           return 0;
@@ -232,8 +252,8 @@ const RoomImageGallery: React.FC<RoomImageGalleryProps> = ({
                 goToImage(index);
               }}
               className={`flex-shrink-0 w-8 h-6 rounded overflow-hidden border transition-all ${index === currentImageIndex
-                  ? 'border-blue-500 ring-1 ring-blue-500'
-                  : 'border-gray-300 hover:border-gray-400'
+                ? 'border-blue-500 ring-1 ring-blue-500'
+                : 'border-gray-300 hover:border-gray-400'
                 }`}
             >
               <img

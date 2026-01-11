@@ -240,7 +240,7 @@ const ImageGallery: React.FC = () => {
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <img
-              src="https://bookingengine-8g1-boe-kxn.pages.dev/logo.png"
+              src="/logo.png"
               alt="Logo"
               className="h-16 w-auto object-contain cursor-pointer"
               onClick={() => navigate('/')}

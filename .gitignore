@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Cloudflare Wrangler
+.wrangler
+.dev.vars
+
+# Local database files
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
