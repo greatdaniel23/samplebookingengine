@@ -130,16 +130,233 @@ export async function handlePackages(url: URL, method: string, body: any, env: E
     try {
       const packageId = parseInt(pathParts[2]);
       const result = await env.DB.prepare(`
-        SELECT pi.*, i.name, i.description, i.icon
+        SELECT pi.inclusion_id, i.name, i.description, i.package_type as category
         FROM package_inclusions pi
         JOIN inclusions i ON pi.inclusion_id = i.id
-        WHERE pi.package_id = ? AND pi.is_active = 1
+        WHERE pi.package_id = ? AND pi.is_active = 1 AND i.is_active = 1
         ORDER BY i.name
       `).bind(packageId).all();
 
       return new Response(JSON.stringify({
         success: true,
-        data: result.results
+        inclusions: result.results
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    } catch (error: any) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+  }
+
+  // POST /api/packages/:id/inclusions - add inclusion to package
+  if (pathParts.length === 4 && pathParts[3] === 'inclusions' && method === 'POST') {
+    try {
+      const packageId = parseInt(pathParts[2]);
+      const { inclusion_id } = body;
+
+      if (!inclusion_id) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'inclusion_id is required'
+        }), {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      }
+
+      // Check if already exists
+      const existing = await env.DB.prepare(
+        'SELECT * FROM package_inclusions WHERE package_id = ? AND inclusion_id = ?'
+      ).bind(packageId, inclusion_id).first();
+
+      if (existing) {
+        // Reactivate if soft-deleted
+        await env.DB.prepare(
+          'UPDATE package_inclusions SET is_active = 1 WHERE package_id = ? AND inclusion_id = ?'
+        ).bind(packageId, inclusion_id).run();
+      } else {
+        await env.DB.prepare(
+          'INSERT INTO package_inclusions (package_id, inclusion_id, is_active) VALUES (?, ?, 1)'
+        ).bind(packageId, inclusion_id).run();
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Inclusion added to package'
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    } catch (error: any) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+  }
+
+  // DELETE /api/packages/:id/inclusions/:inclusionId - remove inclusion from package
+  if (pathParts.length === 5 && pathParts[3] === 'inclusions' && method === 'DELETE') {
+    try {
+      const packageId = parseInt(pathParts[2]);
+      const inclusionId = parseInt(pathParts[4]);
+
+      await env.DB.prepare(
+        'UPDATE package_inclusions SET is_active = 0 WHERE package_id = ? AND inclusion_id = ?'
+      ).bind(packageId, inclusionId).run();
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Inclusion removed from package'
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    } catch (error: any) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+  }
+
+  // GET /api/packages/:id/amenities - get package amenities
+  if (pathParts.length === 4 && pathParts[3] === 'amenities' && method === 'GET') {
+    try {
+      const packageId = parseInt(pathParts[2]);
+      const result = await env.DB.prepare(`
+        SELECT pa.amenity_id as id, a.name, a.description, a.category, a.icon, pa.is_highlighted, pa.custom_note
+        FROM package_amenities pa
+        JOIN amenities a ON pa.amenity_id = a.id
+        WHERE pa.package_id = ? AND pa.is_active = 1 AND a.is_active = 1
+        ORDER BY pa.is_highlighted DESC, a.name
+      `).bind(packageId).all();
+
+      return new Response(JSON.stringify({
+        success: true,
+        amenities: result.results
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    } catch (error: any) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+  }
+
+  // POST /api/packages/:id/amenities - add amenity to package
+  if (pathParts.length === 4 && pathParts[3] === 'amenities' && method === 'POST') {
+    try {
+      const packageId = parseInt(pathParts[2]);
+      const { amenity_id, is_highlighted = false } = body;
+
+      if (!amenity_id) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'amenity_id is required'
+        }), {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      }
+
+      // Check if already exists
+      const existing = await env.DB.prepare(
+        'SELECT * FROM package_amenities WHERE package_id = ? AND amenity_id = ?'
+      ).bind(packageId, amenity_id).first();
+
+      if (existing) {
+        // Update highlight status or reactivate
+        await env.DB.prepare(
+          'UPDATE package_amenities SET is_active = 1, is_highlighted = ? WHERE package_id = ? AND amenity_id = ?'
+        ).bind(is_highlighted ? 1 : 0, packageId, amenity_id).run();
+      } else {
+        await env.DB.prepare(
+          'INSERT INTO package_amenities (package_id, amenity_id, is_highlighted, is_active) VALUES (?, ?, ?, 1)'
+        ).bind(packageId, amenity_id, is_highlighted ? 1 : 0).run();
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Amenity added to package'
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    } catch (error: any) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+  }
+
+  // DELETE /api/packages/:id/amenities/:amenityId - remove amenity from package
+  if (pathParts.length === 5 && pathParts[3] === 'amenities' && method === 'DELETE') {
+    try {
+      const packageId = parseInt(pathParts[2]);
+      const amenityId = parseInt(pathParts[4]);
+
+      await env.DB.prepare(
+        'UPDATE package_amenities SET is_active = 0 WHERE package_id = ? AND amenity_id = ?'
+      ).bind(packageId, amenityId).run();
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Amenity removed from package'
       }), {
         headers: {
           'Content-Type': 'application/json',

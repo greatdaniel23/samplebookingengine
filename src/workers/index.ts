@@ -3,28 +3,15 @@ import { handleRooms } from './routes/rooms';
 import { handlePackages } from './routes/packages';
 import { handleVilla } from './routes/villa';
 
-// FORCE REBUILD - Timestamp: 2026-01-11 10:10
+// FORCE REBUILD - Timestamp: 2026-01-09 02:37
 // This comment exists only to force Wrangler to rebuild the Worker
 
 async function handleRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const method = request.method;
   const path = url.pathname;
-
+  
   let body = null;
-
-  // Handle CORS preflight requests
-  if (method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Max-Age': '86400',
-      },
-    });
-  }
-
   // Skip JSON parsing for image upload (needs formData)
   if ((method === 'POST' || method === 'PUT') && path !== '/api/images/upload') {
     try {
@@ -91,6 +78,11 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
       return handlePackages(url, method, body, env);
     }
 
+    // Inclusions routes
+    if (path.startsWith('/api/inclusions')) {
+      return handleInclusions(url, method, body, env);
+    }
+
     // Villa routes
     if (path.startsWith('/api/villa')) {
       return handleVilla(url, method, body, env);
@@ -124,26 +116,6 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     // Email routes
     if (path.startsWith('/api/email')) {
       return handleEmail(url, method, body, env);
-    }
-
-    // Marketing Categories routes
-    if (path.startsWith('/api/marketing-categories')) {
-      return handleMarketingCategories(url, method, body, env);
-    }
-
-    // Inclusions routes
-    if (path.startsWith('/api/inclusions')) {
-      return handleInclusions(url, method, body, env);
-    }
-
-    // Homepage Settings routes
-    if (path.startsWith('/api/homepage-settings')) {
-      return handleHomepageSettings(url, method, body, env);
-    }
-
-    // Calendar / Blackout Dates routes
-    if (path.startsWith('/api/blackout-dates')) {
-      return handleBlackoutDates(url, method, body, env);
     }
 
     return errorResponse('Endpoint not found', 404);
@@ -378,6 +350,279 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env): P
     }
   }
 
+  // POST /api/amenities - Create new amenity
+  if (pathParts.length === 2 && method === 'POST') {
+    try {
+      const { name, category, description, icon, is_featured, is_active, display_order } = body;
+      if (!name) return errorResponse('Name is required', 400);
+
+      const result = await env.DB.prepare(
+        `INSERT INTO amenities (name, category, description, icon, is_featured, is_active, display_order, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+      ).bind(
+        name,
+        category || null,
+        description || null,
+        icon || 'star',
+        is_featured ? 1 : 0,
+        is_active !== false ? 1 : 0,
+        display_order || 0
+      ).run();
+
+      return successResponse({ id: result.meta.last_row_id, message: 'Amenity created successfully' });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // PUT /api/amenities/:id - Update amenity
+  if (pathParts[2] && !isNaN(Number(pathParts[2])) && method === 'PUT') {
+    try {
+      const id = parseInt(pathParts[2]);
+      const { name, category, description, icon, is_featured, is_active, display_order } = body;
+
+      // Build dynamic update query
+      const updates: string[] = [];
+      const values: any[] = [];
+
+      if (name !== undefined) { updates.push('name = ?'); values.push(name); }
+      if (category !== undefined) { updates.push('category = ?'); values.push(category); }
+      if (description !== undefined) { updates.push('description = ?'); values.push(description); }
+      if (icon !== undefined) { updates.push('icon = ?'); values.push(icon); }
+      if (is_featured !== undefined) { updates.push('is_featured = ?'); values.push(is_featured ? 1 : 0); }
+      if (is_active !== undefined) { updates.push('is_active = ?'); values.push(is_active ? 1 : 0); }
+      if (display_order !== undefined) { updates.push('display_order = ?'); values.push(display_order); }
+      
+      updates.push("updated_at = datetime('now')");
+      values.push(id);
+
+      await env.DB.prepare(
+        `UPDATE amenities SET ${updates.join(', ')} WHERE id = ?`
+      ).bind(...values).run();
+
+      return successResponse({ message: 'Amenity updated successfully' });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // DELETE /api/amenities/:id - Delete amenity
+  if (pathParts[2] && !isNaN(Number(pathParts[2])) && method === 'DELETE') {
+    try {
+      const id = parseInt(pathParts[2]);
+      await env.DB.prepare('DELETE FROM amenities WHERE id = ?').bind(id).run();
+      return successResponse({ message: 'Amenity deleted successfully' });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  return errorResponse('Endpoint not found', 404);
+}
+
+// ==================== INCLUSIONS ====================
+async function handleInclusions(url: URL, method: string, body: any, env: Env): Promise<Response> {
+  const pathParts = url.pathname.split('/').filter(Boolean);
+
+  // GET /api/inclusions or /api/inclusions/list - List all inclusions
+  if ((pathParts.length === 2 || pathParts[2] === 'list') && method === 'GET') {
+    try {
+      const result = await env.DB.prepare(
+        'SELECT * FROM inclusions WHERE is_active = 1 ORDER BY package_type, name ASC'
+      ).all();
+      return successResponse({ inclusions: result.results });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // GET /api/inclusions/category/:type - Get by package type/category
+  if (pathParts[2] === 'category' && pathParts[3] && method === 'GET') {
+    try {
+      const packageType = pathParts[3];
+      const result = await env.DB.prepare(
+        'SELECT * FROM inclusions WHERE package_type = ? AND is_active = 1 ORDER BY name ASC'
+      ).bind(packageType).all();
+      return successResponse({ inclusions: result.results });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // GET /api/inclusions/package/:id - Get inclusions for a specific package
+  if (pathParts[2] === 'package' && pathParts[3] && method === 'GET') {
+    try {
+      const packageId = parseInt(pathParts[3]);
+      const result = await env.DB.prepare(`
+        SELECT i.*, pi.quantity, pi.custom_description
+        FROM inclusions i
+        JOIN package_inclusions pi ON i.id = pi.inclusion_id
+        WHERE pi.package_id = ? AND i.is_active = 1 AND pi.is_active = 1
+        ORDER BY i.name ASC
+      `).bind(packageId).all();
+      return successResponse({ inclusions: result.results });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // GET /api/inclusions/:id - Get single inclusion
+  if (pathParts[2] && !isNaN(Number(pathParts[2])) && method === 'GET') {
+    try {
+      const id = parseInt(pathParts[2]);
+      const result = await env.DB.prepare('SELECT * FROM inclusions WHERE id = ?').bind(id).first();
+      if (!result) return errorResponse('Inclusion not found', 404);
+      return successResponse(result);
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // POST /api/inclusions - Create new inclusion
+  if (pathParts.length === 2 && method === 'POST') {
+    try {
+      const { name, description, package_type, is_active } = body;
+      if (!name) return errorResponse('Name is required', 400);
+
+      const result = await env.DB.prepare(
+        `INSERT INTO inclusions (name, description, package_type, is_active, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))`
+      ).bind(
+        name,
+        description || null,
+        package_type || null,
+        is_active !== false ? 1 : 0
+      ).run();
+
+      return successResponse({ id: result.meta.last_row_id, message: 'Inclusion created successfully' });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // PUT /api/inclusions/:id - Update inclusion
+  if (pathParts[2] && !isNaN(Number(pathParts[2])) && method === 'PUT') {
+    try {
+      const id = parseInt(pathParts[2]);
+      const { name, description, package_type, is_active } = body;
+
+      const updates: string[] = [];
+      const values: any[] = [];
+
+      if (name !== undefined) { updates.push('name = ?'); values.push(name); }
+      if (description !== undefined) { updates.push('description = ?'); values.push(description); }
+      if (package_type !== undefined) { updates.push('package_type = ?'); values.push(package_type); }
+      if (is_active !== undefined) { updates.push('is_active = ?'); values.push(is_active ? 1 : 0); }
+      
+      updates.push("updated_at = datetime('now')");
+      values.push(id);
+
+      await env.DB.prepare(
+        `UPDATE inclusions SET ${updates.join(', ')} WHERE id = ?`
+      ).bind(...values).run();
+
+      return successResponse({ message: 'Inclusion updated successfully' });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // DELETE /api/inclusions/:id - Delete inclusion
+  if (pathParts[2] && !isNaN(Number(pathParts[2])) && method === 'DELETE') {
+    try {
+      const id = parseInt(pathParts[2]);
+      // Also remove from package_inclusions
+      await env.DB.prepare('DELETE FROM package_inclusions WHERE inclusion_id = ?').bind(id).run();
+      await env.DB.prepare('DELETE FROM inclusions WHERE id = ?').bind(id).run();
+      return successResponse({ message: 'Inclusion deleted successfully' });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // POST /api/inclusions/link-package - Link inclusion to package
+  if (pathParts[2] === 'link-package' && method === 'POST') {
+    try {
+      const { package_id, inclusion_id, quantity } = body;
+      if (!package_id || !inclusion_id) return errorResponse('package_id and inclusion_id are required', 400);
+
+      await env.DB.prepare(
+        `INSERT INTO package_inclusions (package_id, inclusion_id, quantity, is_active, created_at, updated_at) 
+         VALUES (?, ?, ?, 1, datetime('now'), datetime('now'))`
+      ).bind(package_id, inclusion_id, quantity || 1).run();
+
+      return successResponse({ message: 'Inclusion linked to package successfully' });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // DELETE /api/inclusions/unlink-package - Unlink inclusion from package
+  if (pathParts[2] === 'unlink-package' && method === 'DELETE') {
+    try {
+      const { package_id, inclusion_id } = body;
+      if (!package_id || !inclusion_id) return errorResponse('package_id and inclusion_id are required', 400);
+
+      await env.DB.prepare(
+        'DELETE FROM package_inclusions WHERE package_id = ? AND inclusion_id = ?'
+      ).bind(package_id, inclusion_id).run();
+
+      return successResponse({ message: 'Inclusion unlinked from package successfully' });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // GET /api/inclusions/room/:id - Get inclusions for a specific room
+  if (pathParts[2] === 'room' && pathParts[3] && method === 'GET') {
+    try {
+      const roomId = parseInt(pathParts[3]);
+      const result = await env.DB.prepare(`
+        SELECT i.*, ri.quantity, ri.custom_description
+        FROM inclusions i
+        JOIN room_inclusions ri ON i.id = ri.inclusion_id
+        WHERE ri.room_id = ? AND i.is_active = 1
+        ORDER BY i.name ASC
+      `).bind(roomId).all();
+      return successResponse({ inclusions: result.results });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // POST /api/inclusions/link-room - Link inclusion to room
+  if (pathParts[2] === 'link-room' && method === 'POST') {
+    try {
+      const { room_id, inclusion_id, quantity, custom_description } = body;
+      if (!room_id || !inclusion_id) return errorResponse('room_id and inclusion_id are required', 400);
+
+      await env.DB.prepare(
+        `INSERT OR REPLACE INTO room_inclusions (room_id, inclusion_id, quantity, custom_description, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))`
+      ).bind(room_id, inclusion_id, quantity || 1, custom_description || null).run();
+
+      return successResponse({ message: 'Inclusion linked to room successfully' });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // DELETE /api/inclusions/unlink-room - Unlink inclusion from room
+  if (pathParts[2] === 'unlink-room' && method === 'DELETE') {
+    try {
+      const { room_id, inclusion_id } = body;
+      if (!room_id || !inclusion_id) return errorResponse('room_id and inclusion_id are required', 400);
+
+      await env.DB.prepare(
+        'DELETE FROM room_inclusions WHERE room_id = ? AND inclusion_id = ?'
+      ).bind(room_id, inclusion_id).run();
+
+      return successResponse({ message: 'Inclusion unlinked from room successfully' });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
   return errorResponse('Endpoint not found', 404);
 }
 
@@ -429,14 +674,14 @@ async function handleAuth(url: URL, method: string, body: any, env: Env): Promis
 
 // ==================== IMAGES ====================
 async function handleImages(url: URL, method: string, request: Request, env: Env): Promise<Response> {
-  const R2_PUBLIC_URL = 'https://bookingengine-8g1-boe-kxn.pages.dev';
+  const R2_PUBLIC_URL = 'https://pub-e303ec878512482fa87c065266e6bedd.r2.dev';
 
   // GET /api/images/list
   if (url.pathname === '/api/images/list' && method === 'GET') {
     try {
       const prefix = url.searchParams.get('prefix') || '';
       const listed = await env.IMAGES.list({ prefix });
-
+      
       return successResponse({
         files: listed.objects.map((obj) => ({
           id: obj.key,
@@ -508,7 +753,7 @@ async function handleImages(url: URL, method: string, request: Request, env: Env
   if (url.pathname.startsWith('/api/images/') && method === 'DELETE') {
     try {
       const imageKey = url.pathname.replace('/api/images/', '');
-
+      
       await env.IMAGES.delete(imageKey);
 
       return successResponse({ success: true, message: 'Image deleted', key: imageKey });
@@ -606,10 +851,10 @@ async function handleSettings(url: URL, method: string, body: any, env: Env): Pr
   if (method === 'POST') {
     try {
       const { admin_email, villa_name, from_email } = body;
-
+      
       // Get existing settings
       const existing = await env.CACHE.get('app_settings', 'json') as any || {};
-
+      
       // Merge with new values
       const updatedSettings = {
         ...existing,
@@ -635,10 +880,10 @@ async function handleSettings(url: URL, method: string, body: any, env: Env): Pr
   if (method === 'PUT' && settingKey) {
     try {
       const { value } = body;
-
+      
       // Get existing settings
       const existing = await env.CACHE.get('app_settings', 'json') as any || {};
-
+      
       // Update specific key
       existing[settingKey] = value;
       existing.updated_at = new Date().toISOString();
@@ -685,7 +930,7 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
     // Send booking confirmation email
     if (action === 'booking-confirmation') {
       const { booking_data } = body;
-
+      
       if (!booking_data || !booking_data.guest_email) {
         return errorResponse('Missing booking_data or guest_email', 400);
       }
@@ -764,7 +1009,7 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
     // Send status change notification
     if (action === 'status-change') {
       const { booking_data, old_status, new_status } = body;
-
+      
       const emailResult = {
         success: true,
         message: 'Status change notification sent',
@@ -784,9 +1029,9 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
 }
 
 // ==================== RESEND EMAIL SERVICE ====================
-async function sendEmailViaResend(env: Env, to: string, subject: string, html: string): Promise<{ id: string, error?: string }> {
+async function sendEmailViaResend(env: Env, to: string, subject: string, html: string): Promise<{ id: string }> {
   const RESEND_API_KEY = env.RESEND_API_KEY;
-
+  
   if (!RESEND_API_KEY) {
     console.error('RESEND_API_KEY not configured');
     return { id: 'no-api-key' };
@@ -800,7 +1045,7 @@ async function sendEmailViaResend(env: Env, to: string, subject: string, html: s
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${env.VILLA_NAME || 'Best Villa Bali'} <booking@bookingengine.com>`,
+        from: `${env.VILLA_NAME || 'Best Villa Bali'} <booking@alphadigitalagency.id>`,
         to: [to],
         subject: subject,
         html: html,
@@ -808,7 +1053,7 @@ async function sendEmailViaResend(env: Env, to: string, subject: string, html: s
     });
 
     const result = await response.json();
-
+    
     if (!response.ok) {
       console.error('Resend API error:', result);
       return { id: 'error-' + Date.now(), error: JSON.stringify(result) };
