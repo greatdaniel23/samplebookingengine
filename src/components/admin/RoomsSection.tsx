@@ -11,6 +11,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 const RoomsSection: React.FC = () => {
+  const safeJSONParse = (jsonString: string | any, defaultValue: any = []) => {
+    if (!jsonString) return defaultValue;
+    if (Array.isArray(jsonString) || typeof jsonString === 'object') return jsonString;
+    try {
+      return JSON.parse(jsonString);
+    } catch (e) {
+      console.error('Error parsing JSON:', e, jsonString);
+      return defaultValue;
+    }
+  };
+
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingRoom, setEditingRoom] = useState<any>(null);
@@ -54,7 +65,7 @@ const RoomsSection: React.FC = () => {
   const fetchRooms = async () => {
     try {
       setLoading(true);
-      const apiUrl = paths.buildApiUrl('rooms');
+      const apiUrl = paths.buildApiUrl('rooms?all=true');
 
 
       const response = await fetch(apiUrl);
@@ -79,8 +90,11 @@ const RoomsSection: React.FC = () => {
       }
 
       if (roomsArray.length > 0) {
-
-
+        // Normalize room data
+        roomsArray = roomsArray.map((room: any) => ({
+          ...room,
+          available: room.is_active === 1
+        }));
       }
 
       setRooms(roomsArray);
@@ -185,10 +199,11 @@ const RoomsSection: React.FC = () => {
       // Include the room ID in the request body as expected by the API
       const requestBody = {
         ...roomFormData,
-        id: editingRoom.id
+        id: editingRoom.id,
+        is_active: roomFormData.available
       };
 
-      const response = await fetch(paths.buildApiUrl('rooms'), {
+      const response = await fetch(paths.buildApiUrl(`rooms/${editingRoom.id}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -216,7 +231,7 @@ const RoomsSection: React.FC = () => {
     if (!confirm('Are you sure you want to delete this room?')) return;
 
     try {
-      const response = await fetch(paths.buildApiUrl('rooms'), {
+      const response = await fetch(paths.buildApiUrl(`rooms/${roomId}`), {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -412,12 +427,9 @@ const RoomsSection: React.FC = () => {
                       size: room.size || '',
                       beds: room.beds || '',
                       available: room.available !== false,
-                      features: Array.isArray(room.features) ? room.features :
-                        (room.features ? JSON.parse(room.features) : []),
-                      amenities: Array.isArray(room.amenities) ? room.amenities :
-                        (room.amenities ? JSON.parse(room.amenities) : []),
-                      images: Array.isArray(room.images) ? room.images :
-                        (room.images ? JSON.parse(room.images) : [])
+                      features: safeJSONParse(room.features, []),
+                      amenities: safeJSONParse(room.amenities, []),
+                      images: safeJSONParse(room.images, [])
                     });
                   }}
                 >

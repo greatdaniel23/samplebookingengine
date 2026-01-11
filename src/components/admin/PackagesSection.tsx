@@ -4,6 +4,8 @@ import { paths } from '@/config/paths';
 import { ImageManager } from '@/components/ImageManager';
 import { PackageCalendarManager } from './PackageCalendarManager';
 import { PackageRoomsManager } from './PackageRoomsManager';
+import R2ImagePicker from './R2ImagePicker';
+import { getImageUrl } from '@/config/r2';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +33,7 @@ const PackagesSection: React.FC = () => {
   const [selectedPackageForInclusions, setSelectedPackageForInclusions] = useState<{ id: number, name: string } | null>(null);
   const [showInclusionsModal, setShowInclusionsModal] = useState(false);
   const [packageInclusions, setPackageInclusions] = useState<any[]>([]);
+  const [showImagePicker, setShowImagePicker] = useState(false);
 
   // Marketing categories
   const [marketingCategories, setMarketingCategories] = useState<any[]>([]);
@@ -171,7 +174,7 @@ const PackagesSection: React.FC = () => {
   const fetchPackageAmenities = async (packageId: number) => {
     try {
       // Use Cloudflare Worker API
-      const apiUrl = `https://bookingengine-8g1-boe-kxn.pages.dev/api/packages/${packageId}/amenities`;
+      const apiUrl = paths.buildApiUrl(`packages/${packageId}/amenities`);
       console.log('Fetching package amenities from:', apiUrl);
 
       const response = await fetch(apiUrl);
@@ -195,7 +198,7 @@ const PackagesSection: React.FC = () => {
   const addAmenityToPackage = async (packageId: number, amenityId: number, isHighlighted: boolean = false) => {
     try {
       // Use Cloudflare Worker API
-      const apiUrl = `https://bookingengine-8g1-boe-kxn.pages.dev/api/packages/${packageId}/amenities`;
+      const apiUrl = paths.buildApiUrl(`packages/${packageId}/amenities`);
       console.log('Adding amenity to package:', apiUrl);
 
       const response = await fetch(apiUrl, {
@@ -222,7 +225,7 @@ const PackagesSection: React.FC = () => {
   const removeAmenityFromPackage = async (packageId: number, amenityId: number) => {
     try {
       // Use Cloudflare Worker API
-      const apiUrl = `https://bookingengine-8g1-boe-kxn.pages.dev/api/packages/${packageId}/amenities/${amenityId}`;
+      const apiUrl = paths.buildApiUrl(`packages/${packageId}/amenities/${amenityId}`);
       console.log('Removing amenity from package:', apiUrl);
       const response = await fetch(apiUrl, { method: 'DELETE' });
 
@@ -242,7 +245,7 @@ const PackagesSection: React.FC = () => {
 
   const fetchPackageInclusions = async (packageId: number) => {
     try {
-      const apiUrl = `https://bookingengine-8g1-boe-kxn.pages.dev/api/packages/${packageId}/inclusions`;
+      const apiUrl = paths.buildApiUrl(`packages/${packageId}/inclusions`);
       console.log('Fetching package inclusions from:', apiUrl);
 
       const response = await fetch(apiUrl);
@@ -265,7 +268,7 @@ const PackagesSection: React.FC = () => {
 
   const addInclusionToPackage = async (packageId: number, inclusionId: number) => {
     try {
-      const apiUrl = `https://bookingengine-8g1-boe-kxn.pages.dev/api/packages/${packageId}/inclusions`;
+      const apiUrl = paths.buildApiUrl(`packages/${packageId}/inclusions`);
       console.log('Adding inclusion to package:', apiUrl);
 
       const response = await fetch(apiUrl, {
@@ -291,7 +294,7 @@ const PackagesSection: React.FC = () => {
 
   const removeInclusionFromPackage = async (packageId: number, inclusionId: number) => {
     try {
-      const apiUrl = `https://bookingengine-8g1-boe-kxn.pages.dev/api/packages/${packageId}/inclusions/${inclusionId}`;
+      const apiUrl = paths.buildApiUrl(`packages/${packageId}/inclusions/${inclusionId}`);
       console.log('Removing inclusion from package:', apiUrl);
       const response = await fetch(apiUrl, { method: 'DELETE' });
 
@@ -1186,72 +1189,51 @@ const PackagesSection: React.FC = () => {
                   )}
 
                   {/* Image Upload */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    <input
-                      type="file"
-                      id="package-images"
-                      multiple
-                      accept="image/*"
-                      onChange={async (e) => {
-                        const files = e.target.files;
-                        if (files) {
-                          // Validate files before processing
-                          const validFiles = Array.from(files).filter(file => {
-                            // Check file type
-                            if (!file.type.startsWith('image/')) {
-                              alert(`File "${file.name}" is not an image. Only image files are allowed.`);
-                              return false;
-                            }
-                            // Check file size (max 10MB)
-                            if (file.size > 10 * 1024 * 1024) {
-                              alert(`File "${file.name}" is too large. Maximum file size is 10MB.`);
-                              return false;
-                            }
-                            return true;
-                          });
-
-                          if (validFiles.length === 0) {
-                            e.target.value = ''; // Reset input
-                            return;
-                          }
-
-                          // Convert valid files to data URLs for safe preview
-                          const filePromises = validFiles.map(file => {
-                            return new Promise<string>((resolve, reject) => {
-                              const reader = new FileReader();
-                              reader.onload = (e) => resolve(e.target?.result as string);
-                              reader.onerror = reject;
-                              reader.readAsDataURL(file);
-                            });
-                          });
-
-                          try {
-                            const dataUrls = await Promise.all(filePromises);
-                            setPackageFormData({
-                              ...packageFormData,
-                              images: [...packageFormData.images, ...dataUrls]
-                            });
-                            // Reset the input after successful processing
-                            e.target.value = '';
-                          } catch (error) {
-                            console.error('Error reading files:', error);
-                            alert('Error reading selected files. Please try again.');
-                            e.target.value = ''; // Reset input on error
-                          }
-                        }
-                      }}
-                      className="hidden"
-                    />
-                    <label htmlFor="package-images" className="cursor-pointer">
-                      <div className="flex flex-col items-center">
-                        <ImagePlus className="w-8 h-8 text-gray-400 mb-2" />
-                        <span className="text-sm text-gray-600">Click to upload images</span>
-                        <span className="text-xs text-gray-500">PNG, JPG up to 10MB</span>
-                      </div>
-                    </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <div className="flex flex-col items-center">
+                      <ImagePlus className="w-12 h-12 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600 mb-4">Select images from R2 Storage</p>
+                      <Button
+                        type="button"
+                        onClick={() => setShowImagePicker(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Select Images
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* R2 Image Picker Modal */}
+              {showImagePicker && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto relative">
+                    <button
+                      onClick={() => setShowImagePicker(false)}
+                      className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10"
+                    >
+                      <X size={24} />
+                    </button>
+                    <div className="p-6">
+                      <h3 className="text-lg font-semibold mb-4">Select Package Image</h3>
+                      <R2ImagePicker
+                        onSelect={(imageId) => {
+                          const imageUrl = getImageUrl(imageId);
+                          setPackageFormData({
+                            ...packageFormData,
+                            images: [...packageFormData.images, imageUrl]
+                          });
+                          setShowImagePicker(false);
+                        }}
+                        prefix="packages/"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
 
               {/* Value Proposition Preview */}
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -1299,340 +1281,348 @@ const PackagesSection: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </div >
+        </div >
       )}
 
       {/* Package Calendar Manager */}
-      {selectedPackageForCalendar && (
-        <PackageCalendarManager
-          packageId={selectedPackageForCalendar.id}
-          packageName={selectedPackageForCalendar.name}
-          isOpen={calendarManagerOpen}
-          onClose={() => {
-            setCalendarManagerOpen(false);
-            setSelectedPackageForCalendar(null);
-          }}
-        />
-      )}
+      {
+        selectedPackageForCalendar && (
+          <PackageCalendarManager
+            packageId={selectedPackageForCalendar.id}
+            packageName={selectedPackageForCalendar.name}
+            isOpen={calendarManagerOpen}
+            onClose={() => {
+              setCalendarManagerOpen(false);
+              setSelectedPackageForCalendar(null);
+            }}
+          />
+        )
+      }
 
       {/* Package Rooms Manager */}
-      {selectedPackageForRooms && (
-        <PackageRoomsManager
-          packageId={selectedPackageForRooms.id}
-          packageName={selectedPackageForRooms.name}
-          isOpen={roomsManagerOpen}
-          onClose={() => {
-            setRoomsManagerOpen(false);
-            setSelectedPackageForRooms(null);
-          }}
-        />
-      )}
+      {
+        selectedPackageForRooms && (
+          <PackageRoomsManager
+            packageId={selectedPackageForRooms.id}
+            packageName={selectedPackageForRooms.name}
+            isOpen={roomsManagerOpen}
+            onClose={() => {
+              setRoomsManagerOpen(false);
+              setSelectedPackageForRooms(null);
+            }}
+          />
+        )
+      }
 
       {/* Package Amenities Manager */}
-      {showAmenitiesModal && selectedPackageForAmenities && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-hotel-gold-light bg-hotel-cream">
-              <div>
-                <h3 className="text-lg font-semibold text-hotel-navy">Manage Package Amenities</h3>
-                <p className="text-sm text-hotel-bronze mt-1">
-                  Configure amenities for "{selectedPackageForAmenities.name}"
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setShowAmenitiesModal(false);
-                  setSelectedPackageForAmenities(null);
-                  setPackageAmenities([]);
-                }}
-                className="text-hotel-bronze hover:text-hotel-navy"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Available Amenities */}
+      {
+        showAmenitiesModal && selectedPackageForAmenities && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-hotel-gold-light bg-hotel-cream">
                 <div>
-                  <h4 className="text-md font-semibold text-hotel-navy mb-4 flex items-center">
-                    <Plus className="h-5 w-5 mr-2 text-hotel-gold" />
-                    Available Amenities
-                  </h4>
+                  <h3 className="text-lg font-semibold text-hotel-navy">Manage Package Amenities</h3>
+                  <p className="text-sm text-hotel-bronze mt-1">
+                    Configure amenities for "{selectedPackageForAmenities.name}"
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowAmenitiesModal(false);
+                    setSelectedPackageForAmenities(null);
+                    setPackageAmenities([]);
+                  }}
+                  className="text-hotel-bronze hover:text-hotel-navy"
+                >
+                  ✕
+                </button>
+              </div>
 
-                  {amenities.length === 0 ? (
-                    <div className="text-center py-8 text-hotel-bronze">
-                      <Building className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p className="font-medium">No amenities available</p>
-                      <p className="text-sm text-gray-400 mt-1">Create amenities in the Amenities Management section first</p>
-                      <div className="mt-4 p-4 bg-hotel-cream rounded-lg text-left">
-                        <p className="text-xs text-hotel-bronze font-medium mb-2">Quick Setup:</p>
-                        <p className="text-xs text-hotel-bronze">1. Go to \"Amenities\" tab in admin panel</p>
-                        <p className="text-xs text-hotel-bronze">2. Create amenities like \"Swimming Pool\", \"Free WiFi\", etc.</p>
-                        <p className="text-xs text-hotel-bronze">3. Or run the sample amenities SQL in: /sample-data/sample-amenities.sql</p>
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Available Amenities */}
+                  <div>
+                    <h4 className="text-md font-semibold text-hotel-navy mb-4 flex items-center">
+                      <Plus className="h-5 w-5 mr-2 text-hotel-gold" />
+                      Available Amenities
+                    </h4>
+
+                    {amenities.length === 0 ? (
+                      <div className="text-center py-8 text-hotel-bronze">
+                        <Building className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p className="font-medium">No amenities available</p>
+                        <p className="text-sm text-gray-400 mt-1">Create amenities in the Amenities Management section first</p>
+                        <div className="mt-4 p-4 bg-hotel-cream rounded-lg text-left">
+                          <p className="text-xs text-hotel-bronze font-medium mb-2">Quick Setup:</p>
+                          <p className="text-xs text-hotel-bronze">1. Go to \"Amenities\" tab in admin panel</p>
+                          <p className="text-xs text-hotel-bronze">2. Create amenities like \"Swimming Pool\", \"Free WiFi\", etc.</p>
+                          <p className="text-xs text-hotel-bronze">3. Or run the sample amenities SQL in: /sample-data/sample-amenities.sql</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            console.log('Retrying amenities fetch...');
+                            fetchAmenities();
+                          }}
+                          className="mt-3 bg-hotel-gold text-white px-4 py-2 rounded text-sm hover:bg-hotel-gold-dark"
+                        >
+                          Retry Loading
+                        </button>
                       </div>
-                      <button
-                        onClick={() => {
-                          console.log('Retrying amenities fetch...');
-                          fetchAmenities();
-                        }}
-                        className="mt-3 bg-hotel-gold text-white px-4 py-2 rounded text-sm hover:bg-hotel-gold-dark"
-                      >
-                        Retry Loading
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      <div className="text-xs text-hotel-bronze mb-2">Found {amenities.length} amenities</div>
-                      {amenities.map((amenity) => {
-                        const isAssigned = packageAmenities.some(pa => pa.id === amenity.id);
-                        return (
-                          <div key={amenity.id} className={`p-3 border rounded-lg transition-colors ${isAssigned
-                            ? 'bg-hotel-cream border-hotel-gold text-hotel-bronze'
-                            : 'bg-white border-gray-200 hover:border-hotel-gold-light'
-                            }`}>
+                    ) : (
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        <div className="text-xs text-hotel-bronze mb-2">Found {amenities.length} amenities</div>
+                        {amenities.map((amenity) => {
+                          const isAssigned = packageAmenities.some(pa => pa.id === amenity.id);
+                          return (
+                            <div key={amenity.id} className={`p-3 border rounded-lg transition-colors ${isAssigned
+                              ? 'bg-hotel-cream border-hotel-gold text-hotel-bronze'
+                              : 'bg-white border-gray-200 hover:border-hotel-gold-light'
+                              }`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium">{amenity.name}</span>
+                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                      {amenity.category}
+                                    </span>
+                                    {!!amenity.is_featured && (
+                                      <span className="text-xs bg-hotel-gold text-white px-2 py-1 rounded">
+                                        Featured
+                                      </span>
+                                    )}
+                                  </div>
+                                  {amenity.description && (
+                                    <p className="text-xs text-gray-500 mt-1">{amenity.description}</p>
+                                  )}
+                                </div>
+
+                                {!isAssigned ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      console.log('Add button clicked for amenity:', amenity.id, 'to package:', selectedPackageForAmenities.id);
+                                      addAmenityToPackage(selectedPackageForAmenities.id, amenity.id);
+                                    }}
+                                    className="bg-hotel-gold text-white px-3 py-1 rounded text-sm hover:bg-hotel-gold-dark cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:ring-opacity-50"
+                                  >
+                                    Add
+                                  </button>
+                                ) : (
+                                  <span className="text-xs text-hotel-sage font-medium">Added</span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Assigned Amenities */}
+                  <div>
+                    <h4 className="text-md font-semibold text-hotel-navy mb-4 flex items-center">
+                      <Check className="h-5 w-5 mr-2 text-hotel-sage" />
+                      Package Amenities ({packageAmenities.length})
+                    </h4>
+
+                    {packageAmenities.length === 0 ? (
+                      <div className="text-center py-12 text-hotel-bronze">
+                        <Building className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>No amenities assigned to this package</p>
+                        <p className="text-sm text-gray-400 mt-1">Add amenities from the left panel</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {packageAmenities.map((amenity) => (
+                          <div key={amenity.id} className="p-3 bg-hotel-cream border border-hotel-gold-light rounded-lg">
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium">{amenity.name}</span>
-                                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                  <span className="text-sm font-medium text-hotel-navy">{amenity.name}</span>
+                                  <span className="text-xs bg-hotel-gold/20 text-hotel-gold px-2 py-1 rounded">
                                     {amenity.category}
                                   </span>
-                                  {!!amenity.is_featured && (
-                                    <span className="text-xs bg-hotel-gold text-white px-2 py-1 rounded">
-                                      Featured
+                                  {!!amenity.is_highlighted && (
+                                    <span className="text-xs bg-hotel-sage text-white px-2 py-1 rounded">
+                                      Highlighted
                                     </span>
                                   )}
                                 </div>
                                 {amenity.description && (
-                                  <p className="text-xs text-gray-500 mt-1">{amenity.description}</p>
+                                  <p className="text-xs text-hotel-bronze mt-1">{amenity.description}</p>
+                                )}
+                                {amenity.custom_note && (
+                                  <p className="text-xs text-hotel-gold mt-1 italic">
+                                    Note: {amenity.custom_note}
+                                  </p>
                                 )}
                               </div>
 
-                              {!isAssigned ? (
+                              <div className="flex items-center gap-2">
                                 <button
                                   type="button"
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    console.log('Add button clicked for amenity:', amenity.id, 'to package:', selectedPackageForAmenities.id);
-                                    addAmenityToPackage(selectedPackageForAmenities.id, amenity.id);
+                                    console.log('Toggle highlight for amenity:', amenity.id);
+                                    addAmenityToPackage(selectedPackageForAmenities.id, amenity.id, !amenity.is_highlighted);
                                   }}
-                                  className="bg-hotel-gold text-white px-3 py-1 rounded text-sm hover:bg-hotel-gold-dark cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:ring-opacity-50"
+                                  className={`px-2 py-1 rounded text-xs transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 ${!!amenity.is_highlighted
+                                    ? 'bg-hotel-sage text-white focus:ring-hotel-sage'
+                                    : 'bg-gray-200 text-gray-600 hover:bg-hotel-sage hover:text-white focus:ring-hotel-sage'
+                                    }`}
+                                  title="Toggle highlight"
                                 >
-                                  Add
+                                  ⭐
                                 </button>
-                              ) : (
-                                <span className="text-xs text-hotel-sage font-medium">Added</span>
-                              )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('Remove amenity:', amenity.id, 'from package:', selectedPackageForAmenities.id);
+                                    removeAmenityFromPackage(selectedPackageForAmenities.id, amenity.id);
+                                  }}
+                                  className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Package Inclusions Modal */}
+      {
+        showInclusionsModal && selectedPackageForInclusions && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="flex justify-between items-center p-6 border-b">
+                <h3 className="text-xl font-semibold text-hotel-navy">
+                  Manage Inclusions - {selectedPackageForInclusions.name}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowInclusionsModal(false);
+                    setSelectedPackageForInclusions(null);
+                    setPackageInclusions([]);
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto max-h-[70vh]">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                  {/* Available Inclusions */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-hotel-navy mb-4">Available Inclusions</h4>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {inclusions.map((inclusion) => {
+                        const isAssigned = packageInclusions.some(pa => pa.inclusion_id === inclusion.id);
+                        return (
+                          <div
+                            key={inclusion.id}
+                            className={`p-3 border rounded-lg ${isAssigned ? 'bg-gray-100 border-gray-300' : 'bg-white border-gray-200 hover:border-hotel-sage'}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-sm font-medium text-hotel-navy">{inclusion.name}</span>
+                                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">{inclusion.category}</span>
+                                </div>
+                                {inclusion.description && (
+                                  <p className="text-xs text-gray-600 mt-1">{inclusion.description}</p>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                disabled={isAssigned}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log('Add inclusion:', inclusion.id, 'to package:', selectedPackageForInclusions.id);
+                                  addInclusionToPackage(selectedPackageForInclusions.id, inclusion.id);
+                                }}
+                                className={`px-3 py-1 rounded text-xs font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 ${isAssigned
+                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                  : 'bg-hotel-sage text-white hover:bg-hotel-sage-dark focus:ring-hotel-sage'
+                                  }`}
+                              >
+                                {isAssigned ? 'Added' : 'Add'}
+                              </button>
                             </div>
                           </div>
                         );
                       })}
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                {/* Assigned Amenities */}
-                <div>
-                  <h4 className="text-md font-semibold text-hotel-navy mb-4 flex items-center">
-                    <Check className="h-5 w-5 mr-2 text-hotel-sage" />
-                    Package Amenities ({packageAmenities.length})
-                  </h4>
-
-                  {packageAmenities.length === 0 ? (
-                    <div className="text-center py-12 text-hotel-bronze">
-                      <Building className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>No amenities assigned to this package</p>
-                      <p className="text-sm text-gray-400 mt-1">Add amenities from the left panel</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {packageAmenities.map((amenity) => (
-                        <div key={amenity.id} className="p-3 bg-hotel-cream border border-hotel-gold-light rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-hotel-navy">{amenity.name}</span>
-                                <span className="text-xs bg-hotel-gold/20 text-hotel-gold px-2 py-1 rounded">
-                                  {amenity.category}
-                                </span>
-                                {!!amenity.is_highlighted && (
-                                  <span className="text-xs bg-hotel-sage text-white px-2 py-1 rounded">
-                                    Highlighted
-                                  </span>
+                  {/* Assigned Inclusions */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-hotel-navy mb-4">
+                      Package Inclusions ({packageInclusions.length})
+                    </h4>
+                    {packageInclusions.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Check className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p>No inclusions assigned to this package yet.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {packageInclusions.map((inclusion) => (
+                          <div key={inclusion.inclusion_id} className="bg-hotel-sage/10 border border-hotel-sage/20 rounded-lg p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-sm font-medium text-hotel-navy">{inclusion.name}</span>
+                                  <span className="text-xs bg-hotel-sage/20 text-hotel-sage px-2 py-1 rounded">{inclusion.category}</span>
+                                </div>
+                                {inclusion.description && (
+                                  <p className="text-xs text-gray-600 mt-1">{inclusion.description}</p>
                                 )}
                               </div>
-                              {amenity.description && (
-                                <p className="text-xs text-hotel-bronze mt-1">{amenity.description}</p>
-                              )}
-                              {amenity.custom_note && (
-                                <p className="text-xs text-hotel-gold mt-1 italic">
-                                  Note: {amenity.custom_note}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  console.log('Toggle highlight for amenity:', amenity.id);
-                                  addAmenityToPackage(selectedPackageForAmenities.id, amenity.id, !amenity.is_highlighted);
-                                }}
-                                className={`px-2 py-1 rounded text-xs transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 ${!!amenity.is_highlighted
-                                  ? 'bg-hotel-sage text-white focus:ring-hotel-sage'
-                                  : 'bg-gray-200 text-gray-600 hover:bg-hotel-sage hover:text-white focus:ring-hotel-sage'
-                                  }`}
-                                title="Toggle highlight"
-                              >
-                                ⭐
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  console.log('Remove amenity:', amenity.id, 'from package:', selectedPackageForAmenities.id);
-                                  removeAmenityFromPackage(selectedPackageForAmenities.id, amenity.id);
-                                }}
-                                className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Package Inclusions Modal */}
-      {showInclusionsModal && selectedPackageForInclusions && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h3 className="text-xl font-semibold text-hotel-navy">
-                Manage Inclusions - {selectedPackageForInclusions.name}
-              </h3>
-              <button
-                onClick={() => {
-                  setShowInclusionsModal(false);
-                  setSelectedPackageForInclusions(null);
-                  setPackageInclusions([]);
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto max-h-[70vh]">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                {/* Available Inclusions */}
-                <div>
-                  <h4 className="text-lg font-semibold text-hotel-navy mb-4">Available Inclusions</h4>
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {inclusions.map((inclusion) => {
-                      const isAssigned = packageInclusions.some(pa => pa.inclusion_id === inclusion.id);
-                      return (
-                        <div
-                          key={inclusion.id}
-                          className={`p-3 border rounded-lg ${isAssigned ? 'bg-gray-100 border-gray-300' : 'bg-white border-gray-200 hover:border-hotel-sage'}`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
                               <div className="flex items-center space-x-2">
-                                <span className="text-sm font-medium text-hotel-navy">{inclusion.name}</span>
-                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">{inclusion.category}</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('Remove inclusion:', inclusion.inclusion_id, 'from package:', selectedPackageForInclusions.id);
+                                    removeInclusionFromPackage(selectedPackageForInclusions.id, inclusion.inclusion_id);
+                                  }}
+                                  className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+                                >
+                                  Remove
+                                </button>
                               </div>
-                              {inclusion.description && (
-                                <p className="text-xs text-gray-600 mt-1">{inclusion.description}</p>
-                              )}
                             </div>
-                            <button
-                              type="button"
-                              disabled={isAssigned}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log('Add inclusion:', inclusion.id, 'to package:', selectedPackageForInclusions.id);
-                                addInclusionToPackage(selectedPackageForInclusions.id, inclusion.id);
-                              }}
-                              className={`px-3 py-1 rounded text-xs font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 ${isAssigned
-                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                : 'bg-hotel-sage text-white hover:bg-hotel-sage-dark focus:ring-hotel-sage'
-                                }`}
-                            >
-                              {isAssigned ? 'Added' : 'Add'}
-                            </button>
                           </div>
-                        </div>
-                      );
-                    })}
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Assigned Inclusions */}
-                <div>
-                  <h4 className="text-lg font-semibold text-hotel-navy mb-4">
-                    Package Inclusions ({packageInclusions.length})
-                  </h4>
-                  {packageInclusions.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Check className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                      <p>No inclusions assigned to this package yet.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {packageInclusions.map((inclusion) => (
-                        <div key={inclusion.inclusion_id} className="bg-hotel-sage/10 border border-hotel-sage/20 rounded-lg p-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-sm font-medium text-hotel-navy">{inclusion.name}</span>
-                                <span className="text-xs bg-hotel-sage/20 text-hotel-sage px-2 py-1 rounded">{inclusion.category}</span>
-                              </div>
-                              {inclusion.description && (
-                                <p className="text-xs text-gray-600 mt-1">{inclusion.description}</p>
-                              )}
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  console.log('Remove inclusion:', inclusion.inclusion_id, 'from package:', selectedPackageForInclusions.id);
-                                  removeInclusionFromPackage(selectedPackageForInclusions.id, inclusion.inclusion_id);
-                                }}
-                                className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 

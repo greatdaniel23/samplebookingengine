@@ -41,7 +41,7 @@ export const Header = ({ showGallery = false, className = '' }: HeaderProps) => 
                 {/* Logo - Clickable to go to main site */}
                 <a href="https://rumahdaisycantik.com" target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
                     <img
-                        src="https://bookingengine-8g1-boe-kxn.pages.dev/logo.png"
+                        src="/logo.png"
                         alt="Rumah Daisy Cantik Logo"
                         className="h-16 w-auto md:h-20 object-contain cursor-pointer"
                     />

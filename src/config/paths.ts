@@ -32,7 +32,7 @@ const PUBLIC_BASE = import.meta.env.VITE_PUBLIC_BASE || '/';
 
 // PRODUCTION-ONLY CONFIGURATION
 // All API calls are routed to Cloudflare Worker
-const PRODUCTION_API = 'https://bookingengine-8g1-boe-kxn.pages.dev/api';
+const PRODUCTION_API = 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api';
 
 // Always use production API URL - no local development
 let API_BASE = import.meta.env.VITE_API_BASE || PRODUCTION_API;

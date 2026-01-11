@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Room } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { getRoomImages, getImageProps } from "@/utils/images";
+import { getImageUrl } from "@/config/r2";
 
 interface RoomCardProps {
   room: Room;
@@ -12,12 +13,18 @@ interface RoomCardProps {
 
 export const RoomCard = ({ room }: RoomCardProps) => {
   const navigate = useNavigate();
-  
+
   // Get room images - use room.id for image folder structure
   const roomImages = getRoomImages(room.id);
-  
+
   // Fallback to API image_url if exists, otherwise use our structured images
-  const imageUrl = room.image_url || roomImages.main;
+  let imageUrl = roomImages.main;
+
+  if (room.images && Array.isArray(room.images) && room.images.length > 0) {
+    imageUrl = getImageUrl(room.images[0]);
+  } else if (room.image_url) {
+    imageUrl = getImageUrl(room.image_url);
+  }
   const imageProps = getImageProps(imageUrl, room.name);
 
   const handleBook = () => {
@@ -31,7 +38,7 @@ export const RoomCard = ({ room }: RoomCardProps) => {
   return (
     <Card className="overflow-hidden flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="p-0">
-        <img 
+        <img
           {...imageProps}
           className="w-full h-56 object-cover"
           onError={(e) => {

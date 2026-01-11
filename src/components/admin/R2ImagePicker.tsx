@@ -19,7 +19,7 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
   const [selectedImage, setSelectedImage] = useState<string>(currentImage || '');
   const [dragActive, setDragActive] = useState(false);
 
-  const R2_PUBLIC_URL = 'https://bookingengine-8g1-boe-kxn.pages.dev';
+  const R2_PUBLIC_URL = 'https://pub-e303ec878512482fa87c065266e6bedd.r2.dev';
   const API_BASE_URL = paths.apiBase;
 
   useEffect(() => {

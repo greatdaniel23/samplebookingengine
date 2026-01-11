@@ -134,7 +134,7 @@ const PackageDetails = () => {
 
     try {
       // Try fetching from room API first
-      const response = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/${room.room_id}`);
+      const response = await fetch(paths.buildApiUrl(`rooms/${room.room_id}`));
       const data = await response.json();
 
       if (data.success && data.data?.images?.length > 0) {
@@ -150,7 +150,7 @@ const PackageDetails = () => {
         // Fallback: try room type folder
         const roomType = room.type || room.room_type || '';
         const folder = roomType.replace(/\s+/g, '');
-        const fallbackResp = await fetch(`https://bookingengine-8g1-boe-kxn.pages.dev/api/rooms/images/${encodeURIComponent(folder)}`);
+        const fallbackResp = await fetch(paths.buildApiUrl(`rooms/images/${encodeURIComponent(folder)}`));
         const fallbackData = await fallbackResp.json();
 
         if (fallbackData.success && fallbackData.data?.images?.length > 0) {
@@ -346,8 +346,8 @@ const PackageDetails = () => {
     );
   }
 
-  const discountPercentage = parseFloat(pkg.discount_percentage);
-  const basePrice = parseFloat(pkg.price || pkg.base_price || '0');
+  const discountPercentage = parseFloat(String(pkg.discount_percentage || '0'));
+  const basePrice = parseFloat(String(pkg.price || pkg.base_price || '0'));
   const originalPrice = basePrice / (1 - discountPercentage / 100);
 
   // Calculate final price with room adjustment

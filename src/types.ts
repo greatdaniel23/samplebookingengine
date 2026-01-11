@@ -13,7 +13,7 @@ export interface Room {
   type?: string | null;
   capacity?: number;
   amenities?: string | null;
-  images?: string | null;
+  images?: string[] | string | null;
   created_at?: string;
   updated_at?: string;
 }

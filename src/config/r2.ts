@@ -1,5 +1,5 @@
 export const R2_CONFIG = {
-  publicUrl: 'https://bookingengine-8g1-boe-kxn.pages.dev',
+  publicUrl: 'https://pub-e303ec878512482fa87c065266e6bedd.r2.dev',
   bucketName: 'imageroom',
 } as const;
 
