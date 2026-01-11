@@ -41,12 +41,12 @@ export const packageService = {
    */
   async getPackageById(id: string, includeRooms: boolean = true): Promise<{ success: boolean; data: Package; message: string }> {
     try {
-      const params = new URLSearchParams({
-        id: id,
-        ...(includeRooms && { include_rooms: 'true' })
-      });
+      // Use /packages/{id} endpoint for single package fetch
+      const url = includeRooms 
+        ? `${API_BASE_URL}/packages/${id}?include_rooms=true`
+        : `${API_BASE_URL}/packages/${id}`;
       
-      const response = await fetch(`${API_BASE_URL}/packages?${params.toString()}`);
+      const response = await fetch(url);
       
       if (!response.ok) {
         // If including rooms fails with 500, try without rooms

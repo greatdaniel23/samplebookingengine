@@ -328,7 +328,17 @@ const PackageDetails = () => {
   }
 
   // Check if package is inactive - redirect to not found for customers
-  if (!pkg.available) {
+  // API returns is_active field, not available
+  const isPackageActive = pkg.is_active === 1 || pkg.is_active === true || 
+                          pkg.available === 1 || pkg.available === true;
+  
+  // Check date validity
+  const today = new Date().toISOString().split('T')[0];
+  let isDateValid = true;
+  if (pkg.valid_from && today < pkg.valid_from) isDateValid = false;
+  if (pkg.valid_until && today > pkg.valid_until) isDateValid = false;
+
+  if (!isPackageActive || !isDateValid) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto bg-white border border-gray-200 rounded-lg shadow-sm">

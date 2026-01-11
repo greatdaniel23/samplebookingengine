@@ -142,8 +142,9 @@ const PackagesSection: React.FC = () => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const data = await response.json();
-      if (data.success && data.amenities) {
-        setAmenities(data.amenities || []);
+      // API returns data in 'data' field, not 'amenities'
+      if (data.success && (data.data || data.amenities)) {
+        setAmenities(data.data || data.amenities || []);
       } else {
         setAmenities([]);
       }
@@ -160,8 +161,10 @@ const PackagesSection: React.FC = () => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const data = await response.json();
-      if (data.success && data.inclusions) {
-        setInclusions(data.inclusions || []);
+      // API returns data in 'data.inclusions' format
+      if (data.success) {
+        const inclusionsList = data.data?.inclusions || data.inclusions || [];
+        setInclusions(inclusionsList);
       } else {
         setInclusions([]);
       }
@@ -1227,7 +1230,7 @@ const PackagesSection: React.FC = () => {
                           });
                           setShowImagePicker(false);
                         }}
-                        prefix="packages/"
+                        prefix=""
                       />
                     </div>
                   </div>

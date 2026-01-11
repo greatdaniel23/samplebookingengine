@@ -124,18 +124,44 @@ export const PackagesPage: React.FC = () => {
 
   const applyFilters = () => {
     let filtered = [...packages];
+    
+    // Get today's date for validity check
+    const today = new Date().toISOString().split('T')[0];
 
-    // CRITICAL: Filter out inactive packages for customers
-    filtered = filtered.filter(pkg => pkg.available === 1 || pkg.available === true);
+    // CRITICAL: Filter by is_active AND date validity
+    filtered = filtered.filter(pkg => {
+      const isActive = pkg.is_active === 1 || pkg.is_active === true || 
+                      pkg.available === 1 || pkg.available === true;
+      
+      // Check date validity
+      let isDateValid = true;
+      if (pkg.valid_from && today < pkg.valid_from) isDateValid = false;
+      if (pkg.valid_until && today > pkg.valid_until) isDateValid = false;
+      
+      return isActive && isDateValid;
+    });
+
+    // Filter by type (skip if empty)
+    if (filters.type && filters.type !== 'all') {
+      filtered = filtered.filter(pkg => 
+        pkg.package_type === filters.type || pkg.type === filters.type
+      );
+    }
 
     // Filter by search term (client-side)
     if (filters.search) {
       const search = filters.search.toLowerCase();
-      filtered = filtered.filter(pkg =>
-        pkg.name.toLowerCase().includes(search) ||
-        pkg.description.toLowerCase().includes(search) ||
-        (pkg.inclusions || pkg.includes || []).some(item => item.toLowerCase().includes(search))
-      );
+      filtered = filtered.filter(pkg => {
+        // Parse inclusions if string
+        let inclusions = pkg.inclusions || pkg.includes || [];
+        if (typeof inclusions === 'string') {
+          try { inclusions = JSON.parse(inclusions); } catch { inclusions = []; }
+        }
+        
+        return pkg.name.toLowerCase().includes(search) ||
+          pkg.description.toLowerCase().includes(search) ||
+          (Array.isArray(inclusions) && inclusions.some((item: string) => item.toLowerCase().includes(search)));
+      });
     }
 
     // Filter by guest count (client-side)
@@ -271,8 +297,8 @@ export const PackagesPage: React.FC = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Package Type</Label>
                 <Select
-                  value={filters.type}
-                  onValueChange={(value) => handleFilterChange('type', value)}
+                  value={filters.type || 'all'}
+                  onValueChange={(value) => handleFilterChange('type', value === 'all' ? '' : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All types" />
@@ -297,6 +323,7 @@ export const PackagesPage: React.FC = () => {
                     id="check-in"
                     type="date"
                     value={filters.checkIn}
+                    min={new Date().toISOString().split('T')[0]}
                     onChange={(e) => handleFilterChange('checkIn', e.target.value)}
                     className="pl-10 border-gray-300 focus:border-blue-600 focus:ring-blue-600"
                   />
@@ -312,6 +339,7 @@ export const PackagesPage: React.FC = () => {
                     id="check-out"
                     type="date"
                     value={filters.checkOut}
+                    min={filters.checkIn || new Date().toISOString().split('T')[0]}
                     onChange={(e) => handleFilterChange('checkOut', e.target.value)}
                     className="pl-10 border-gray-300 focus:border-blue-600 focus:ring-blue-600"
                   />
