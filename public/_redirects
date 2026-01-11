@@ -1,1 +1,2 @@
+/api/*  https://booking-engine-api.danielsantosomarketing2017.workers.dev/api/:splat  200
 /*    /index.html   200
