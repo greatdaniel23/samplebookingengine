@@ -42,13 +42,15 @@ interface VillaData {
 }
 
 const SimplifiedHomepageManager: React.FC = () => {
-  const { homepageContent, loading, error, updateHomepageContent } = useHomepageContent();
+  const { homepageContent, loading, error, updateHomepageContent, refetch } = useHomepageContent();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<VillaData | null>(null);
   const [saving, setSaving] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     if (homepageContent) {
+      console.log('📝 Updating formData from homepageContent:', homepageContent.name);
       setFormData({
         name: homepageContent.name || '',
         description: homepageContent.description || '',
@@ -95,19 +97,26 @@ const SimplifiedHomepageManager: React.FC = () => {
         state: formData.state,
         country: formData.country,
         zipcode: formData.zipCode,
-        checkIn: formData.checkInTime,
-        checkOut: formData.checkOutTime,
-        // REMOVED: maxGuests, bedrooms, bathrooms, basePrice (don't exist in production villa_info table)
+        checkInTime: formData.checkInTime,
+        checkOutTime: formData.checkOutTime,
+        maxGuests: formData.maxGuests,
+        bedrooms: formData.bedrooms,
+        bathrooms: formData.bathrooms,
         cancellationPolicy: formData.cancellationPolicy,
         houseRules: formData.houseRules
       });
 
       if (result.success) {
+        console.log('✅ Update API returned success, now refetching...');
+        // Force refetch to ensure UI shows updated data
+        await refetch();
+        console.log('✅ Refetch complete, homepageContent should be updated');
         setIsEditing(false);
-        console.log('✅ Villa data updated successfully');
+        // Show success feedback to user
+        alert('✅ Villa information saved successfully!');
       } else {
         console.error('❌ Update failed:', result.error);
-        alert(`Update failed: ${result.error}`);
+        alert(`❌ Update failed: ${result.error}`);
       }
     } catch (err) {
       console.error('❌ Update error:', err);
@@ -155,12 +164,25 @@ const SimplifiedHomepageManager: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && !homepageContent) {
+    const handleRetry = async () => {
+      setRetrying(true);
+      await refetch();
+      setRetrying(false);
+    };
+    
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <h3 className="text-lg font-medium text-red-800 mb-2">Error Loading Data</h3>
-          <p className="text-red-700">{error}</p>
+          <p className="text-red-700 mb-4">{error}</p>
+          <button
+            onClick={handleRetry}
+            disabled={retrying}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            {retrying ? 'Retrying...' : 'Retry'}
+          </button>
         </div>
       </div>
     );

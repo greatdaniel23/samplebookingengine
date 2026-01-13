@@ -117,12 +117,12 @@ const BookingSummary = () => {
 
   // Dynamic contact information helpers
   const getContactPhone = () => {
-    return villaInfo?.phone || "+1 (555) 123-4567";
+    return villaInfo?.phone || "Contact phone not set";
   };
 
   const getContactEmail = () => {
     // Use villa info email or default
-    return villaInfo?.email || "support@villa.com";
+    return villaInfo?.email || "Contact email not set";
   };
 
   // State
@@ -132,6 +132,7 @@ const BookingSummary = () => {
   const [packageData, setPackageData] = useState<Package | null>(null);
   const [roomData, setRoomData] = useState<Room | null>(null);
   const [isUsingFallbackData, setIsUsingFallbackData] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const loadSummaryData = useCallback(async () => {
 
@@ -149,11 +150,11 @@ const BookingSummary = () => {
       let isUsingFallbackData = false;
 
       try {
-        // Use ID parameter if bookingRef is numeric (from route), otherwise use reference parameter
+        // Use ID parameter if bookingRef is numeric (from route), otherwise use ref endpoint
         const isNumericId = /^\d+$/.test(bookingRef);
         const apiUrl = isNumericId
           ? `${API_BASE_URL}/bookings/${bookingRef}`
-          : `${API_BASE_URL}/bookings/reference/${bookingRef}`;
+          : `${API_BASE_URL}/bookings/ref/${bookingRef}`;
 
         const response = await fetch(apiUrl);
 
@@ -276,6 +277,43 @@ const BookingSummary = () => {
         }
       }
 
+      // Send confirmation emails (guest + admin) after loading booking data
+      if (bookingApiData && !isUsingFallbackData) {
+        try {
+          const emailData = {
+            booking_reference: bookingApiData.booking_reference,
+            guest_email: bookingApiData.email,
+            guest_name: `${bookingApiData.first_name} ${bookingApiData.last_name}`,
+            check_in: bookingApiData.check_in,
+            check_out: bookingApiData.check_out,
+            guests: bookingApiData.guests,
+            total_amount: bookingApiData.total_price,
+            room_name: bookingApiData.room_name || 'Standard Room',
+            package_name: bookingApiData.package_name || '',
+            special_requests: bookingApiData.special_requests || '',
+          };
+
+          // Send guest confirmation email
+          await fetch(paths.buildApiUrl('email/booking-confirmation'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ booking_data: emailData })
+          });
+
+          // Send admin notification email
+          await fetch(paths.buildApiUrl('email/admin-notification'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ booking_data: emailData })
+          });
+
+          console.log('📧 Confirmation emails sent successfully');
+        } catch (emailError) {
+          console.error('📧 Failed to send confirmation emails:', emailError);
+          // Don't fail the page if email fails
+        }
+      }
+
     } catch (err) {
       console.error('Error loading summary data:', err);
       setError('Failed to load booking summary');
@@ -285,9 +323,66 @@ const BookingSummary = () => {
     }
   }, [bookingRef, packageId, roomId, searchParams]);
 
+  // Track if emails have been sent to avoid duplicates
+  const [emailsSent, setEmailsSent] = useState(false);
+
   useEffect(() => {
     loadSummaryData();
   }, [loadSummaryData]);
+
+  // Send confirmation emails once when booking data is loaded
+  useEffect(() => {
+    const sendConfirmationEmails = async () => {
+      if (!bookingData || emailsSent || isUsingFallbackData) return;
+
+      // Check sessionStorage to avoid re-sending on page refresh
+      const emailKey = `email_sent_${bookingData.reference}`;
+      if (sessionStorage.getItem(emailKey)) {
+        console.log('📧 Emails already sent for this booking');
+        return;
+      }
+
+      try {
+        const emailData = {
+          booking_reference: bookingData.reference,
+          guest_email: bookingData.guestInfo.email,
+          guest_name: `${bookingData.guestInfo.firstName} ${bookingData.guestInfo.lastName}`,
+          check_in: bookingData.checkIn,
+          check_out: bookingData.checkOut,
+          guests: bookingData.guests,
+          total_amount: bookingData.pricing.totalPrice,
+          room_name: roomData?.name || 'Standard Room',
+          package_name: packageData?.name || '',
+          special_requests: bookingData.guestInfo.specialRequests || '',
+        };
+
+        // Send guest confirmation email
+        const guestEmailRes = await fetch(paths.buildApiUrl('email/booking-confirmation'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ booking_data: emailData })
+        });
+        console.log('📧 Guest email response:', await guestEmailRes.json());
+
+        // Send admin notification email
+        const adminEmailRes = await fetch(paths.buildApiUrl('email/admin-notification'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ booking_data: emailData })
+        });
+        console.log('📧 Admin email response:', await adminEmailRes.json());
+
+        // Mark as sent
+        sessionStorage.setItem(emailKey, 'true');
+        setEmailsSent(true);
+        console.log('📧 Confirmation emails sent successfully');
+      } catch (emailError) {
+        console.error('📧 Failed to send confirmation emails:', emailError);
+      }
+    };
+
+    sendConfirmationEmails();
+  }, [bookingData, emailsSent, isUsingFallbackData, roomData, packageData]);
 
   const handleDownloadConfirmation = () => {
     // Mock download functionality
@@ -326,6 +421,45 @@ Total: $${bookingData?.pricing.totalPrice}
       // Fallback - copy to clipboard
       navigator.clipboard.writeText(window.location.href);
       alert('Link copied to clipboard!');
+    }
+  };
+
+  // Handle DOKU Payment
+  const handlePayment = async () => {
+    if (!bookingData) return;
+    
+    setPaymentLoading(true);
+    try {
+      const response = await fetch(paths.buildApiUrl('payment/create'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          booking_reference: bookingData.reference,
+          amount: bookingData.pricing.totalPrice,
+          customer_name: `${bookingData.guestInfo.firstName} ${bookingData.guestInfo.lastName}`,
+          customer_email: bookingData.guestInfo.email,
+          customer_phone: bookingData.guestInfo.phone,
+          callback_url: `${window.location.origin}/booking/${bookingData.reference}`
+        })
+      });
+
+      const result = await response.json();
+
+      console.log('Payment API response:', result);
+
+      if (result.success && result.data?.payment_url) {
+        // Redirect to DOKU payment page
+        window.location.href = result.data.payment_url;
+      } else {
+        const errorMsg = result.error || 'Unknown error';
+        const details = result.details ? `\n\nDetails: ${JSON.stringify(result.details, null, 2)}` : '';
+        alert('Failed to create payment: ' + errorMsg + details);
+      }
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      alert('Failed to initiate payment. Please try again.');
+    } finally {
+      setPaymentLoading(false);
     }
   };
 
@@ -371,12 +505,19 @@ Total: $${bookingData?.pricing.totalPrice}
 
         {/* Success Message */}
         <div className="text-center my-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-hotel-sage-light rounded-full mb-4">
-            <CheckCircle2 className="h-8 w-8 text-hotel-sage" />
+          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${bookingData.status === 'confirmed' ? 'bg-green-100' : bookingData.status === 'pending' ? 'bg-yellow-100' : 'bg-gray-100'}`}>
+            <CheckCircle2 className={`h-8 w-8 ${bookingData.status === 'confirmed' ? 'text-green-600' : bookingData.status === 'pending' ? 'text-yellow-600' : 'text-gray-600'}`} />
           </div>
-          <h1 className="text-4xl font-bold text-hotel-sage mb-2">Booking Confirmed!</h1>
+          <h1 className={`text-4xl font-bold mb-2 ${bookingData.status === 'confirmed' ? 'text-green-600' : bookingData.status === 'pending' ? 'text-yellow-600' : 'text-gray-600'}`}>
+            {bookingData.status === 'confirmed' ? 'Booking Confirmed!' : bookingData.status === 'pending' ? 'Booking Received!' : 'Booking Status'}
+          </h1>
           <p className="text-xl text-hotel-bronze mb-4">
-            Thank you for your reservation. Your booking has been successfully confirmed.
+            {bookingData.status === 'confirmed' 
+              ? 'Thank you for your reservation. Your booking has been successfully confirmed.'
+              : bookingData.status === 'pending'
+                ? 'Thank you for your reservation. Your booking is pending confirmation.'
+                : 'Your booking status will be updated shortly.'
+            }
           </p>
           <div className="inline-flex items-center gradient-hotel-success px-4 py-2 rounded-full">
             <span className="text-sm font-medium text-hotel-navy">
@@ -599,9 +740,9 @@ Total: $${bookingData?.pricing.totalPrice}
                     </span>
                   </div>
                   <div className="flex items-center justify-center pt-2">
-                    <Badge className="bg-green-100 text-green-700">
+                    <Badge className={bookingData.status === 'confirmed' ? 'bg-green-100 text-green-700' : bookingData.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}>
                       <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Booking Confirmed
+                      {bookingData.status === 'confirmed' ? 'Booking Confirmed' : bookingData.status === 'pending' ? 'Pending Confirmation' : bookingData.status}
                     </Badge>
                   </div>
                 </CardContent>
@@ -613,6 +754,26 @@ Total: $${bookingData?.pricing.totalPrice}
                   <CardTitle>Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {/* Pay Now Button */}
+                  {bookingData?.status === 'pending' && (
+                    <Button
+                      onClick={handlePayment}
+                      disabled={paymentLoading}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                    >
+                      {paymentLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Pay Now
+                        </>
+                      )}
+                    </Button>
+                  )}
                   <Button
                     onClick={handleDownloadConfirmation}
                     variant="outline"

@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { paths } from '@/config/paths';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { X, Upload, Image as ImageIcon } from 'lucide-react';
 
 interface R2ImagePickerProps {
   onSelect: (imageId: string) => void;
@@ -21,6 +25,8 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
 
   const R2_PUBLIC_URL = 'https://pub-e303ec878512482fa87c065266e6bedd.r2.dev';
   const API_BASE_URL = paths.apiBase;
+
+  console.log('R2ImagePicker - API_BASE_URL:', API_BASE_URL);
 
   useEffect(() => {
     if (showModal) {
@@ -192,43 +198,36 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
           />
         ) : (
           <div className="w-20 h-20 bg-gray-200 rounded border flex items-center justify-center text-gray-400 text-xs">
-            No Image
+            <ImageIcon className="w-8 h-8" />
           </div>
         )}
 
-        <button
+        <Button
           type="button"
           onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+          variant="default"
+          size="sm"
         >
           {currentImage ? 'Change Image' : 'Select Image'}
-        </button>
+        </Button>
 
         {currentImage && (
-          <button
+          <Button
             type="button"
             onClick={() => onSelect('')}
-            className="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm"
+            variant="secondary"
+            size="sm"
           >
             Remove
-          </button>
+          </Button>
         )}
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Select Image from R2 Storage</h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>Select Image from R2 Storage</DialogTitle>
+          </DialogHeader>
 
             <div className="p-4 border-b bg-gray-50">
               <div
@@ -240,16 +239,14 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
                 onDrop={handleDrop}
               >
                 <label className="flex flex-col items-center justify-center gap-2 cursor-pointer">
-                  <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
+                  <Upload className="w-12 h-12 text-gray-400" />
                   <div>
-                    <span className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 inline-block">
-                      {uploading ? `Uploading...` : 'Choose Files'}
-                    </span>
+                    <Button variant="default" className="bg-green-600 hover:bg-green-700" disabled={uploading} asChild>
+                      <span>{uploading ? `Uploading...` : 'Choose Files'}</span>
+                    </Button>
                     <p className="text-sm text-gray-500 mt-2">or drag and drop images here</p>
                   </div>
-                  <input
+                  <Input
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
                     multiple
@@ -308,24 +305,22 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
                 {selectedImage ? `Selected: ${images.find(img => img.id === selectedImage)?.filename || selectedImage}` : 'No image selected'}
               </p>
               <div className="flex gap-2">
-                <button
+                <Button
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                  variant="outline"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleSelect}
                   disabled={!selectedImage}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Select Image
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

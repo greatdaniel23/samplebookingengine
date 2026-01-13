@@ -201,7 +201,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
               <h3 className="text-lg font-semibold mb-4">Select Image from R2 Storage</h3>
               <R2ImagePicker
                 onSelect={(imageId) => handleImageSelect(imageId)}
-                prefix="rooms/"
+                prefix=""
               />
             </div>
           </div>

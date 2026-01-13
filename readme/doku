@@ -1,0 +1,57 @@
+POST https://api-sandbox.doku.com/checkout/v1/payment
+
+npm install @doku-id/jokul-nodejs-library
+
+Lalu buat file create-payment.js:
+const Doku = require('@doku-id/jokul-nodejs-library');
+
+// 1. Setup Kunci Rahasia Anda
+Doku.setup({
+    clientId: 'CLIENT_ID_ANDA_DISINI',
+    secretKey: 'SECRET_KEY_ANDA_DISINI',
+    environment: 'sandbox' // Ubah ke 'production' jika sudah live
+});
+
+// 2. Fungsi Membuat Halaman Pembayaran
+async function createDokuPage() {
+    // Generate nomor invoice random biar tidak error 'Duplicate Order ID'
+    const invoiceNumber = "INV-" + Date.now(); 
+
+    const requestBody = {
+        order: {
+            amount: 50000, // Rp 50.000
+            invoice_number: invoiceNumber,
+            callback_url: "http://localhost:3000/payment/finish", // Redirect Page (UI)
+            auto_redirect: true
+        },
+        payment: {
+            payment_due_date: 60 // Expired dalam 60 menit
+        },
+        customer: {
+            name: "User Testing",
+            email: "test@example.com"
+        }
+    };
+
+    try {
+        // 3. Tembak ke DOKU
+        const response = await Doku.Payment.createCheckout(requestBody);
+        
+        // 4. Ambil URL Pembayarannya
+        const paymentUrl = response.response.payment.url;
+        
+        console.log("---------------------------------------");
+        console.log("SUKSES! Silakan redirect user ke sini:");
+        console.log(paymentUrl); 
+        console.log("---------------------------------------");
+        
+        // Di aplikasi nyata (Express.js), Anda akan melakukan:
+        // res.redirect(paymentUrl); 
+
+    } catch (error) {
+        console.error("Gagal membuat payment page:", error);
+    }
+}
+
+createDokuPage();
+

@@ -5,7 +5,7 @@
 
 export const API_CONFIG = {
   // Main Worker API
-  WORKER_API_BASE: 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api',
+  WORKER_API_BASE: 'https://booking-engine-api-production.danielsantosomarketing2017.workers.dev/api',
 
   // R2 Image Storage
   IMAGE_BUCKET_URL: 'https://pub-e303ec878512482fa87c065266e6bedd.r2.dev',

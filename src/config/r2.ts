@@ -1,6 +1,7 @@
 export const R2_CONFIG = {
   publicUrl: 'https://pub-e303ec878512482fa87c065266e6bedd.r2.dev',
   bucketName: 'imageroom',
+  s3Endpoint: 'https://b2a5cc3520b42302ad302f7a4790fbee.r2.cloudflarestorage.com/imageroom',
 } as const;
 
 /**

@@ -390,6 +390,27 @@ CREATE TABLE IF NOT EXISTS guest_profiles (
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Payment Transactions table (DOKU Payment Gateway)
+CREATE TABLE IF NOT EXISTS payment_transactions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  booking_reference TEXT NOT NULL,
+  invoice_number TEXT UNIQUE NOT NULL,
+  payment_method TEXT DEFAULT 'doku',
+  amount REAL NOT NULL,
+  currency TEXT DEFAULT 'IDR',
+  status TEXT CHECK(status IN ('pending', 'paid', 'failed', 'expired', 'refunded')) DEFAULT 'pending',
+  transaction_id TEXT,
+  payment_url TEXT,
+  customer_name TEXT,
+  customer_email TEXT,
+  customer_phone TEXT,
+  request_data TEXT,
+  callback_data TEXT,
+  paid_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_bookings_email ON bookings(email);
 CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
@@ -402,3 +423,6 @@ CREATE INDEX IF NOT EXISTS idx_api_logs_timestamp ON api_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_rooms_active ON rooms(is_active);
 CREATE INDEX IF NOT EXISTS idx_packages_active ON packages(is_active);
 CREATE INDEX IF NOT EXISTS idx_packages_base_room ON packages(base_room_id);
+CREATE INDEX IF NOT EXISTS idx_payment_booking_ref ON payment_transactions(booking_reference);
+CREATE INDEX IF NOT EXISTS idx_payment_invoice ON payment_transactions(invoice_number);
+CREATE INDEX IF NOT EXISTS idx_payment_status ON payment_transactions(status);

@@ -25,8 +25,12 @@ id = "ec304060e11b4215888430acdee7aafa"
 
 # Production environment
 [env.production]
-vars = { ENVIRONMENT = "production", RESEND_API_KEY = "re_ggeu4gUr_B5wJcjrNv2zUVSTmGu8t7hhN", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali" }
+vars = { ENVIRONMENT = "production", RESEND_API_KEY = "re_ggeu4gUr_B5wJcjrNv2zUVSTmGu8t7hhN", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali", DOKU_ENVIRONMENT = "sandbox" }
 workers_dev = true
+
+# DOKU Payment secrets (add via: wrangler secret put DOKU_CLIENT_ID --env production)
+# DOKU_CLIENT_ID = "your-client-id"
+# DOKU_SECRET_KEY = "your-secret-key"
 
 # Bind D1 database to production
 [[env.production.d1_databases]]

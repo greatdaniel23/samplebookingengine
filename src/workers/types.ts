@@ -10,6 +10,10 @@ export interface Env {
   ADMIN_EMAIL?: string;
   VILLA_NAME?: string;
   FROM_EMAIL?: string;
+  // DOKU Payment Gateway
+  DOKU_CLIENT_ID?: string;
+  DOKU_SECRET_KEY?: string;
+  DOKU_ENVIRONMENT?: string; // 'sandbox' or 'production'
 }
 
 export interface User {

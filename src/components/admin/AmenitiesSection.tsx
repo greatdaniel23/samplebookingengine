@@ -71,6 +71,7 @@ const AmenitiesSection: React.FC = () => {
   const [inclusions, setInclusions] = useState<any[]>([]);
   const [inclusionsLoading, setInclusionsLoading] = useState(false);
   const [selectedInclusionCategory, setSelectedInclusionCategory] = useState('all');
+  const [inclusionSearchTerm, setInclusionSearchTerm] = useState('');
   const [showCreateInclusionModal, setShowCreateInclusionModal] = useState(false);
   const [editingInclusion, setEditingInclusion] = useState<any>(null);
   const [inclusionFormData, setInclusionFormData] = useState({
@@ -85,6 +86,13 @@ const AmenitiesSection: React.FC = () => {
   useEffect(() => {
     fetchAmenities();
   }, []);
+
+  // Auto-load inclusions when switching to inclusions tab
+  useEffect(() => {
+    if (activeAmenitiesTab === 'inclusions' && inclusions.length === 0) {
+      fetchInclusions();
+    }
+  }, [activeAmenitiesTab]);
 
   const fetchUsageStats = async (amenitiesList: any[]) => {
     try {
@@ -133,17 +141,20 @@ const AmenitiesSection: React.FC = () => {
 
       const data = await response.json();
 
-      if (data.success && data.amenities) {
-        setAmenities(data.amenities);
+      // Handle both response formats: {success, data} and {success, amenities}
+      const amenitiesList = data.data || data.amenities || [];
+      
+      if (data.success && amenitiesList.length >= 0) {
+        setAmenities(amenitiesList);
 
         // Calculate statistics
-        const uniqueCategories = [...new Set(data.amenities.map((a: any) => a.category))].filter(Boolean) as string[];
-        const featuredCount = data.amenities.filter((a: any) => a.is_featured === 1).length;
+        const uniqueCategories = [...new Set(amenitiesList.map((a: any) => a.category))].filter(Boolean) as string[];
+        const featuredCount = amenitiesList.filter((a: any) => a.is_featured === 1).length;
 
         // Fetch usage statistics
-        fetchUsageStats(data.amenities).then(usageStats => {
+        fetchUsageStats(amenitiesList).then(usageStats => {
           setStats({
-            total: data.amenities.length,
+            total: amenitiesList.length,
             categories: uniqueCategories.length,
             featured: featuredCount,
             inUse: usageStats.inUse
@@ -203,11 +214,11 @@ const AmenitiesSection: React.FC = () => {
     setEditingAmenity(amenity);
     setEditFormData({
       name: amenity.name,
-      category: amenity.category,
-      description: amenity.description,
-      icon: amenity.icon,
-      is_featured: amenity.is_featured === "1",
-      is_active: amenity.is_active === "1"
+      category: amenity.category || '',
+      description: amenity.description || '',
+      icon: amenity.icon || 'star',
+      is_featured: amenity.is_featured === 1 || amenity.is_featured === "1",
+      is_active: amenity.is_active === 1 || amenity.is_active === "1"
     });
     setShowEditModal(true);
   };
@@ -217,16 +228,13 @@ const AmenitiesSection: React.FC = () => {
     if (!editingAmenity) return;
 
     try {
-      const apiUrl = paths.buildApiUrl('amenities');
+      const apiUrl = paths.buildApiUrl(`amenities/${editingAmenity.id}`);
       const response = await fetch(apiUrl, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          id: editingAmenity.id,
-          ...editFormData
-        })
+        body: JSON.stringify(editFormData)
       });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -478,8 +486,12 @@ const AmenitiesSection: React.FC = () => {
       const response = await fetch(paths.buildApiUrl('inclusions'));
       if (response.ok) {
         const data = await response.json();
+        console.log('Inclusions API response:', data);
         if (data.success) {
-          setInclusions(data.inclusions || []);
+          // API returns: { success: true, data: { inclusions: [...] } }
+          const inclusionsList = data.data?.inclusions || [];
+          console.log('Setting inclusions:', inclusionsList.length, 'items');
+          setInclusions(inclusionsList);
         }
       }
     } catch (error) {
@@ -593,107 +605,130 @@ const AmenitiesSection: React.FC = () => {
       { value: 'special', label: '🎁 Special' }
     ];
 
-    const filteredInclusions = selectedInclusionCategory === 'all'
-      ? inclusions
-      : inclusions.filter(inc => inc.category === selectedInclusionCategory);
+    const filteredInclusions = inclusions.filter(inc => {
+      const matchesSearch = inc.name?.toLowerCase().includes(inclusionSearchTerm.toLowerCase()) ||
+        inc.description?.toLowerCase().includes(inclusionSearchTerm.toLowerCase());
+      const matchesCategory = selectedInclusionCategory === 'all' || inc.category === selectedInclusionCategory;
+      return matchesSearch && matchesCategory;
+    });
 
     return (
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h3 className="text-lg font-medium text-gray-900">What's Included Management</h3>
-            <p className="text-gray-600">Manage package inclusions and benefits</p>
-          </div>
-          <button
-            onClick={() => {
-              fetchInclusions();
-              setShowCreateInclusionModal(true);
-            }}
-            className="bg-hotel-gold hover:bg-hotel-gold-dark text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Inclusion
-          </button>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700">Category:</label>
-            <select
-              value={selectedInclusionCategory}
-              onChange={(e) => setSelectedInclusionCategory(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-1.5 text-sm"
-            >
-              {inclusionCategories.map(cat => (
-                <option key={cat.value} value={cat.value}>{cat.label}</option>
-              ))}
-            </select>
-            <button
-              onClick={fetchInclusions}
-              className="bg-hotel-sage hover:bg-hotel-sage-dark text-white px-3 py-1.5 rounded-md text-sm font-medium"
-            >
-              Load Inclusions
-            </button>
-          </div>
-        </div>
-
-        {/* Inclusions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {inclusionsLoading ? (
-            <div className="col-span-full text-center py-8">Loading inclusions...</div>
-          ) : filteredInclusions.length === 0 ? (
-            <div className="col-span-full text-center py-8 text-gray-500">
-              {inclusions.length === 0 ? 'Click "Load Inclusions" to fetch inclusions data' : 'No inclusions found for selected category'}
+        {/* Search and Filter Controls */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Search Inclusions</label>
+              <input
+                type="text"
+                value={inclusionSearchTerm}
+                onChange={(e) => setInclusionSearchTerm(e.target.value)}
+                placeholder="Search by name or description..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
-          ) : (
-            filteredInclusions.map((inclusion) => {
-              const IconComponent = getInclusionIcon(inclusion.icon);
-              return (
-                <div key={inclusion.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <IconComponent className="h-5 w-5 text-hotel-gold" />
-                      <div>
-                        <h3 className="font-medium text-gray-900">{inclusion.name}</h3>
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded capitalize">
-                          {inclusion.category}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {inclusion.is_featured ? (
-                        <Star className="h-4 w-4 text-yellow-500" title="Featured" />
-                      ) : null}
-                      <div className={`w-2 h-2 rounded-full ${inclusion.is_active ? 'bg-green-500' : 'bg-red-500'}`}
-                        title={inclusion.is_active ? 'Active' : 'Inactive'} />
-                    </div>
-                  </div>
+            <div className="md:w-48">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Category</label>
+              <select
+                value={selectedInclusionCategory}
+                onChange={(e) => setSelectedInclusionCategory(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {inclusionCategories.map(cat => (
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
 
-                  {inclusion.description && (
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">{inclusion.description}</p>
-                  )}
+        {/* Inclusions Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Featured</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {inclusionsLoading ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Loading inclusions...</td>
+                  </tr>
+                ) : filteredInclusions.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                      {inclusions.length === 0 ? 'No inclusions found. Add some inclusions to get started.' : 'No inclusions found matching your criteria'}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredInclusions.map((inclusion) => {
+                    const IconComponent = getInclusionIcon(inclusion.icon);
+                    return (
+                      <tr key={inclusion.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <IconComponent className="w-6 h-6 mr-3 text-hotel-gold" />
+                            <div className="text-sm font-medium text-gray-900">{inclusion.name}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800 capitalize">
+                            {inclusion.category || 'general'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                          {inclusion.description || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs ${
+                            inclusion.is_active ? 'bg-hotel-sage/20 text-hotel-sage' : 'bg-hotel-bronze/20 text-hotel-bronze'
+                          }`}>
+                            {inclusion.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {inclusion.is_featured ? (
+                            <svg className="w-5 h-5 text-hotel-gold" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.518 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                          ) : (
+                            <span className="text-gray-300">-</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => handleEditInclusion(inclusion)}
+                            className="text-hotel-sage hover:text-hotel-sage-dark mr-3"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteInclusion(inclusion.id)}
+                            className="text-hotel-bronze hover:text-hotel-bronze/80"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
 
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => handleEditInclusion(inclusion)}
-                      className="bg-hotel-sage text-white p-1.5 rounded hover:bg-hotel-sage-dark"
-                      title="Edit"
-                    >
-                      <Edit3 className="h-3 w-3" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteInclusion(inclusion.id)}
-                      className="bg-hotel-bronze text-white p-1.5 rounded hover:bg-hotel-bronze-dark"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })
+          {filteredInclusions.length === 0 && !inclusionsLoading && inclusions.length > 0 && (
+            <div className="text-center py-12">
+              <Check className="h-12 w-12 mx-auto mb-4 opacity-50 text-gray-400" />
+              <p className="text-gray-500">No inclusions found matching your criteria</p>
+            </div>
           )}
         </div>
       </div>
@@ -722,13 +757,29 @@ const AmenitiesSection: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold">Amenities Management</h2>
-          <p className="text-sm text-muted-foreground mt-1">Manage property features that enhance rooms and packages</p>
+          <h2 className="text-xl font-semibold">
+            {activeAmenitiesTab === 'inclusions' ? "What's Included Management" : 'Amenities Management'}
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {activeAmenitiesTab === 'inclusions' 
+              ? 'Manage package inclusions and benefits for customers'
+              : 'Manage property features that enhance rooms and packages'}
+          </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Amenity
-        </Button>
+        {activeAmenitiesTab === 'inclusions' ? (
+          <Button onClick={() => {
+            fetchInclusions();
+            setShowCreateInclusionModal(true);
+          }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Inclusion
+          </Button>
+        ) : (
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add New Amenity
+          </Button>
+        )}
       </div>
 
       {/* Statistics */}
