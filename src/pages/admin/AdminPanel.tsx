@@ -63,6 +63,8 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 
+import { useVillaInfo } from '@/hooks/useVillaInfo';
+
 // Navigation menu items
 const navItems = [
   { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
@@ -81,6 +83,7 @@ const navItems = [
 const AdminPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [activeCalendarTab, setActiveCalendarTab] = useState<'dashboard' | 'integration'>('dashboard');
+  const { villaInfo, refetch: refetchVillaInfo } = useVillaInfo();
 
   // 🔄 Initialize automatic sync on component mount
   useEffect(() => {
@@ -106,15 +109,28 @@ const AdminPanel: React.FC = () => {
       <Sidebar collapsible="icon">
         {/* Sidebar Header */}
         <SidebarHeader className="border-b border-sidebar-border">
-          <div className="flex items-center gap-3 px-2 py-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-              H
-            </div>
+          <a 
+            href={villaInfo?.website || "/"} 
+            target={villaInfo?.website ? "_blank" : "_self"} 
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-2 py-2 hover:opacity-80 transition-opacity"
+          >
+            {villaInfo?.logo_url ? (
+              <img 
+                src={villaInfo.logo_url} 
+                alt={villaInfo?.name || 'Logo'} 
+                className="h-8 w-8 object-contain rounded-lg"
+              />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
+                {villaInfo?.name?.charAt(0) || 'H'}
+              </div>
+            )}
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-              <span className="text-sm font-semibold">Hotel Admin</span>
+              <span className="text-sm font-semibold">{villaInfo?.name || 'Hotel Admin'}</span>
               <span className="text-xs text-muted-foreground">Management Portal</span>
             </div>
-          </div>
+          </a>
         </SidebarHeader>
 
         {/* Sidebar Content - Navigation */}
@@ -197,7 +213,7 @@ const AdminPanel: React.FC = () => {
           {activeTab === 'calendar' && <CalendarSection />}
           {activeTab === 'property' && <PropertySection />}
           {activeTab === 'analytics' && <AnalyticsSection />}
-          {activeTab === 'settings' && <SettingsSection />}
+          {activeTab === 'settings' && <SettingsSection onSave={refetchVillaInfo} />}
         </main>
       </SidebarInset>
     </SidebarProvider>
@@ -884,36 +900,139 @@ const AnalyticsSection: React.FC = () => {
 };
 
 // Settings Section
-const SettingsSection: React.FC = () => {
+interface SettingsSectionProps {
+  onSave?: () => void;
+}
+
+const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
   const [settings, setSettings] = useState({
     siteName: '',
     siteUrl: '',
     adminEmail: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    country: '',
     currency: 'USD',
     timezone: 'UTC',
-    maintenanceMode: false
+    checkInTime: '15:00',
+    checkOutTime: '11:00',
+    maintenanceMode: false,
+    logo_url: ''
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
-  const handleSave = async () => {
+  // Load settings from database on mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('Settings saved successfully!');
+      const apiUrl = paths.buildApiUrl('villa') + `?t=${Date.now()}`;
+      const response = await fetch(apiUrl, {
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const data = result.data;
+          setSettings({
+            siteName: data.name || '',
+            siteUrl: data.website || '',
+            adminEmail: data.email || '',
+            phone: data.phone || '',
+            address: data.address || '',
+            city: data.city || '',
+            state: data.state || '',
+            country: data.country || '',
+            currency: data.currency || 'USD',
+            timezone: data.timezone || 'Asia/Jakarta',
+            checkInTime: data.checkInTime || data.check_in_time || '15:00',
+            checkOutTime: data.checkOutTime || data.check_out_time || '11:00',
+            maintenanceMode: data.maintenance_mode === 1 || data.maintenance_mode === true,
+            logo_url: data.logo_url || ''
+          });
+        }
+      }
     } catch (error) {
-      alert('Error saving settings');
+      console.error('Error loading settings:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const apiUrl = paths.buildApiUrl('villa');
+      const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: settings.siteName,
+          website: settings.siteUrl,
+          email: settings.adminEmail,
+          phone: settings.phone,
+          address: settings.address,
+          city: settings.city,
+          state: settings.state,
+          country: settings.country,
+          currency: settings.currency,
+          timezone: settings.timezone,
+          check_in_time: settings.checkInTime,
+          check_out_time: settings.checkOutTime,
+          maintenance_mode: settings.maintenanceMode ? 1 : 0,
+          logo_url: settings.logo_url
+        })
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        // Refetch to confirm changes
+        await loadSettings();
+        // Notify parent to refresh villa info (for sidebar logo)
+        onSave?.();
+        alert('✅ Settings saved successfully!');
+      } else {
+        alert('❌ Error saving settings: ' + (result.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('❌ Error saving settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">System Settings</h2>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center h-32">
+              <span className="text-gray-500">Loading settings...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">System Settings</h2>
-        <Button onClick={handleSave} disabled={loading}>
-          {loading ? 'Saving...' : 'Save Settings'}
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving...' : 'Save Settings'}
         </Button>
       </div>
 
@@ -923,20 +1042,101 @@ const SettingsSection: React.FC = () => {
           <CardDescription>Configure your site's basic information</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Logo Upload Section */}
+          <div className="space-y-4 pb-6 border-b">
+            <Label>Site Logo</Label>
+            <div className="flex items-center gap-6">
+              <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden">
+                {settings.logo_url ? (
+                  <img 
+                    src={settings.logo_url} 
+                    alt="Site Logo" 
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="text-center text-gray-400">
+                    <Image className="w-8 h-8 mx-auto mb-2" />
+                    <span className="text-xs">No logo</span>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  id="logoUpload"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    
+                    if (file.size > 5 * 1024 * 1024) {
+                      alert('Logo must be less than 5MB');
+                      return;
+                    }
+                    
+                    setUploadingLogo(true);
+                    try {
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      formData.append('prefix', 'logo');
+                      
+                      const response = await fetch(paths.buildApiUrl('images/upload'), {
+                        method: 'POST',
+                        body: formData
+                      });
+                      
+                      const result = await response.json();
+                      if (result.success && result.data?.url) {
+                        setSettings({ ...settings, logo_url: result.data.url });
+                        alert('✅ Logo uploaded! Click "Save Settings" to apply.');
+                      } else {
+                        alert('Failed to upload logo: ' + (result.error || 'Unknown error'));
+                      }
+                    } catch (error) {
+                      console.error('Logo upload error:', error);
+                      alert('Failed to upload logo');
+                    } finally {
+                      setUploadingLogo(false);
+                    }
+                  }}
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={() => document.getElementById('logoUpload')?.click()}
+                  disabled={uploadingLogo}
+                >
+                  {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
+                </Button>
+                {settings.logo_url && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-red-500 hover:text-red-700"
+                    onClick={() => setSettings({ ...settings, logo_url: '' })}
+                  >
+                    Remove Logo
+                  </Button>
+                )}
+                <p className="text-xs text-gray-500">Recommended: PNG or SVG, max 5MB</p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="siteName">Site Name</Label>
+              <Label htmlFor="siteName">Site Name / Villa Name</Label>
               <Input
                 id="siteName"
                 type="text"
                 value={settings.siteName}
                 onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                placeholder="Your Hotel Name"
+                placeholder="Your Villa Name"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="siteUrl">Site URL</Label>
+              <Label htmlFor="siteUrl">Website URL</Label>
               <Input
                 id="siteUrl"
                 type="url"
@@ -949,7 +1149,7 @@ const SettingsSection: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="adminEmail">Admin Email</Label>
+              <Label htmlFor="adminEmail">Admin / Contact Email</Label>
               <Input
                 id="adminEmail"
                 type="email"
@@ -959,6 +1159,63 @@ const SettingsSection: React.FC = () => {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={settings.phone}
+                onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
+                placeholder="+62 xxx xxxx xxxx"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address">Address</Label>
+            <Input
+              id="address"
+              type="text"
+              value={settings.address}
+              onChange={(e) => setSettings({ ...settings, address: e.target.value })}
+              placeholder="Street address"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="city">City</Label>
+              <Input
+                id="city"
+                type="text"
+                value={settings.city}
+                onChange={(e) => setSettings({ ...settings, city: e.target.value })}
+                placeholder="City"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="state">State / Province</Label>
+              <Input
+                id="state"
+                type="text"
+                value={settings.state}
+                onChange={(e) => setSettings({ ...settings, state: e.target.value })}
+                placeholder="State"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="country">Country</Label>
+              <Input
+                id="country"
+                type="text"
+                value={settings.country}
+                onChange={(e) => setSettings({ ...settings, country: e.target.value })}
+                placeholder="Country"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="currency">Currency</Label>
               <select
@@ -971,26 +1228,53 @@ const SettingsSection: React.FC = () => {
                 <option value="EUR">EUR - Euro</option>
                 <option value="GBP">GBP - British Pound</option>
                 <option value="IDR">IDR - Indonesian Rupiah</option>
+                <option value="MYR">MYR - Malaysian Ringgit</option>
+                <option value="SGD">SGD - Singapore Dollar</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="timezone">Timezone</Label>
+              <select
+                id="timezone"
+                value={settings.timezone}
+                onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
+                <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
+                <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
+                <option value="Asia/Singapore">Asia/Singapore</option>
+                <option value="Asia/Kuala_Lumpur">Asia/Kuala_Lumpur</option>
+                <option value="UTC">UTC</option>
+                <option value="America/New_York">America/New_York</option>
+                <option value="Europe/London">Europe/London</option>
               </select>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="timezone">Timezone</Label>
-            <select
-              id="timezone"
-              value={settings.timezone}
-              onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              <option value="UTC">UTC</option>
-              <option value="Asia/Jakarta">Asia/Jakarta</option>
-              <option value="America/New_York">America/New_York</option>
-              <option value="Europe/London">Europe/London</option>
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="checkInTime">Check-in Time</Label>
+              <Input
+                id="checkInTime"
+                type="time"
+                value={settings.checkInTime}
+                onChange={(e) => setSettings({ ...settings, checkInTime: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="checkOutTime">Check-out Time</Label>
+              <Input
+                id="checkOutTime"
+                type="time"
+                value={settings.checkOutTime}
+                onChange={(e) => setSettings({ ...settings, checkOutTime: e.target.value })}
+              />
+            </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 pt-4 border-t">
             <Switch
               id="maintenanceMode"
               checked={settings.maintenanceMode}

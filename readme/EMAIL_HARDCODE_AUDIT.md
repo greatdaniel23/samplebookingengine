@@ -14,8 +14,8 @@ email: 'info@villa.com',
 ### 2. **src/pages/user/RoomDetails.tsx** (1 occurrence)
 ```typescript
 // Lines 626, 630 - Hardcoded contact email
-href="mailto:reservations@rumahdaisycantik.com"
-<span>reservations@rumahdaisycantik.com</span>
+href="mailto:danielsantosomarketing2017@gmail.com"
+<span>danielsantosomarketing2017@gmail.com</span>
 ```
 
 ### 3. **src/pages/user/PackageDetails.tsx** (1 occurrence)

@@ -6,6 +6,7 @@ export interface VillaInfo {
   name: string;
   location: string;
   description: string;
+  logo_url?: string;
   rating: number;
   reviews: number;
   images: string[];

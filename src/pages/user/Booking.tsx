@@ -120,21 +120,22 @@ const BookingPage = () => {
           room = roomsArray[0];
         }
 
-        // If still no room, create a default room from package's base_room_id
+        // If still no room, create a default room from package's base_room_id or URL param
         if (!room) {
-          const baseRoomId = pkg.base_room_id || pkg.room_id || null;
+          const baseRoomId = roomParam || pkg.base_room_id || pkg.room_id || null;
           if (!baseRoomId) {
             throw new Error("Package has no associated room. Please contact support.");
           }
           room = {
             id: baseRoomId,
+            room_id: baseRoomId,
             name: pkg.name || 'Standard Room',
             price: pkg.price || pkg.base_price || 0,
             max_guests: pkg.max_guests || 2,
             size: '25',
             beds: 'Queen Bed'
           };
-          console.log("Using package base room:", room);
+          console.log("Using fallback room with ID from URL or package:", room);
         }
 
         console.log("Final selectedRoom:", room);
@@ -157,8 +158,34 @@ const BookingPage = () => {
   };
 
   const handleSubmitBooking = async () => {
-    if (!selectedPackage || !selectedRoom || !checkIn || !checkOut) {
-      showError("Missing booking information");
+    // Debug logging to identify which value is missing
+    console.log('handleSubmitBooking called');
+    console.log('selectedPackage:', selectedPackage);
+    console.log('selectedRoom:', selectedRoom);
+    console.log('checkIn:', checkIn);
+    console.log('checkOut:', checkOut);
+    console.log('roomParam from URL:', roomParam);
+
+    if (!selectedPackage) {
+      showError("Missing package information. Please select a package first.");
+      return;
+    }
+    if (!checkIn || !checkOut) {
+      showError("Missing dates. Please select check-in and check-out dates.");
+      return;
+    }
+    if (!selectedRoom) {
+      showError("Missing room selection. Please select a room.");
+      return;
+    }
+
+    // Room data can use different key names depending on source
+    // Also check roomParam from URL as fallback
+    const roomId = selectedRoom.id || selectedRoom.room_id || selectedRoom.roomId || roomParam;
+    console.log('Resolved roomId:', roomId);
+    
+    if (!roomId) {
+      showError("Missing room information. Please go back and select a room.");
       return;
     }
 
@@ -171,9 +198,13 @@ const BookingPage = () => {
     try {
       setBooking(true);
 
+      // Generate a unique booking reference
+      const bookingReference = `BK-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
       const bookingData = {
+        booking_reference: bookingReference,
         package_id: selectedPackage.id,
-        room_id: selectedRoom.id,
+        room_id: roomId,
         check_in: checkIn,
         check_out: checkOut,
         guests: guests,
@@ -188,7 +219,8 @@ const BookingPage = () => {
       console.log('selectedRoom:', selectedRoom);
       console.log('Sending booking data:', bookingData);
 
-      const response = await fetch(paths.api.bookings, {
+      // Use /bookings/create endpoint
+      const response = await fetch(paths.buildApiUrl('bookings/create'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -202,9 +234,11 @@ const BookingPage = () => {
 
       if (result.success) {
         showSuccess("Booking confirmed successfully!");
-        navigate(paths.confirmation(result.data.id));
+        // Navigate using booking_reference (API returns this, not id)
+        const bookingRef = result.data?.booking_reference || bookingReference;
+        navigate(`/confirmation/${bookingRef}`);
       } else {
-        throw new Error(result.message || "Booking failed");
+        throw new Error(result.message || result.error || "Booking failed");
       }
     } catch (err) {
       console.error("Booking error:", err);

@@ -1,0 +1,66 @@
+# Signature Componen from Response Header
+
+```
+Client-Id:value
+Request-Id:value
+Response-Timestamp:value
+Request-Target:value
+Digest:value
+```
+
+#### Component Explanation
+
+| Name                 | Description                                                                                          |
+| -------------------- | ---------------------------------------------------------------------------------------------------- |
+| `Client-Id`          | Retrieved from the Request Header                                                                    |
+| `Request-Id`         | Retrieved from the Request Header                                                                    |
+| `Response-Timestamp` | Retrieved from the Response Header                                                                   |
+| `Request-Target`     | The path of the endpoint that will be hitted e.g: `/doku-virtual-account/v2/payment-code`.           |
+| `Digest`             | Encoded (base64) value of hashed (SHA-256) JSON body. This component only applied for `POST` Method. |
+
+### Preparation
+
+Before validating `Signature`, merchant need to check all the component required.
+
+**Set Client-Id, Request-Id, Response-Timestamp.**[**​**](https://dashboard.doku.com/docs/docs/technical-references/generate-signature#set-client-id-request-id-response-timestamp)
+
+Use the Client-Id, Request-Id, Response-Timestamp that is placed on the Response Header.
+
+**Set Request-Target**[**​**](https://dashboard.doku.com/docs/docs/technical-references/generate-signature#set-request-target-1)
+
+The Request-Target is depending on who is sending the request:
+
+1. **When merchant hits DOKU endpoints:** The Request-Target is the path of the DOKU API that merchant hits.
+
+### Validating Signature <a href="#validating-signature" id="validating-signature"></a>
+
+After merchant send request to DOKU and generate signature in request header, DOKU will send response and generate signature in response header. Then merchant can verify this response is coming from DOKU by Signature.
+
+1. Arrange the signature components to one component and its value per line by adding  escape character. Don't add  at the end of the string. Sample of the raw format :&#x20;
+
+```
+Client-Id:MCH-0001-10791114622547\nRequest-Id:cc682442-6c22-493e-8121-b9ef6b3fa728\Response-Timestamp:2020-08-11T08:45:42Z\nRequest-Target:/doku-virtual-account/v2/payment-code\nDigest:5WIYK2TJg6iiZ0d5v4IXSR0EkYEkYOezJIma3Ufli5s=
+```
+
+This is how merchant will see :&#x20;
+
+```
+Client-Id:MCH-0001-10791114622547
+Request-Id:cc682442-6c22-493e-8121-b9ef6b3fa728
+Response-Timestamp:2020-08-11T08:45:42Z
+Request-Target:/doku-virtual-account/v2/payment-code
+Digest:5WIYK2TJg6iiZ0d5v4IXSR0EkYEkYOezJIma3Ufli5s=
+```
+
+2. Calculate HMAC-SHA256 base64 from all the components above using the [Secret Key from DOKU Back Office](https://dashboard.doku.com/docs/docs/getting-started/retrieve-credential)
+3. Put encoded value and prepend `HMACSHA256=` to the `Signature`. Sample :
+
+```
+Signature: HMACSHA256=OvIRJs/jH8BIcGsktr4d8nnYtxY6E0Uzdm9d1GVgv5s=
+```
+
+{% hint style="info" %}
+INFO!
+
+To make sure every response API from DOKU, just verify in Signature that you get from Response Header!
+{% endhint %}

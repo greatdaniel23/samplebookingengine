@@ -2,6 +2,7 @@ import { Env } from './types';
 import { handleRooms } from './routes/rooms';
 import { handlePackages } from './routes/packages';
 import { handleVilla } from './routes/villa';
+import { handlePayment } from './routes/payment';
 
 // FORCE REBUILD - Timestamp: 2026-01-09 02:37
 // This comment exists only to force Wrangler to rebuild the Worker
@@ -13,11 +14,14 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
   
   let body = null;
   // Skip JSON parsing for image upload (needs formData)
-  if ((method === 'POST' || method === 'PUT') && path !== '/api/images/upload') {
+  if ((method === 'POST' || method === 'PUT' || method === 'DELETE') && path !== '/api/images/upload') {
     try {
       body = await request.json();
     } catch (e) {
-      return errorResponse('Invalid JSON body', 400);
+      // Allow empty body for DELETE requests
+      if (method !== 'DELETE') {
+        return errorResponse('Invalid JSON body', 400);
+      }
     }
   }
 
@@ -116,6 +120,11 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     // Email routes
     if (path.startsWith('/api/email')) {
       return handleEmail(url, method, body, env);
+    }
+
+    // Payment routes (DOKU)
+    if (path.startsWith('/api/payment')) {
+      return handlePayment(url, method, body, env);
     }
 
     return errorResponse('Endpoint not found', 404);

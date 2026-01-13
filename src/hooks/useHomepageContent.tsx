@@ -32,9 +32,11 @@ export interface HomepageContent {
   bathrooms: number;
   basePrice: number;
   
-  // Timing Information
+  // Timing Information - support both formats
   checkIn: string;
   checkOut: string;
+  checkInTime?: string;
+  checkOutTime?: string;
   
   // Property Policies
   cancellationPolicy: string;
@@ -77,14 +79,17 @@ export const useHomepageContent = (): UseHomepageContentResult => {
       setError(null);
       
       // Use working villa API instead of broken homepage
-      const apiUrl = paths.buildApiUrl('villa');
+      // Add cache-busting parameter to ensure fresh data
+      const apiUrl = paths.buildApiUrl('villa') + `?t=${Date.now()}`;
       
+      console.log('🔄 Fetching villa data from:', apiUrl);
       
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
+        mode: 'cors',
       });
       
       if (!response.ok) {
@@ -158,39 +163,10 @@ export const useHomepageContent = (): UseHomepageContentResult => {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch homepage content';
       setError(errorMessage);
       
-      // Set fallback data to prevent app from breaking
-      setHomepageContent({
-        hero_title: 'Serene Mountain Retreat',
-        hero_subtitle: 'Luxury Villa Experience',
-        hero_description: 'Experience unparalleled luxury and comfort',
-        name: 'Serene Mountain Retreat',
-        location: 'Aspen, Colorado',
-        description: 'Escape to this stunning mountain retreat where modern luxury meets rustic charm.',
-        rating: 4.8,
-        reviews: 127,
-        phone: '+1 (555) 123-4567',
-        email: 'info@sereneretreat.com',
-        website: '',
-        address: '123 Luxury Avenue',
-        city: 'Aspen',
-        state: 'Colorado',
-        country: 'United States',
-        zipcode: '',
-        maxGuests: 8,
-        bedrooms: 4,
-        bathrooms: 3,
-        basePrice: 350,
-        checkIn: '3:00 PM',
-        checkOut: '11:00 AM',
-        cancellationPolicy: '',
-        houseRules: '',
-        termsConditions: '',
-        facebook: '',
-        instagram: '',
-        twitter: '',
-        images: [],
-        amenities: []
-      });
+      // DON'T set fallback data - let the error show so user knows there's an issue
+      // The previous hardcoded fallback was overwriting real database values
+      // setHomepageContent(null) will show error state in UI
+      setHomepageContent(null);
     } finally {
       setLoading(false);
     }
@@ -225,20 +201,20 @@ export const useHomepageContent = (): UseHomepageContentResult => {
       if (data.cancellationPolicy !== undefined) apiData.cancellationPolicy = data.cancellationPolicy;
       if (data.houseRules !== undefined) apiData.houseRules = data.houseRules;
       
-      // Property specifications - REMOVED: These columns don't exist in production villa_info table
-      // maxGuests, bedrooms, bathrooms, basePrice are not in production database
-      // if (data.maxGuests !== undefined) apiData.max_guests = data.maxGuests;
-      // if (data.bedrooms !== undefined) apiData.bedrooms = data.bedrooms; 
-      // if (data.bathrooms !== undefined) apiData.bathrooms = data.bathrooms;
-      // if (data.basePrice !== undefined) apiData.price_per_night = data.basePrice;
+      // Property specifications - these exist in villa_info table
+      if (data.maxGuests !== undefined) apiData.max_guests = data.maxGuests;
+      if (data.bedrooms !== undefined) apiData.total_rooms = data.bedrooms; 
+      if (data.bathrooms !== undefined) apiData.total_bathrooms = data.bathrooms;
       
-      // Rating and reviews (these DO exist in production)
+      // Rating and reviews
       if (data.rating !== undefined) apiData.rating = data.rating;
       if (data.reviews !== undefined) apiData.reviews = data.reviews;
       
-      // Timing - map to database field names
+      // Timing - support both checkIn/checkInTime formats
       if (data.checkIn !== undefined) apiData.check_in_time = data.checkIn;
       if (data.checkOut !== undefined) apiData.check_out_time = data.checkOut;
+      if (data.checkInTime !== undefined) apiData.check_in_time = data.checkInTime;
+      if (data.checkOutTime !== undefined) apiData.check_out_time = data.checkOutTime;
       
       // Ensure we always have required fields if nothing else is provided
       if (Object.keys(apiData).length === 0) {

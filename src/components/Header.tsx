@@ -21,7 +21,8 @@ export const Header = ({ showGallery = false, className = '' }: HeaderProps) => 
         phone: '',
         rating: 4.8,
         reviews: 120,
-        images: []
+        images: [],
+        logo_url: ''
     };
 
     const villa = villaInfo || defaultVilla;
@@ -39,10 +40,10 @@ export const Header = ({ showGallery = false, className = '' }: HeaderProps) => 
         <header className={`mb-8 ${className}`}>
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center gap-6">
                 {/* Logo - Clickable to go to main site */}
-                <a href="https://rumahdaisycantik.com" target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
+                <a href={villa.website || "/"} target={villa.website ? "_blank" : "_self"} rel="noopener noreferrer" className="flex-shrink-0">
                     <img
-                        src="/logo.png"
-                        alt="Rumah Daisy Cantik Logo"
+                        src={villa.logo_url || "/logo.png"}
+                        alt={`${villa.name} Logo`}
                         className="h-16 w-auto md:h-20 object-contain cursor-pointer"
                     />
                 </a>

@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useVillaInfo } from '@/hooks/useVillaInfo';
 import R2ImagePicker from './R2ImagePicker';
 import { getImageUrl } from '@/config/r2';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Pencil, Save, X, Plus, Trash2, Image, Home, Star } from 'lucide-react';
 
 const PropertySection: React.FC = () => {
   const { villaInfo, loading, updateVillaInfo } = useVillaInfo();
@@ -84,29 +92,31 @@ const PropertySection: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-gray-300 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <div className="h-32 bg-gray-300 rounded"></div>
-              <div className="h-48 bg-gray-300 rounded"></div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-1/4" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-48 w-full" />
+              </div>
+              <Skeleton className="h-64 w-full" />
             </div>
-            <div className="h-64 bg-gray-300 rounded"></div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!formData) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow text-center text-gray-500">
-        <svg className="h-12 w-12 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
-        <p>No villa information available</p>
-      </div>
+      <Card>
+        <CardContent className="p-6 text-center text-gray-500">
+          <Home className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>No villa information available</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -116,31 +126,29 @@ const PropertySection: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-900">Property Management</h2>
         <div className="flex gap-2">
           {!isEditing ? (
-            <button
+            <Button
               onClick={() => setIsEditing(true)}
-              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 flex items-center gap-2"
+              variant="secondary"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
+              <Pencil className="w-4 h-4 mr-2" />
               Edit Property
-            </button>
+            </Button>
           ) : (
             <>
-              <button
+              <Button
                 onClick={() => setIsEditing(false)}
-                className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
+                variant="outline"
               >
+                <X className="w-4 h-4 mr-2" />
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
               >
                 {saving ? (
                   <>
-                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
@@ -148,13 +156,11 @@ const PropertySection: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <Save className="w-4 h-4 mr-2" />
                     Save Changes
                   </>
                 )}
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -163,17 +169,19 @@ const PropertySection: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Basic Information */}
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
-            <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Basic Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Villa Name</label>
+                <Label htmlFor="name">Villa Name</Label>
                 {isEditing ? (
-                  <input
+                  <Input
+                    id="name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 ) : (
                   <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.name}</p>
@@ -181,13 +189,13 @@ const PropertySection: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <Label htmlFor="location">Location</Label>
                 {isEditing ? (
-                  <input
+                  <Input
+                    id="location"
                     type="text"
                     value={formData.location}
                     onChange={(e) => handleInputChange('location', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 ) : (
                   <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.location}</p>
@@ -196,16 +204,16 @@ const PropertySection: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
+                  <Label htmlFor="rating">Rating</Label>
                   {isEditing ? (
-                    <input
+                    <Input
+                      id="rating"
                       type="number"
                       min="0"
                       max="5"
                       step="0.1"
                       value={formData.rating}
                       onChange={(e) => handleInputChange('rating', parseFloat(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   ) : (
                     <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.rating} / 5</p>
@@ -213,14 +221,14 @@ const PropertySection: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Reviews</label>
+                  <Label htmlFor="reviews">Reviews</Label>
                   {isEditing ? (
-                    <input
+                    <Input
+                      id="reviews"
                       type="number"
                       min="0"
                       value={formData.reviews}
                       onChange={(e) => handleInputChange('reviews', parseInt(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   ) : (
                     <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.reviews} reviews</p>
@@ -229,38 +237,37 @@ const PropertySection: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <Label htmlFor="description">Description</Label>
                 {isEditing ? (
-                  <textarea
+                  <Textarea
+                    id="description"
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 ) : (
                   <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.description}</p>
                 )}
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Images */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Images</h3>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Images</CardTitle>
               {isEditing && (
-                <button
+                <Button
                   onClick={addImage}
-                  className="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700 flex items-center gap-1"
+                  variant="secondary"
+                  size="sm"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
+                  <Plus className="w-4 h-4 mr-1" />
                   Add Image
-                </button>
+                </Button>
               )}
-            </div>
-            <div className="space-y-3">
+            </CardHeader>
+            <CardContent className="space-y-3">
               {formData.images.map((image, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg p-3">
                   {isEditing ? (
@@ -272,14 +279,13 @@ const PropertySection: React.FC = () => {
                           prefix="villa/"
                         />
                       </div>
-                      <button
+                      <Button
                         onClick={() => removeImage(index)}
-                        className="bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 mt-1"
+                        variant="destructive"
+                        size="sm"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
@@ -307,69 +313,69 @@ const PropertySection: React.FC = () => {
               ))}
               {formData.images.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
-                  <svg className="h-12 w-12 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+                  <Image className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No images added</p>
                 </div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Amenities */}
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Amenities</h3>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Amenities</CardTitle>
               {isEditing && (
-                <button
+                <Button
                   onClick={addAmenity}
-                  className="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700 flex items-center gap-1"
+                  variant="secondary"
+                  size="sm"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
+                  <Plus className="w-4 h-4 mr-1" />
                   Add Amenity
-                </button>
+                </Button>
               )}
-            </div>
-            <div className="space-y-3">
+            </CardHeader>
+            <CardContent className="space-y-3">
               {formData.amenities.map((amenity, index) => (
                 <div key={index} className="flex items-center gap-2">
                   {isEditing ? (
                     <>
-                      <input
+                      <Input
                         type="text"
                         value={amenity.name}
                         onChange={(e) => handleAmenityChange(index, 'name', e.target.value)}
                         placeholder="Amenity name"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1"
                       />
-                      <select
+                      <Select
                         value={amenity.icon}
-                        onChange={(e) => handleAmenityChange(index, 'icon', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onValueChange={(value) => handleAmenityChange(index, 'icon', value)}
                       >
-                        <option value="Wifi">Wifi</option>
-                        <option value="Bath">Bath</option>
-                        <option value="Flame">Flame</option>
-                        <option value="CookingPot">CookingPot</option>
-                        <option value="Car">Car</option>
-                        <option value="AirVent">AirVent</option>
-                        <option value="Star">Star</option>
-                        <option value="Home">Home</option>
-                        <option value="Coffee">Coffee</option>
-                        <option value="Tv">Tv</option>
-                      </select>
-                      <button
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Wifi">Wifi</SelectItem>
+                          <SelectItem value="Bath">Bath</SelectItem>
+                          <SelectItem value="Flame">Flame</SelectItem>
+                          <SelectItem value="CookingPot">CookingPot</SelectItem>
+                          <SelectItem value="Car">Car</SelectItem>
+                          <SelectItem value="AirVent">AirVent</SelectItem>
+                          <SelectItem value="Star">Star</SelectItem>
+                          <SelectItem value="Home">Home</SelectItem>
+                          <SelectItem value="Coffee">Coffee</SelectItem>
+                          <SelectItem value="Tv">Tv</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
                         onClick={() => removeAmenity(index)}
-                        className="bg-gray-600 text-white px-2 py-2 rounded text-sm hover:bg-gray-700"
+                        variant="secondary"
+                        size="icon"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </>
                   ) : (
                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-md w-full">
@@ -381,14 +387,12 @@ const PropertySection: React.FC = () => {
               ))}
               {formData.amenities.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
-                  <svg className="h-12 w-12 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                  </svg>
+                  <Star className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No amenities added</p>
                 </div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

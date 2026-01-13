@@ -620,14 +620,14 @@ const RoomDetails: React.FC = () => {
                       className="flex items-center gap-3 text-gray-600 hover:text-blue-600 transition-colors"
                     >
                       <Phone className="w-5 h-5" />
-                      <span>+1 (234) 567-8900</span>
+                      <span>Contact phone not set</span>
                     </a>
                     <a
-                      href="mailto:reservations@rumahdaisycantik.com"
+                      href="#"
                       className="flex items-center gap-3 text-gray-600 hover:text-blue-600 transition-colors"
                     >
                       <Mail className="w-5 h-5" />
-                      <span>reservations@rumahdaisycantik.com</span>
+                      <span>Contact email not set</span>
                     </a>
                   </>
                 )}

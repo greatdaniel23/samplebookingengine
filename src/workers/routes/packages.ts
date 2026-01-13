@@ -94,17 +94,261 @@ export async function handlePackages(url: URL, method: string, body: any, env: E
   if (pathParts.length === 4 && pathParts[3] === 'rooms' && method === 'GET') {
     try {
       const packageId = parseInt(pathParts[2]);
-      const result = await env.DB.prepare(`
-        SELECT pr.*, r.name as room_name, r.description as room_description
-        FROM package_rooms pr
-        JOIN rooms r ON pr.room_id = r.id
-        WHERE pr.package_id = ? AND pr.is_active = 1
-        ORDER BY pr.is_default DESC, pr.availability_priority
-      `).bind(packageId).all();
+      const includeInactive = url.searchParams.get('include_inactive') === '1';
+      
+      const query = includeInactive
+        ? `SELECT pr.*, r.name as room_name, r.description as room_description, r.images as room_images
+           FROM package_rooms pr
+           JOIN rooms r ON pr.room_id = r.id
+           WHERE pr.package_id = ?
+           ORDER BY pr.is_default DESC, pr.availability_priority`
+        : `SELECT pr.*, r.name as room_name, r.description as room_description, r.images as room_images
+           FROM package_rooms pr
+           JOIN rooms r ON pr.room_id = r.id
+           WHERE pr.package_id = ? AND pr.is_active = 1
+           ORDER BY pr.is_default DESC, pr.availability_priority`;
+      
+      const result = await env.DB.prepare(query).bind(packageId).all();
+      
+      // Parse room_images JSON field
+      const rooms = result.results.map((room: any) => {
+        if (room.room_images && typeof room.room_images === 'string') {
+          try {
+            room.images = JSON.parse(room.room_images);
+          } catch {
+            room.images = [];
+          }
+        } else {
+          room.images = room.room_images || [];
+        }
+        delete room.room_images;
+        return room;
+      });
 
       return new Response(JSON.stringify({
         success: true,
-        data: result.results
+        data: rooms
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    } catch (error: any) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+  }
+
+  // POST /api/packages/:id/rooms - add room to package
+  if (pathParts.length === 4 && pathParts[3] === 'rooms' && method === 'POST') {
+    try {
+      const packageId = parseInt(pathParts[2]);
+      const { 
+        room_id, 
+        is_default = 0, 
+        price_adjustment = 0, 
+        adjustment_type = 'fixed',
+        availability_priority = 1,
+        max_occupancy_override = null,
+        description = null
+      } = body;
+
+      if (!room_id) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'room_id is required'
+        }), {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      }
+
+      // Check if relationship already exists
+      const existing = await env.DB.prepare(
+        'SELECT * FROM package_rooms WHERE package_id = ? AND room_id = ?'
+      ).bind(packageId, room_id).first();
+
+      if (existing) {
+        // Reactivate if soft-deleted
+        await env.DB.prepare(
+          `UPDATE package_rooms 
+           SET is_active = 1, is_default = ?, price_adjustment = ?, adjustment_type = ?, 
+               availability_priority = ?, max_occupancy_override = ?, description = ?
+           WHERE package_id = ? AND room_id = ?`
+        ).bind(
+          is_default ? 1 : 0,
+          price_adjustment,
+          adjustment_type,
+          availability_priority,
+          max_occupancy_override,
+          description,
+          packageId,
+          room_id
+        ).run();
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Room relationship updated'
+        }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      }
+
+      // If setting as default, unset other defaults first
+      if (is_default) {
+        await env.DB.prepare(
+          'UPDATE package_rooms SET is_default = 0 WHERE package_id = ?'
+        ).bind(packageId).run();
+      }
+
+      const result = await env.DB.prepare(
+        `INSERT INTO package_rooms (package_id, room_id, is_default, price_adjustment, adjustment_type, availability_priority, max_occupancy_override, description, is_active) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`
+      ).bind(
+        packageId,
+        room_id,
+        is_default ? 1 : 0,
+        price_adjustment,
+        adjustment_type,
+        availability_priority,
+        max_occupancy_override,
+        description
+      ).run();
+
+      return new Response(JSON.stringify({
+        success: true,
+        data: { id: result.meta.last_row_id },
+        message: 'Room added to package'
+      }), {
+        status: 201,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    } catch (error: any) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+  }
+
+  // PUT /api/packages/rooms/:id - update package room relationship
+  if (pathParts.length === 4 && pathParts[2] === 'rooms' && method === 'PUT') {
+    try {
+      const relationshipId = parseInt(pathParts[3]);
+      const { 
+        is_default, 
+        price_adjustment, 
+        adjustment_type,
+        availability_priority,
+        max_occupancy_override,
+        description,
+        is_active
+      } = body;
+
+      const updates: string[] = [];
+      const values: any[] = [];
+
+      if (is_default !== undefined) {
+        // If setting as default, get the package_id first
+        if (is_default) {
+          const rel = await env.DB.prepare(
+            'SELECT package_id FROM package_rooms WHERE id = ?'
+          ).bind(relationshipId).first() as any;
+          if (rel) {
+            await env.DB.prepare(
+              'UPDATE package_rooms SET is_default = 0 WHERE package_id = ?'
+            ).bind(rel.package_id).run();
+          }
+        }
+        updates.push('is_default = ?');
+        values.push(is_default ? 1 : 0);
+      }
+      if (price_adjustment !== undefined) { updates.push('price_adjustment = ?'); values.push(price_adjustment); }
+      if (adjustment_type !== undefined) { updates.push('adjustment_type = ?'); values.push(adjustment_type); }
+      if (availability_priority !== undefined) { updates.push('availability_priority = ?'); values.push(availability_priority); }
+      if (max_occupancy_override !== undefined) { updates.push('max_occupancy_override = ?'); values.push(max_occupancy_override); }
+      if (description !== undefined) { updates.push('description = ?'); values.push(description); }
+      if (is_active !== undefined) { updates.push('is_active = ?'); values.push(is_active ? 1 : 0); }
+
+      if (updates.length === 0) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'No fields to update'
+        }), {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      }
+
+      values.push(relationshipId);
+
+      await env.DB.prepare(
+        `UPDATE package_rooms SET ${updates.join(', ')} WHERE id = ?`
+      ).bind(...values).run();
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Package room relationship updated'
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    } catch (error: any) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+  }
+
+  // DELETE /api/packages/rooms/:id - soft delete package room relationship
+  if (pathParts.length === 4 && pathParts[2] === 'rooms' && method === 'DELETE') {
+    try {
+      const relationshipId = parseInt(pathParts[3]);
+
+      await env.DB.prepare(
+        'UPDATE package_rooms SET is_active = 0 WHERE id = ?'
+      ).bind(relationshipId).run();
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Room removed from package'
       }), {
         headers: {
           'Content-Type': 'application/json',
