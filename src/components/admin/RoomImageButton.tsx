@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Camera } from 'lucide-react';
 import { paths } from '@/config/paths';
+import { getImageUrl } from '@/config/r2';
 
 interface RoomImageButtonProps {
   roomId: string | number;
@@ -140,7 +141,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
           <div className="flex flex-col gap-2">
             <div className="relative inline-block group">
               <img
-                src={currentImage.image_url}
+                src={getImageUrl(currentImage.image_url)}
                 alt="Room image"
                 className="w-20 h-20 object-cover rounded-lg border-2 border-[var(--hotel-gold)]"
                 onError={(e) => {
@@ -367,7 +368,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
                 >
                   <div className="relative">
                     <img
-                      src={`https://rumahdaisycantik.com/images/rooms/${selectedFolder}/${image}`}
+                      src={getImageUrl(`rooms/${selectedFolder}/${image}`)}
                       alt={image}
                       className="w-full h-40 object-cover"
                       onLoad={(e) => {

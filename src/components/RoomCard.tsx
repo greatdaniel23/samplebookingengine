@@ -55,7 +55,7 @@ export const RoomCard = ({ room }: RoomCardProps) => {
       <CardFooter className="p-4 pt-2 bg-slate-50">
         <div className="flex justify-between items-center w-full mb-3">
           <div>
-            <p className="text-xl font-bold">${room.price}</p>
+            <p className="text-xl font-bold">Rp {room.price?.toLocaleString('id-ID')}</p>
             <p className="text-xs text-muted-foreground">/ night</p>
           </div>
           <Button onClick={handleViewDetails} variant="outline" size="sm">

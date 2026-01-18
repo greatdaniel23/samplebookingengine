@@ -37,6 +37,7 @@ import PackagesSection from '@/components/admin/PackagesSection';
 import AmenitiesSection from '@/components/admin/AmenitiesSection';
 import MarketingCategoriesSection from '@/components/admin/MarketingCategoriesSection';
 import SimplifiedHomepageManager from '@/components/admin/SimplifiedHomepageManager';
+import GTMSettingsSection from '@/components/admin/GTMSettingsSection';
 import { CalendarDashboard } from '@/components/CalendarDashboard';
 import { calendarService } from '@/services/calendarService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,6 +79,7 @@ const navItems = [
   { id: 'property', label: 'Property', icon: Home },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'gtm', label: 'GTM Settings', icon: Tag },
 ];
 
 const AdminPanel: React.FC = () => {
@@ -109,16 +111,16 @@ const AdminPanel: React.FC = () => {
       <Sidebar collapsible="icon">
         {/* Sidebar Header */}
         <SidebarHeader className="border-b border-sidebar-border">
-          <a 
-            href={villaInfo?.website || "/"} 
-            target={villaInfo?.website ? "_blank" : "_self"} 
+          <a
+            href={villaInfo?.website || "/"}
+            target={villaInfo?.website ? "_blank" : "_self"}
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-2 py-2 hover:opacity-80 transition-opacity"
           >
             {villaInfo?.logo_url ? (
-              <img 
-                src={villaInfo.logo_url} 
-                alt={villaInfo?.name || 'Logo'} 
+              <img
+                src={villaInfo.logo_url}
+                alt={villaInfo?.name || 'Logo'}
                 className="h-8 w-8 object-contain rounded-lg"
               />
             ) : (
@@ -214,6 +216,7 @@ const AdminPanel: React.FC = () => {
           {activeTab === 'property' && <PropertySection />}
           {activeTab === 'analytics' && <AnalyticsSection />}
           {activeTab === 'settings' && <SettingsSection onSave={refetchVillaInfo} />}
+          {activeTab === 'gtm' && <GTMSettingsSection />}
         </main>
       </SidebarInset>
     </SidebarProvider>
@@ -254,7 +257,8 @@ const getTabTitle = (tab: string) => {
     calendar: 'Calendar & Availability Management',
     property: 'Property Management',
     analytics: 'Analytics & Reports',
-    settings: 'System Settings'
+    settings: 'System Settings',
+    gtm: 'GTM Settings'
   };
   return titles[tab] || 'Admin Panel';
 };
@@ -270,7 +274,8 @@ const getTabDescription = (tab: string) => {
     calendar: 'Visual calendar management with external platform integration',
     property: 'Update property information and settings',
     analytics: 'View performance metrics and reports',
-    settings: 'Configure system preferences'
+    settings: 'Configure system preferences',
+    gtm: 'Manage Google Tag Manager containers'
   };
   return descriptions[tab] || 'Admin management panel';
 };
@@ -826,7 +831,7 @@ const AnalyticsSection: React.FC = () => {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-green-600">${analytics.totalRevenue.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-green-600">Rp {analytics.totalRevenue.toLocaleString('id-ID')}</p>
           </CardContent>
         </Card>
 
@@ -865,7 +870,7 @@ const AnalyticsSection: React.FC = () => {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Weekly Revenue</span>
-              <span className="text-xl font-bold text-green-600">${analytics.weeklyRevenue.toLocaleString()}</span>
+              <span className="text-xl font-bold text-green-600">Rp {analytics.weeklyRevenue.toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Top Performing Room</span>
@@ -914,7 +919,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
     city: '',
     state: '',
     country: '',
-    currency: 'USD',
+    currency: 'IDR',
     timezone: 'UTC',
     checkInTime: '15:00',
     checkOutTime: '11:00',
@@ -937,7 +942,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
       const response = await fetch(apiUrl, {
         headers: { 'Cache-Control': 'no-cache' }
       });
-      
+
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
@@ -951,7 +956,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
             city: data.city || '',
             state: data.state || '',
             country: data.country || '',
-            currency: data.currency || 'USD',
+            currency: data.currency || 'IDR',
             timezone: data.timezone || 'Asia/Jakarta',
             checkInTime: data.checkInTime || data.check_in_time || '15:00',
             checkOutTime: data.checkOutTime || data.check_out_time || '11:00',
@@ -991,7 +996,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
           logo_url: settings.logo_url
         })
       });
-      
+
       const result = await response.json();
       if (result.success) {
         // Refetch to confirm changes
@@ -1048,9 +1053,9 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
             <div className="flex items-center gap-6">
               <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden">
                 {settings.logo_url ? (
-                  <img 
-                    src={settings.logo_url} 
-                    alt="Site Logo" 
+                  <img
+                    src={settings.logo_url}
+                    alt="Site Logo"
                     className="w-full h-full object-contain"
                   />
                 ) : (
@@ -1069,23 +1074,23 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    
+
                     if (file.size > 5 * 1024 * 1024) {
                       alert('Logo must be less than 5MB');
                       return;
                     }
-                    
+
                     setUploadingLogo(true);
                     try {
                       const formData = new FormData();
                       formData.append('file', file);
                       formData.append('prefix', 'logo');
-                      
+
                       const response = await fetch(paths.buildApiUrl('images/upload'), {
                         method: 'POST',
                         body: formData
                       });
-                      
+
                       const result = await response.json();
                       if (result.success && result.data?.url) {
                         setSettings({ ...settings, logo_url: result.data.url });
@@ -1101,16 +1106,16 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
                     }
                   }}
                 />
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => document.getElementById('logoUpload')?.click()}
                   disabled={uploadingLogo}
                 >
                   {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
                 </Button>
                 {settings.logo_url && (
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     className="text-red-500 hover:text-red-700"
                     onClick={() => setSettings({ ...settings, logo_url: '' })}
@@ -1224,7 +1229,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
                 onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                <option value="USD">USD - US Dollar</option>
+                <option value="IDR">IDR - Indonesian Rupiah</option>
                 <option value="EUR">EUR - Euro</option>
                 <option value="GBP">GBP - British Pound</option>
                 <option value="IDR">IDR - Indonesian Rupiah</option>
@@ -1602,7 +1607,7 @@ const EnhancedBookingCalendar: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-green-900">Total Revenue</p>
-              <p className="text-lg font-bold text-green-600">${calendarStats.totalRevenue?.toFixed(0) || '0'}</p>
+              <p className="text-lg font-bold text-green-600">Rp {Number(calendarStats.totalRevenue || 0).toLocaleString('id-ID')}</p>
             </div>
             <DollarSign className="w-6 h-6 text-green-500" />
           </div>
@@ -1680,7 +1685,7 @@ const EnhancedBookingCalendar: React.FC = () => {
                       {item.bookingCount}
                     </span>
                   </div>
-                  <p className="text-xs text-green-600 font-medium break-words">${item.totalRevenue.toFixed(0)} revenue</p>
+                  <p className="text-xs text-green-600 font-medium break-words">Rp {Number(item.totalRevenue || 0).toLocaleString('id-ID')} revenue</p>
                 </div>
               )) || (
                   <div className="col-span-full text-center py-4 text-gray-500 text-sm">

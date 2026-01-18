@@ -607,7 +607,7 @@ const PackagesSection: React.FC = () => {
                     </div>
                     {baseRoom ? (
                       <div className="text-sm text-gray-600">
-                        <p><strong>{baseRoom.name}</strong> - ${baseRoom.price}/night</p>
+                        <p><strong>{baseRoom.name}</strong> - Rp {Number(baseRoom.price || 0).toLocaleString('id-ID')}/night</p>
                         <p className="text-xs text-gray-500">Capacity: {baseRoom.capacity} guests | Type: {baseRoom.type}</p>
                       </div>
                     ) : (
@@ -621,7 +621,7 @@ const PackagesSection: React.FC = () => {
                   <div className="space-y-2 text-sm text-gray-600">
                     <div className="flex justify-between">
                       <span><strong>Bundle Price:</strong></span>
-                      <span className="text-gray-800 font-semibold">${pkg.price || pkg.base_price || '0'}</span>
+                      <span className="text-gray-800 font-semibold">Rp {Number(pkg.price || pkg.base_price || 0).toLocaleString('id-ID')}</span>
                     </div>
                     <div className="flex justify-between">
                       <span><strong>Marketing Category:</strong></span>
@@ -792,7 +792,7 @@ const PackagesSection: React.FC = () => {
                   <option value="">Select the room this sales tool is based on</option>
                   {rooms.map(room => (
                     <option key={room.id} value={room.id}>
-                      {room.name} - ${room.price}/night (Capacity: {room.capacity})
+                      {room.name} - Rp {Number(room.price || 0).toLocaleString('id-ID')}/night (Capacity: {room.capacity})
                     </option>
                   ))}
                 </select>
@@ -930,7 +930,7 @@ const PackagesSection: React.FC = () => {
                     </div>
                     {baseRoom ? (
                       <div className="text-sm text-gray-600">
-                        <p><strong>{baseRoom.name}</strong> - ${baseRoom.price}/night</p>
+                        <p><strong>{baseRoom.name}</strong> - Rp {Number(baseRoom.price || 0).toLocaleString('id-ID')}/night</p>
                         <p className="text-xs text-gray-500">
                           Capacity: {baseRoom.capacity} guests | Type: {baseRoom.type} |
                           <span className={baseRoom.available ? 'text-green-600' : 'text-red-600'}>

@@ -32,6 +32,8 @@ import {
 } from 'lucide-react';
 import BookingSkeleton from '@/components/BookingSkeleton';
 import Header from '@/components/Header';
+import { formatRupiah } from '@/utils/currency';
+import { getImageUrl } from '@/config/r2';
 
 interface BookingSummaryData {
   bookingId: string;
@@ -330,6 +332,25 @@ const BookingSummary = () => {
     loadSummaryData();
   }, [loadSummaryData]);
 
+  // Track confirmation page view when booking data is loaded
+  useEffect(() => {
+    if (bookingData && !loading) {
+      import('@/utils/ga4Analytics').then(({ trackConfirmationPage }) => {
+        trackConfirmationPage({
+          booking_reference: bookingData.reference,
+          package_name: packageData?.name,
+          room_name: roomData?.name,
+          total_amount: bookingData.pricing.totalPrice,
+          currency: 'IDR',
+          guest_email: bookingData.guestInfo.email,
+          check_in: bookingData.checkIn,
+          check_out: bookingData.checkOut,
+          payment_status: bookingData.status,
+        });
+      });
+    }
+  }, [bookingData, packageData, roomData, loading]);
+
   // Send confirmation emails once when booking data is loaded
   useEffect(() => {
     const sendConfirmationEmails = async () => {
@@ -384,6 +405,33 @@ const BookingSummary = () => {
     sendConfirmationEmails();
   }, [bookingData, emailsSent, isUsingFallbackData, roomData, packageData]);
 
+  // Track GA4 Page View (Confirmation or View Cart)
+  useEffect(() => {
+    if (!bookingData) return;
+
+    import('@/utils/ga4Analytics').then(({ trackConfirmationPage, trackViewCart }) => {
+      if (bookingData.status === 'confirmed') {
+        trackConfirmationPage({
+          booking_reference: bookingData.reference,
+          total_amount: bookingData.pricing.totalPrice,
+          package_name: packageData?.name || roomData?.name || '',
+        });
+      } else {
+        // Pending status -> View Cart / Review
+        trackViewCart({
+          currency: 'IDR',
+          value: bookingData.pricing.totalPrice,
+          items: [{
+            item_id: bookingData.packageId || bookingData.roomId || 'unknown',
+            item_name: packageData?.name || roomData?.name || 'Booking',
+            price: bookingData.pricing.totalPrice,
+            quantity: 1
+          }]
+        });
+      }
+    });
+  }, [bookingData?.status, bookingData?.reference, packageData, roomData]);
+
   const handleDownloadConfirmation = () => {
     // Mock download functionality
     const element = document.createElement('a');
@@ -427,7 +475,16 @@ Total: $${bookingData?.pricing.totalPrice}
   // Handle DOKU Payment
   const handlePayment = async () => {
     if (!bookingData) return;
-    
+
+    // Track GA4 add_payment_info event
+    console.log('🔍 DEBUG: bookingData.pricing.totalPrice =', bookingData.pricing.totalPrice);
+    const { trackAddPaymentInfo } = await import('@/utils/ga4Analytics');
+    trackAddPaymentInfo({
+      value: Number(bookingData.pricing.totalPrice),
+      currency: 'IDR',
+      payment_type: 'Doku'
+    });
+
     setPaymentLoading(true);
     try {
       const response = await fetch(paths.buildApiUrl('payment/create'), {
@@ -512,7 +569,7 @@ Total: $${bookingData?.pricing.totalPrice}
             {bookingData.status === 'confirmed' ? 'Booking Confirmed!' : bookingData.status === 'pending' ? 'Booking Received!' : 'Booking Status'}
           </h1>
           <p className="text-xl text-hotel-bronze mb-4">
-            {bookingData.status === 'confirmed' 
+            {bookingData.status === 'confirmed'
               ? 'Thank you for your reservation. Your booking has been successfully confirmed.'
               : bookingData.status === 'pending'
                 ? 'Thank you for your reservation. Your booking is pending confirmation.'
@@ -569,7 +626,7 @@ Total: $${bookingData?.pricing.totalPrice}
                 {roomData && !packageData && (
                   <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg">
                     <img
-                      src={roomData.image_url}
+                      src={getImageUrl(roomData.image_url)}
                       alt={roomData.name}
                       className="w-20 h-20 object-cover rounded-lg"
                     />
@@ -726,17 +783,17 @@ Total: $${bookingData?.pricing.totalPrice}
                     <span className="text-sm">
                       {packageData ? 'Package Rate' : 'Room Rate'} × {bookingData.nights} nights
                     </span>
-                    <span className="font-medium">${bookingData.pricing.basePrice.toFixed(2)}</span>
+                    <span className="font-medium">{formatRupiah(bookingData.pricing.basePrice)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Service Fee</span>
-                    <span className="font-medium">${bookingData.pricing.serviceFee.toFixed(2)}</span>
+                    <span className="font-medium">{formatRupiah(bookingData.pricing.serviceFee)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">Total Amount</span>
                     <span className="font-bold text-lg text-green-600">
-                      ${bookingData.pricing.totalPrice.toFixed(2)}
+                      {formatRupiah(bookingData.pricing.totalPrice)}
                     </span>
                   </div>
                   <div className="flex items-center justify-center pt-2">

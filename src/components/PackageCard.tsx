@@ -7,6 +7,7 @@ import { packageService } from '@/services/packageService';
 import { useNavigate } from 'react-router-dom';
 import { paths } from '@/config/paths';
 import { getImageUrl } from "@/config/r2";
+import { trackSelectItem } from '@/utils/ga4Analytics';
 import {
     Clock,
     Users,
@@ -130,6 +131,15 @@ export const PackageCard: React.FC<PackageCardProps> = ({
     const originalPrice = basePrice / (1 - discountPercentage / 100);
 
     const handleSelect = () => {
+        // GA4 E-commerce: Track select_item event
+        trackSelectItem({
+            item_id: pkg.id,
+            item_name: pkg.name,
+            item_list_name: 'Packages',
+            item_category: pkg.type || pkg.package_type || 'Package',
+            price: basePrice,
+        });
+
         if (onSelect) {
             onSelect(pkg.id);
         } else {
@@ -183,7 +193,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
 
                     {/* Price Badge */}
                     <div className="absolute bottom-4 right-4 bg-slate-900 text-white px-4 py-2 rounded-2xl shadow-lg">
-                        <span className="text-lg font-bold">${basePrice.toFixed(0)}</span>
+                        <span className="text-lg font-bold">Rp {basePrice.toLocaleString('id-ID')}</span>
                         <span className="text-[10px] opacity-70 ml-1">/ night</span>
                     </div>
                 </div>
@@ -240,13 +250,39 @@ export const PackageCard: React.FC<PackageCardProps> = ({
                 <div className="flex gap-3">
                     <Button
                         variant="outline"
-                        onClick={() => navigate(`/packages/${pkg.id}`)}
+                        onClick={() => {
+                            // Track view details click
+                            import('@/utils/ga4Analytics').then(({ trackButtonClick }) => {
+                                trackButtonClick({
+                                    button_name: 'view_details',
+                                    package_name: pkg.name,
+                                    package_id: pkg.id,
+                                    value: basePrice,
+                                    check_in: dateFilters?.checkIn,
+                                    check_out: dateFilters?.checkOut,
+                                });
+                            });
+                            navigate(`/packages/${pkg.id}`);
+                        }}
                         className="flex-1 bg-white text-hotel-bronze border-hotel-gold px-4 py-2 rounded-lg hover:bg-hotel-cream transition-colors font-medium"
                     >
                         View Details
                     </Button>
                     <Button
-                        onClick={handleSelect}
+                        onClick={() => {
+                            // Track book now click
+                            import('@/utils/ga4Analytics').then(({ trackButtonClick }) => {
+                                trackButtonClick({
+                                    button_name: 'book_now',
+                                    package_name: pkg.name,
+                                    package_id: pkg.id,
+                                    value: basePrice,
+                                    check_in: dateFilters?.checkIn,
+                                    check_out: dateFilters?.checkOut,
+                                });
+                            });
+                            handleSelect();
+                        }}
                         className="flex-1 bg-hotel-gold text-white px-4 py-2 rounded-lg hover:bg-hotel-gold-dark transition-colors font-medium shadow-lg"
                     >
                         Book Now

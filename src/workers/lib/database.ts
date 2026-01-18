@@ -1,7 +1,7 @@
 import { Env } from '../types';
 
 export class Database {
-  constructor(private db: D1Database) {}
+  constructor(private db: D1Database) { }
 
   async query(sql: string, params?: any[]) {
     try {
@@ -76,7 +76,7 @@ export class Database {
         data.adults || data.guests,
         data.children || 0,
         data.total_price,
-        data.currency || 'USD',
+        data.currency || 'IDR',
         data.special_requests || null,
         data.source || 'direct',
       ]

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Users, Search, Tag } from 'lucide-react';
+import { Calendar, Users, Search } from 'lucide-react';
 
 interface BookingSearchFormProps {
   onSearch?: (searchData: BookingSearchData) => void;
@@ -14,24 +14,21 @@ interface BookingSearchData {
 }
 
 export const BookingSearchForm: React.FC<BookingSearchFormProps> = ({ onSearch }) => {
-  // Get today's date and tomorrow for default values
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   const [searchData, setSearchData] = useState<BookingSearchData>({
-    checkIn: today.toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
-    checkOut: tomorrow.toISOString().split('T')[0], // Tomorrow's date in YYYY-MM-DD format
+    checkIn: today.toISOString().split('T')[0],
+    checkOut: tomorrow.toISOString().split('T')[0],
     adults: 2,
     children: 0,
     promoCode: ''
   });
 
   const [showGuestDropdown, setShowGuestDropdown] = useState(false);
-  const [showPromoInput, setShowPromoInput] = useState(false);
 
   const handleSearch = () => {
-    // Validate dates before searching
     if (!searchData.checkIn || !searchData.checkOut) {
       alert('Please select both check-in and check-out dates');
       return;
@@ -39,7 +36,7 @@ export const BookingSearchForm: React.FC<BookingSearchFormProps> = ({ onSearch }
 
     const checkIn = new Date(searchData.checkIn);
     const checkOut = new Date(searchData.checkOut);
-    
+
     if (checkOut <= checkIn) {
       alert('Check-out date must be after check-in date');
       return;
@@ -61,117 +58,106 @@ export const BookingSearchForm: React.FC<BookingSearchFormProps> = ({ onSearch }
     return 1;
   };
 
-  const formatDateDisplay = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  };
+  const totalGuests = searchData.adults + searchData.children;
 
   return (
-    <div className="bg-white shadow-lg rounded-lg p-4 mb-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        {/* Villa Name */}
-        <div className="flex items-center text-sm font-medium text-gray-700">
-          <div className="w-4 h-4 bg-hotel-sage rounded mr-2"></div>
-          <span>Rumah Daisy Cantik</span>
-        </div>
+    <div className="bg-white shadow-lg rounded-xl p-4">
+      {/* Mobile: 3 rows | Desktop: Single row */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
 
-        {/* Separator */}
-        <div className="hidden md:block w-px h-8 bg-gray-200"></div>
-
-        {/* Check-in / Check-out */}
-        <div className="flex items-center space-x-2">
-          <Calendar className="w-4 h-4 text-gray-500" />
-          <div className="flex items-center space-x-2">
-            <input
-              type="date"
-              value={searchData.checkIn}
-              onChange={(e) => setSearchData({...searchData, checkIn: e.target.value})}
-              min={new Date().toISOString().split('T')[0]}
-              className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-hotel-sage"
-            />
-            <span className="text-gray-400">-</span>
-            <input
-              type="date"
-              value={searchData.checkOut}
-              onChange={(e) => setSearchData({...searchData, checkOut: e.target.value})}
-              min={searchData.checkIn || new Date().toISOString().split('T')[0]}
-              className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-hotel-sage"
-            />
-            {getTotalNights() > 0 && (
-              <span className="text-gray-500 text-sm ml-2">
-                {getTotalNights()} night{getTotalNights() !== 1 ? 's' : ''}
-              </span>
-            )}
+        {/* Row 1: Date Inputs - Side by side */}
+        <div className="flex gap-2 md:flex-1">
+          <div className="flex-1">
+            <label className="block text-xs text-gray-500 mb-1">Check-in</label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="date"
+                value={searchData.checkIn}
+                onChange={(e) => setSearchData({ ...searchData, checkIn: e.target.value })}
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full text-sm border border-gray-300 rounded-lg pl-9 pr-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-hotel-sage focus:border-transparent"
+              />
+            </div>
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs text-gray-500 mb-1">Check-out</label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="date"
+                value={searchData.checkOut}
+                onChange={(e) => setSearchData({ ...searchData, checkOut: e.target.value })}
+                min={searchData.checkIn || new Date().toISOString().split('T')[0]}
+                className="w-full text-sm border border-gray-300 rounded-lg pl-9 pr-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-hotel-sage focus:border-transparent"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Separator */}
-        <div className="hidden md:block w-px h-8 bg-gray-200"></div>
+        {/* Nights indicator */}
+        {getTotalNights() > 0 && (
+          <div className="text-xs text-hotel-sage text-center md:hidden">
+            {getTotalNights()} night{getTotalNights() !== 1 ? 's' : ''}
+          </div>
+        )}
 
-        {/* Guests */}
-        <div className="relative">
-          <div 
-            className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 px-3 py-2 rounded-md transition-colors"
+        {/* Divider - Desktop only */}
+        <div className="hidden md:block w-px h-10 bg-gray-200"></div>
+
+        {/* Row 2: Total Guests */}
+        <div className="relative md:min-w-[180px]">
+          <label className="block text-xs text-gray-500 mb-1">Guests</label>
+          <div
+            className="flex items-center justify-between gap-2 cursor-pointer border border-gray-300 px-3 py-2.5 rounded-lg hover:border-hotel-sage transition-colors"
             onClick={() => setShowGuestDropdown(!showGuestDropdown)}
           >
-            <Users className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium">
-              {searchData.adults} Adult{searchData.adults !== 1 ? 's' : ''}
-              {searchData.children > 0 && `, ${searchData.children} Child${searchData.children !== 1 ? 'ren' : ''}`}
-            </span>
-            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-gray-400" />
+              <span className="text-sm">
+                {totalGuests} Guest{totalGuests !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <svg className={`w-4 h-4 text-gray-400 transition-transform ${showGuestDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </div>
 
           {/* Guests Dropdown */}
           {showGuestDropdown && (
-            <div className="absolute top-full mt-2 left-0 bg-white border rounded-lg shadow-lg p-4 w-64 z-10">
-              <div className="space-y-4">
+            <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-20">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Adults</span>
-                  <div className="flex items-center space-x-2">
+                  <span className="text-sm">Adults</span>
+                  <div className="flex items-center gap-3">
                     <button
-                      onClick={() => setSearchData({...searchData, adults: Math.max(1, searchData.adults - 1)})}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
-                    >
-                      -
-                    </button>
-                    <span className="w-8 text-center">{searchData.adults}</span>
+                      onClick={(e) => { e.stopPropagation(); setSearchData({ ...searchData, adults: Math.max(1, searchData.adults - 1) }); }}
+                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 text-lg"
+                    >−</button>
+                    <span className="w-6 text-center font-medium">{searchData.adults}</span>
                     <button
-                      onClick={() => setSearchData({...searchData, adults: searchData.adults + 1})}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
-                    >
-                      +
-                    </button>
+                      onClick={(e) => { e.stopPropagation(); setSearchData({ ...searchData, adults: searchData.adults + 1 }); }}
+                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 text-lg"
+                    >+</button>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Children</span>
-                  <div className="flex items-center space-x-2">
+                  <span className="text-sm">Children</span>
+                  <div className="flex items-center gap-3">
                     <button
-                      onClick={() => setSearchData({...searchData, children: Math.max(0, searchData.children - 1)})}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
-                    >
-                      -
-                    </button>
-                    <span className="w-8 text-center">{searchData.children}</span>
+                      onClick={(e) => { e.stopPropagation(); setSearchData({ ...searchData, children: Math.max(0, searchData.children - 1) }); }}
+                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 text-lg"
+                    >−</button>
+                    <span className="w-6 text-center font-medium">{searchData.children}</span>
                     <button
-                      onClick={() => setSearchData({...searchData, children: searchData.children + 1})}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
-                    >
-                      +
-                    </button>
+                      onClick={(e) => { e.stopPropagation(); setSearchData({ ...searchData, children: searchData.children + 1 }); }}
+                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 text-lg"
+                    >+</button>
                   </div>
                 </div>
                 <button
-                  onClick={() => setShowGuestDropdown(false)}
-                  className="w-full bg-hotel-sage text-white py-2 rounded-md hover:bg-hotel-sage-dark transition-colors"
+                  onClick={(e) => { e.stopPropagation(); setShowGuestDropdown(false); }}
+                  className="w-full bg-hotel-sage text-white py-2 rounded-lg hover:bg-hotel-sage-dark transition-colors text-sm font-medium"
                 >
                   Done
                 </button>
@@ -180,51 +166,16 @@ export const BookingSearchForm: React.FC<BookingSearchFormProps> = ({ onSearch }
           )}
         </div>
 
-        {/* Separator */}
-        <div className="hidden lg:block w-px h-8 bg-gray-200"></div>
-
-        {/* Promo Code */}
-        <div className="relative hidden lg:block">
-          <div 
-            className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 px-3 py-2 rounded-md transition-colors"
-            onClick={() => setShowPromoInput(!showPromoInput)}
-          >
-            <Tag className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-500">
-              {searchData.promoCode || 'Promo code'}
-            </span>
-          </div>
-
-          {/* Promo Code Input */}
-          {showPromoInput && (
-            <div className="absolute top-full mt-2 left-0 bg-white border rounded-lg shadow-lg p-4 w-48 z-10">
-              <input
-                type="text"
-                value={searchData.promoCode}
-                onChange={(e) => setSearchData({...searchData, promoCode: e.target.value})}
-                placeholder="Enter promo code"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-hotel-sage"
-              />
-              <button
-                onClick={() => setShowPromoInput(false)}
-                className="w-full mt-2 bg-hotel-sage text-white py-2 rounded-md text-sm hover:bg-hotel-sage-dark transition-colors"
-              >
-                Apply
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Search Button */}
+        {/* Row 3: Search Button */}
         <button
           onClick={handleSearch}
-          className="flex items-center space-x-2 bg-hotel-sage text-white px-6 py-3 rounded-md font-medium hover:bg-hotel-sage-dark transition-colors"
+          className="w-full md:w-auto flex items-center justify-center gap-2 bg-hotel-sage text-white px-6 py-3 rounded-lg font-medium hover:bg-hotel-sage-dark transition-colors"
         >
           <Search className="w-4 h-4" />
-          <span className="hidden sm:inline">Check Availability</span>
-          <span className="sm:hidden">Search</span>
+          <span>Check Availability</span>
         </button>
       </div>
     </div>
   );
 };
+

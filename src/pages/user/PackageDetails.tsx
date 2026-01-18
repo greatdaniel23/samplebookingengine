@@ -53,10 +53,12 @@ import {
   Archive,
   Camera,
   Flower,
-  PartyPopper
+  PartyPopper,
+  Search
 } from 'lucide-react';
 import NotFound from '../shared/NotFound';
 import BookingSkeleton from '@/components/BookingSkeleton';
+import { formatRupiah } from '@/utils/currency';
 
 const PackageDetails = () => {
   // Icon mapper function to convert backend icon strings to Lucide React components
@@ -103,6 +105,8 @@ const PackageDetails = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [tempCheckIn, setTempCheckIn] = useState(checkIn || '');
   const [tempCheckOut, setTempCheckOut] = useState(checkOut || '');
+  const [tempGuests, setTempGuests] = useState(guests);
+  const [showGuestDropdown, setShowGuestDropdown] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
 
   // Room image lightbox state
@@ -297,6 +301,24 @@ const PackageDetails = () => {
         setError(null);
         const response = await packageService.getPackageById(packageId);
         setPackage(response.data);
+
+        // Track package details page view & view_item
+        import('@/utils/ga4Analytics').then(({ trackPackageDetailsPage, trackViewItem }) => {
+          trackPackageDetailsPage({
+            package_id: response.data.id,
+            package_name: response.data.name,
+            price: response.data.price || response.data.base_price,
+            package_type: response.data.type,
+          });
+
+          trackViewItem({
+            item_id: response.data.id,
+            item_name: response.data.name,
+            item_category: response.data.type || 'Package',
+            price: Number(response.data.price || response.data.base_price || 0),
+            currency: 'IDR'
+          });
+        });
       } catch (err: any) {
         console.error('Package fetch error:', err);
 
@@ -332,9 +354,9 @@ const PackageDetails = () => {
   // Also check date validity
   const isActive = pkg.is_active === 1 || pkg.is_active === true;
   const today = new Date().toISOString().split('T')[0];
-  const dateValid = (!pkg.valid_from || today >= pkg.valid_from) && 
-                    (!pkg.valid_until || today <= pkg.valid_until);
-  
+  const dateValid = (!pkg.valid_from || today >= pkg.valid_from) &&
+    (!pkg.valid_until || today <= pkg.valid_until);
+
   if (!isActive || !dateValid) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -395,6 +417,20 @@ const PackageDetails = () => {
     params.set('finalPrice', finalPrice.toString());
     params.set('roomAdjustment', (selectedRoom?.price_adjustment || 0).toString());
     params.set('adjustmentType', selectedRoom?.adjustment_type || 'fixed');
+
+    // Track book now click
+    import('@/utils/ga4Analytics').then(({ trackButtonClick }) => {
+      trackButtonClick({
+        button_name: 'book_now',
+        package_name: pkg.name,
+        package_id: pkg.id.toString(),
+        room_name: selectedRoom?.name || selectedRoom?.room_name,
+        check_in: tempCheckIn,
+        check_out: tempCheckOut,
+        value: finalPrice,
+        currency: 'IDR'
+      });
+    });
 
     navigate(`/book?${params.toString()}`);
   };
@@ -528,11 +564,15 @@ const PackageDetails = () => {
   // Main render - Full production design with proper typography
   return (
     <div className="min-h-screen bg-hotel-cream">
-      <Header />
-      
-      {/* Hero Section with Package Images */}
-      <PhotoGallery images={pkg.images || []} title={pkg.name} />
-      
+
+      {/* Hero Section with Package Images - Contained style like homepage */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 pt-6">
+        <Header />
+        <div className="mt-8">
+          <PhotoGallery images={pkg.images || []} />
+        </div>
+      </div>
+
       {/* Package Title Banner */}
       <div className="bg-white border-b border-gray-100 py-10 md:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -574,58 +614,110 @@ const PackageDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Section - Package Details */}
           <div className="lg:col-span-2 space-y-6 md:space-y-8">
-            
+
             {/* Date Selection Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
-              <h2 className="font-display text-lg md:text-xl font-medium text-hotel-charcoal mb-3 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-hotel-gold" />
-                Select Your Dates
-              </h2>
-              <p className="text-sm text-hotel-bronze mb-4 leading-relaxed">Choose your check-in and check-out dates to continue</p>
-              <div className="flex flex-wrap gap-4">
-                <div className="flex-1 min-w-[180px]">
-                  <label className="block text-xs font-medium text-hotel-bronze mb-1.5 uppercase tracking-wide">Check-in</label>
-                  <input 
-                    type="date" 
-                    value={tempCheckIn}
-                    onChange={(e) => setTempCheckIn(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-hotel-gold focus:border-hotel-gold bg-white" 
-                  />
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+                {/* Dates */}
+                <div className="flex gap-2 md:flex-1">
+                  <div className="flex-1">
+                    <label className="block text-xs text-gray-500 mb-1">Check-in</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="date"
+                        value={tempCheckIn}
+                        onChange={(e) => setTempCheckIn(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="w-full text-sm border border-gray-300 rounded-lg pl-9 pr-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-hotel-sage focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs text-gray-500 mb-1">Check-out</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="date"
+                        value={tempCheckOut}
+                        onChange={(e) => setTempCheckOut(e.target.value)}
+                        min={tempCheckIn || new Date().toISOString().split('T')[0]}
+                        className="w-full text-sm border border-gray-300 rounded-lg pl-9 pr-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-hotel-sage focus:border-transparent"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-[180px]">
-                  <label className="block text-xs font-medium text-hotel-bronze mb-1.5 uppercase tracking-wide">Check-out</label>
-                  <input 
-                    type="date" 
-                    value={tempCheckOut}
-                    onChange={(e) => setTempCheckOut(e.target.value)}
-                    min={tempCheckIn || new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-hotel-gold focus:border-hotel-gold bg-white" 
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button 
-                    onClick={() => {
-                      if (tempCheckIn && tempCheckOut) {
-                        const params = new URLSearchParams(window.location.search);
-                        params.set('checkin', tempCheckIn);
-                        params.set('checkout', tempCheckOut);
-                        navigate(`${window.location.pathname}?${params.toString()}`, { replace: true });
-                      }
-                    }}
-                    disabled={!tempCheckIn || !tempCheckOut}
-                    className="bg-hotel-gold hover:bg-hotel-gold/90 text-white font-medium text-sm px-5 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+
+                {/* Mobile Nights Display */}
+                {tempCheckIn && tempCheckOut && (
+                  <div className="text-xs text-hotel-sage text-center md:hidden">
+                    {Math.max(1, Math.ceil((new Date(tempCheckOut).getTime() - new Date(tempCheckIn).getTime()) / (1000 * 3600 * 24)))} night(s)
+                  </div>
+                )}
+
+                {/* Divider */}
+                <div className="hidden md:block w-px h-10 bg-gray-200"></div>
+
+                {/* Guests */}
+                <div className="relative md:min-w-[180px]">
+                  <label className="block text-xs text-gray-500 mb-1">Guests</label>
+                  <div
+                    className="flex items-center justify-between gap-2 cursor-pointer border border-gray-300 px-3 py-2.5 rounded-lg hover:border-hotel-sage transition-colors"
+                    onClick={() => setShowGuestDropdown(!showGuestDropdown)}
                   >
-                    Apply Dates
-                  </Button>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm">{tempGuests} Guest{tempGuests !== 1 ? 's' : ''}</span>
+                    </div>
+                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${showGuestDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
+
+                  {/* Guest Dropdown */}
+                  {showGuestDropdown && (
+                    <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-20">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Guests</span>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setTempGuests(Math.max(1, tempGuests - 1)); }}
+                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                          >-</button>
+                          <span className="w-8 text-center">{tempGuests}</span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setTempGuests(Math.min(pkg?.max_guests || 10, tempGuests + 1)); }}
+                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                          >+</button>
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowGuestDropdown(false); }}
+                        className="w-full mt-3 bg-hotel-sage text-white py-2 rounded-lg hover:bg-hotel-sage-dark transition-colors text-sm"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  )}
                 </div>
+
+                {/* Button */}
+                <button
+                  onClick={() => {
+                    if (tempCheckIn && tempCheckOut) {
+                      const params = new URLSearchParams(window.location.search);
+                      params.set('checkin', tempCheckIn);
+                      params.set('checkout', tempCheckOut);
+                      params.set('guests', tempGuests.toString());
+                      navigate(`${window.location.pathname}?${params.toString()}`, { replace: true });
+                    } else {
+                      alert('Please select check-in and check-out dates');
+                    }
+                  }}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 bg-hotel-sage text-white px-6 py-3 rounded-lg font-medium hover:bg-hotel-sage-dark transition-colors whitespace-nowrap"
+                >
+                  <Search className="w-4 h-4" />
+                  <span>Check Availability</span>
+                </button>
               </div>
-              {tempCheckIn && tempCheckOut && (
-                <p className="mt-3 text-sm text-green-600 flex items-center gap-1">
-                  <Check className="w-4 h-4" />
-                  Dates selected: {new Date(tempCheckIn).toLocaleDateString()} - {new Date(tempCheckOut).toLocaleDateString()}
-                </p>
-              )}
             </div>
 
             {/* Package Overview */}
@@ -676,24 +768,25 @@ const PackageDetails = () => {
                   {packageRooms.map((room: any) => {
                     const roomName = room.room_name || room.name;
                     const roomDescription = room.room_description || room.description;
-                    // Handle both string arrays and object arrays for images
+                    // Handle both string arrays and object arrays for images - apply formatRupiah for mobile compatibility
                     const rawImages = room.images || [];
-                    const roomImages = rawImages.map((img: any) => 
-                      typeof img === 'string' ? img : (img.url || img)
-                    );
-                    
+                    const roomImages = rawImages.map((img: any) => {
+                      const imgUrl = typeof img === 'string' ? img : (img.url || img);
+                      // Apply URL conversion for mobile compatibility using existing formatRupiah import's r2 module
+                      return imgUrl.startsWith('https://pub-') ? imgUrl.replace('https://pub-e303ec878512482fa87c065266e6bedd.r2.dev', 'https://alphadigitalagency.id') : imgUrl;
+                    });
+
                     return (
                       <div
                         key={room.room_id || room.id}
-                        className={`bg-white rounded-lg border transition-all duration-200 flex flex-row overflow-hidden ${
-                          selectedRoom?.room_id === room.room_id
-                            ? 'border-hotel-gold shadow-lg ring-2 ring-hotel-gold/30'
-                            : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                        }`}
+                        className={`bg-white rounded-lg border transition-all duration-200 flex flex-col sm:flex-row overflow-hidden ${selectedRoom?.room_id === room.room_id
+                          ? 'border-hotel-gold shadow-lg ring-2 ring-hotel-gold/30'
+                          : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                          }`}
                         onClick={() => setSelectedRoom(room)}
                       >
-                        {/* Room Image - Left Side */}
-                        <div className="relative w-48 h-32 flex-shrink-0">
+                        {/* Room Image - Full width on mobile, fixed width on desktop */}
+                        <div className="relative w-full sm:w-48 h-40 sm:h-32 flex-shrink-0">
                           {roomImages.length > 0 ? (
                             <img
                               src={roomImages[0]}
@@ -711,40 +804,50 @@ const PackageDetails = () => {
                             </div>
                           )}
                         </div>
-                        
+
                         {/* Room Content - Right Side */}
-                        <div className="flex-1 p-4 flex flex-col justify-between min-h-[128px]">
+                        <div className="flex-1 p-4 flex flex-col justify-between min-h-[100px] sm:min-h-[128px]">
                           {/* Title and Price */}
                           <div className="flex justify-between items-start mb-2">
                             <h3 className="font-semibold text-lg text-hotel-charcoal flex-1 pr-3">
                               {roomName}
                             </h3>
                             <span className={`text-base font-bold whitespace-nowrap ${room.price_adjustment > 0 ? 'text-hotel-gold' : 'text-green-600'}`}>
-                              {room.price_adjustment === 0 
-                                ? '$0' 
+                              {room.price_adjustment === 0
+                                ? 'Rp 0'
                                 : room.adjustment_type === 'percentage'
                                   ? `${room.price_adjustment > 0 ? '+' : ''}${room.price_adjustment}%`
-                                  : `${room.price_adjustment > 0 ? '+' : ''}$${Math.abs(room.price_adjustment)}`
+                                  : `${room.price_adjustment > 0 ? '+' : ''}${formatRupiah(Math.abs(room.price_adjustment))}`
                               }
                             </span>
                           </div>
-                          
+
                           {/* Description */}
                           <p className="text-sm text-gray-500 mb-3 line-clamp-2 flex-1">
                             {roomDescription || 'Premium room option for this package with quality amenities and services.'}
                           </p>
-                          
+
                           {/* Select Button */}
                           <div className="flex justify-start">
                             <button
-                              className={`px-4 py-2 text-sm font-semibold rounded transition-colors ${
-                                selectedRoom?.room_id === room.room_id
-                                  ? 'bg-hotel-gold text-white hover:bg-hotel-gold/90'
-                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-                              }`}
+                              className={`px-4 py-2 text-sm font-semibold rounded transition-colors ${selectedRoom?.room_id === room.room_id
+                                ? 'bg-hotel-gold text-white hover:bg-hotel-gold/90'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                                }`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedRoom(room);
+                                // Track add_cart (room selection)
+                                import('@/utils/ga4Analytics').then(({ trackAddToCart }) => {
+                                  trackAddToCart({
+                                    item_id: room.room_id,
+                                    item_name: roomName,
+                                    item_category: 'Room',
+                                    price: Number(room.price_adjustment) || 0,
+                                    quantity: 1,
+                                    currency: 'IDR'
+                                  });
+                                });
                               }}
                             >
                               {selectedRoom?.room_id === room.room_id ? (
@@ -780,14 +883,14 @@ const PackageDetails = () => {
                   <div>
                     <h4 className="font-medium text-sm text-hotel-charcoal">Valid Period</h4>
                     <p className="text-xs md:text-sm text-hotel-bronze mt-0.5 leading-relaxed">
-                      {pkg.valid_from && pkg.valid_until 
+                      {pkg.valid_from && pkg.valid_until
                         ? `${new Date(pkg.valid_from).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(pkg.valid_until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
                         : 'Available year-round'
                       }
                     </p>
                   </div>
                 </div>
-                
+
                 {/* Stay Duration */}
                 <div className="flex items-start gap-3 md:gap-4">
                   <div className="w-10 h-10 md:w-11 md:h-11 bg-hotel-gold/10 rounded-full flex items-center justify-center flex-shrink-0">
@@ -798,7 +901,7 @@ const PackageDetails = () => {
                     <p className="text-xs md:text-sm text-hotel-bronze mt-0.5 leading-relaxed">{pkg.duration || 'Flexible duration'}</p>
                   </div>
                 </div>
-                
+
                 {/* Max Guests */}
                 <div className="flex items-start gap-3 md:gap-4">
                   <div className="w-10 h-10 md:w-11 md:h-11 bg-hotel-gold/10 rounded-full flex items-center justify-center flex-shrink-0">
@@ -809,7 +912,7 @@ const PackageDetails = () => {
                     <p className="text-xs md:text-sm text-hotel-bronze mt-0.5 leading-relaxed">Up to {pkg.max_guests || 2} guests</p>
                   </div>
                 </div>
-                
+
                 {/* Room Selection */}
                 <div className="flex items-start gap-3 md:gap-4">
                   <div className="w-10 h-10 md:w-11 md:h-11 bg-hotel-gold/10 rounded-full flex items-center justify-center flex-shrink-0">
@@ -849,21 +952,21 @@ const PackageDetails = () => {
                   <span className="text-hotel-bronze">Package</span>
                   <span className="font-medium text-hotel-charcoal text-right max-w-[55%] leading-snug">{pkg.name}</span>
                 </div>
-                
+
                 {selectedRoom && (
                   <div className="flex justify-between text-sm">
                     <span className="text-hotel-bronze">Room Type</span>
                     <span className="font-medium text-hotel-charcoal">{selectedRoom.name}</span>
                   </div>
                 )}
-                
+
                 {pkg.duration && (
                   <div className="flex justify-between text-sm">
                     <span className="text-hotel-bronze">Duration</span>
                     <span className="font-medium text-hotel-charcoal">{pkg.duration}</span>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between text-sm">
                   <span className="text-hotel-bronze">Guests</span>
                   <span className="font-medium text-hotel-charcoal">{guests} guests</span>
@@ -873,16 +976,16 @@ const PackageDetails = () => {
 
                 <div className="flex justify-between text-sm">
                   <span className="text-hotel-bronze">Base Price</span>
-                  <span className="font-medium text-hotel-charcoal">${basePrice.toFixed(2)}</span>
+                  <span className="font-medium text-hotel-charcoal">{formatRupiah(basePrice)}</span>
                 </div>
-                
+
                 {selectedRoom && selectedRoom.price_adjustment !== 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-hotel-bronze">Room Adjustment</span>
                     <span className={`font-medium ${selectedRoom.price_adjustment > 0 ? 'text-hotel-gold' : 'text-green-600'}`}>
                       {selectedRoom.adjustment_type === 'percentage'
                         ? `${selectedRoom.price_adjustment > 0 ? '+' : ''}${selectedRoom.price_adjustment}%`
-                        : `${selectedRoom.price_adjustment > 0 ? '+' : ''}$${selectedRoom.price_adjustment}`
+                        : `${selectedRoom.price_adjustment > 0 ? '+' : ''}${formatRupiah(selectedRoom.price_adjustment)}`
                       }
                     </span>
                   </div>
@@ -899,7 +1002,7 @@ const PackageDetails = () => {
 
                 <div className="flex justify-between items-baseline">
                   <span className="font-medium text-hotel-charcoal text-sm">Total Amount</span>
-                  <span className="text-xl md:text-2xl font-bold text-hotel-gold">${finalPrice.toFixed(2)}</span>
+                  <span className="text-xl md:text-2xl font-bold text-hotel-gold">{formatRupiah(finalPrice)}</span>
                 </div>
 
                 {/* Action Buttons */}
@@ -937,13 +1040,13 @@ const PackageDetails = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Footer */}
       <Footer />
     </div>
   );
 
-  
+
 };
 
 export default PackageDetails;

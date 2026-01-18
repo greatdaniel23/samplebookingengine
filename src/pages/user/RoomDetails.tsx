@@ -111,6 +111,24 @@ const RoomDetails: React.FC = () => {
 
       if (result.success && result.data) {
         setRoom(result.data);
+
+        // Track room details page view & view_item
+        import('@/utils/ga4Analytics').then(({ trackRoomDetailsPage, trackViewItem }) => {
+          trackRoomDetailsPage({
+            room_id: result.data.id,
+            room_name: result.data.name,
+            price: result.data.price,
+            capacity: result.data.capacity || result.data.occupancy,
+          });
+
+          trackViewItem({
+            item_id: result.data.id,
+            item_name: result.data.name,
+            item_category: 'Room',
+            price: Number(result.data.price || 0),
+            currency: 'IDR'
+          });
+        });
       } else {
         throw new Error('Room not found');
       }
@@ -164,6 +182,15 @@ const RoomDetails: React.FC = () => {
 
   const handleBookNow = () => {
     if (room) {
+      // Track book now click
+      import('@/utils/ga4Analytics').then(({ trackButtonClick }) => {
+        trackButtonClick({
+          button_name: 'book_now',
+          room_name: room.name,
+          value: Number(room.price),
+          currency: 'IDR'
+        });
+      });
       navigate(`/book/${room.id}`);
     }
   };
