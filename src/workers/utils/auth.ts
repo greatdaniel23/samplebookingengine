@@ -2,25 +2,47 @@ import { JWTPayload } from '../types';
 
 /**
  * Verify password against bcrypt hash
- * Note: Cloudflare Workers doesn't have built-in bcrypt support
- * This is a placeholder - you should implement a proper bcrypt verification
- * or use a hashing service/library compatible with Workers
  */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   // TODO: Implement proper bcrypt verification
-  // For now, this is a placeholder that returns false
-  // In production, you might want to:
-  // 1. Use a service that supports bcrypt verification
-  // 2. Use a compatible hashing library
-  // 3. Store plaintext passwords (NOT RECOMMENDED)
   console.warn('Using placeholder password verification - implement proper bcrypt check');
   return false;
 }
 
 /**
- * Generate JWT token
+ * Helper to encode string to Base64Url with Unicode support
  */
-export function generateToken(userId: number, username: string, secret?: string): string {
+function base64UrlEncode(str: string): string {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(str);
+  const binary = String.fromCharCode(...new Uint8Array(bytes));
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+/**
+ * Helper to decode Base64Url to string with Unicode support
+ */
+function base64UrlDecode(str: string): string {
+  const binary = atob(str.replace(/-/g, '+').replace(/_/g, '/'));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  const decoder = new TextDecoder();
+  return decoder.decode(bytes);
+}
+
+/**
+ * Generate JWT token using HMAC-SHA256 via Web Crypto API
+ */
+export async function generateToken(userId: number, username: string, secret?: string): Promise<string> {
+  if (!secret) {
+      throw new Error('JWT_SECRET is not defined');
+  }
+
   const now = Math.floor(Date.now() / 1000);
   const exp = now + (24 * 60 * 60); // 24 hours
 
@@ -36,23 +58,36 @@ export function generateToken(userId: number, username: string, secret?: string)
     exp,
   };
 
-  const encodedHeader = btoa(JSON.stringify(header));
-  const encodedPayload = btoa(JSON.stringify(payload));
-
-  // Simple HMAC-SHA256 signature (simplified, not production-ready)
-  const message = `${encodedHeader}.${encodedPayload}`;
+  const encodedHeader = base64UrlEncode(JSON.stringify(header));
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   
-  // Using a simple hash for demo purposes
-  // In production, use a proper HMAC-SHA256 implementation
-  const signature = btoa(message + (secret || 'secret'));
+  const data = new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`);
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
 
-  return `${message}.${signature}`;
+  const signature = await crypto.subtle.sign('HMAC', key, data);
+  // Convert ArrayBuffer to Base64Url
+  const signatureArray = Array.from(new Uint8Array(signature));
+  const encodedSignature = btoa(String.fromCharCode.apply(null, signatureArray))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  return `${encodedHeader}.${encodedPayload}.${encodedSignature}`;
 }
 
 /**
- * Verify JWT token
+ * Verify JWT token using HMAC-SHA256 via Web Crypto API
  */
-export function verifyToken(token: string, secret?: string): JWTPayload | null {
+export async function verifyToken(token: string, secret?: string): Promise<JWTPayload | null> {
+  if (!secret) {
+    console.error('JWT_SECRET is missing during verification');
+    return null;
+  }
+
   try {
     const parts = token.split('.');
     
@@ -60,11 +95,37 @@ export function verifyToken(token: string, secret?: string): JWTPayload | null {
       return null;
     }
 
-    const [, payloadEncoded] = parts;
-    const payload = JSON.parse(atob(payloadEncoded)) as JWTPayload;
+    const [headerEncoded, payloadEncoded, signatureEncoded] = parts;
+
+    // Verify signature
+    const data = new TextEncoder().encode(`${headerEncoded}.${payloadEncoded}`);
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+
+    // Convert Base64Url signature back to Uint8Array
+    const binarySignature = atob(signatureEncoded.replace(/-/g, '+').replace(/_/g, '/'));
+    const signatureBytes = new Uint8Array(binarySignature.length);
+    for (let i = 0; i < binarySignature.length; i++) {
+      signatureBytes[i] = binarySignature.charCodeAt(i);
+    }
+
+    const isValid = await crypto.subtle.verify('HMAC', key, signatureBytes, data);
+
+    if (!isValid) {
+      console.error('Invalid token signature');
+      return null;
+    }
+
+    const payload = JSON.parse(base64UrlDecode(payloadEncoded)) as JWTPayload;
 
     // Check expiration
     if (payload.exp < Math.floor(Date.now() / 1000)) {
+      console.error('Token expired');
       return null;
     }
 
@@ -83,18 +144,4 @@ export function getTokenFromHeader(authHeader: string | null): string | null {
     return null;
   }
   return authHeader.slice(7);
-}
-
-/**
- * Authenticate request
- */
-export function authenticateRequest(request: Request): JWTPayload | null {
-  const authHeader = request.headers.get('Authorization');
-  const token = getTokenFromHeader(authHeader);
-
-  if (!token) {
-    return null;
-  }
-
-  return verifyToken(token);
 }
