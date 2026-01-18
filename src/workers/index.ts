@@ -140,26 +140,42 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
   }
 }
 
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+  'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; base-uri 'none';",
+};
+
 function successResponse(data: any): Response {
+  const allowedOrigin = 'https://bookingengine-8g1-boe-kxn.pages.dev'; // Restrict to production domain
+
   return new Response(JSON.stringify({ success: true, data }), {
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      ...SECURITY_HEADERS,
     },
   });
 }
 
 function errorResponse(message: string, status = 500): Response {
+  const allowedOrigin = 'https://bookingengine-8g1-boe-kxn.pages.dev';
+
   return new Response(JSON.stringify({ success: false, error: message }), {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': allowedOrigin,
+      ...SECURITY_HEADERS,
     },
   });
 }
+
 
 // ==================== BOOKINGS ====================
 async function handleBookings(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
@@ -1182,7 +1198,7 @@ async function sendEmailViaResend(env: Env, to: string, subject: string, html: s
 
     if (!response.ok) {
       console.error('Resend API error:', result);
-      return { id: 'error-' + Date.now(), error: JSON.stringify(result) };
+      return { id: 'error-' + Date.now(), error: JSON.stringify(result) } as any;
     }
 
     return { id: result.id || 'sent-' + Date.now() };
