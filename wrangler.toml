@@ -25,7 +25,13 @@ id = "ec304060e11b4215888430acdee7aafa"
 
 # Production environment
 [env.production]
-vars = { ENVIRONMENT = "production", RESEND_API_KEY = "re_ggeu4gUr_B5wJcjrNv2zUVSTmGu8t7hhN", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali", DOKU_ENVIRONMENT = "sandbox" }
+vars = { ENVIRONMENT = "production", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali", DOKU_ENVIRONMENT = "sandbox" }
+# Secrets to be added via wrangler secret put:
+# RESEND_API_KEY
+# DOKU_CLIENT_ID
+# DOKU_SECRET_KEY
+# JWT_SECRET
+
 workers_dev = true
 
 # DOKU Payment secrets (add via: wrangler secret put DOKU_CLIENT_ID --env production)
@@ -54,7 +60,15 @@ id = "ec304060e11b4215888430acdee7aafa"
 
 # Development environment
 [env.development]
-vars = { ENVIRONMENT = "development", RESEND_API_KEY = "re_ggeu4gUr_B5wJcjrNv2zUVSTmGu8t7hhN", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali" }
+vars = { ENVIRONMENT = "development", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali" }
 
-[env.development.secrets]
-SMTP_PASSWORD = "jdgzizrrdjhkznqx"
+# SMTP_PASSWORD should be a secret
+
+# Rate Limiting configuration
+# Note: Enabling this requires a paid plan or specific setup in Cloudflare dashboard
+# [unsafe]
+# [[unsafe.bindings]]
+# name = "RATE_LIMITER"
+# type = "ratelimit"
+# namespace_id = "1"
+# simple = { limit = 100, period = 60 }

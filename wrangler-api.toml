@@ -25,16 +25,18 @@ id = "ec304060e11b4215888430acdee7aafa"
 
 # Environment configuration
 [vars]
-RESEND_API_KEY = "re_ggeu4gUr_B5wJcjrNv2zUVSTmGu8t7hhN"
 ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com"
 VILLA_NAME = "Best Villa Bali"
 FROM_EMAIL = "danielsantosomarketing2017@gmail.com"
 FROM_NAME = "Best Villa Bali"
 DOKU_ENVIRONMENT = "sandbox"
+# Secrets to be added via wrangler secret put:
+# RESEND_API_KEY
+
 
 [env.production]
 workers_dev = true
-vars = { ENVIRONMENT = "production", RESEND_API_KEY = "re_ggeu4gUr_B5wJcjrNv2zUVSTmGu8t7hhN", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali", DOKU_ENVIRONMENT = "sandbox" }
+vars = { ENVIRONMENT = "production", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali", DOKU_ENVIRONMENT = "sandbox" }
 routes = [
   { pattern = "api.bookingengine.com/api/*", zone_name = "bookingengine.com" }
 ]
@@ -57,4 +59,4 @@ binding = "CACHE"
 id = "ec304060e11b4215888430acdee7aafa"
 
 [env.development]
-vars = { ENVIRONMENT = "development", RESEND_API_KEY = "re_ggeu4gUr_B5wJcjrNv2zUVSTmGu8t7hhN", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali", DOKU_ENVIRONMENT = "sandbox" }
+vars = { ENVIRONMENT = "development", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali", DOKU_ENVIRONMENT = "sandbox" }

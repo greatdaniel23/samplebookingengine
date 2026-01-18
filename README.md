@@ -371,8 +371,24 @@ sudo crontab -e
 - [ ] SSL certificate installed and working
 - [ ] Admin credentials changed from defaults
 - [ ] Email service configured for booking notifications
+- [ ] Cloudflare Secrets configured (RESEND_API_KEY, DOKU_CLIENT_ID, DOKU_SECRET_KEY, JWT_SECRET)
 - [ ] Backup strategy implemented
 - [ ] Monitoring/analytics setup (optional)
+
+### 🔐 Cloudflare Security (Workers)
+
+The Cloudflare Workers backend has been hardened with the following security measures:
+1. **Secrets Management**: Sensitive keys are no longer stored in `wrangler.toml`. You must add them via the CLI:
+   ```bash
+   wrangler secret put RESEND_API_KEY
+   wrangler secret put DOKU_CLIENT_ID
+   wrangler secret put DOKU_SECRET_KEY
+   wrangler secret put JWT_SECRET
+   ```
+2. **Restrictive CORS**: The API now only accepts requests from the production domain `https://bookingengine-8g1-boe-kxn.pages.dev`.
+3. **Security Headers**: HSTS, CSP, X-Frame-Options, and X-Content-Type-Options are applied to all responses.
+4. **Rate Limiting**: Basic rate limiting configuration is included for protection against abuse.
+
 
 ### 8. Maintenance & Updates
 
