@@ -47,6 +47,11 @@ const Index = () => {
 
   // Auto-filter packages for today when component loads
   useEffect(() => {
+    // Track homepage page view
+    import('@/utils/ga4Analytics').then(({ trackHomepage }) => {
+      trackHomepage();
+    });
+
     if (!isLoading && safePackages.length > 0) {
       handleBookingSearch({
         checkIn: dateFilters.checkIn,
@@ -138,10 +143,10 @@ const Index = () => {
 
   return (
     <div className="bg-hotel-cream min-h-screen">
+      <Header />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Professional Hotel Header - Shared Component */}
         <section className="mb-8">
-          <Header />
 
           {/* Enhanced Photo Gallery Hero */}
           <div className="mb-8">

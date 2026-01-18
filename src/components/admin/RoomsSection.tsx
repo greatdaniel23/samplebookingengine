@@ -370,7 +370,7 @@ const RoomsSection: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span><strong>Price per Night:</strong></span>
-                  <span className="font-semibold text-foreground">${room.price || '0'}</span>
+                  <span className="font-semibold text-foreground">Rp {room.price?.toLocaleString('id-ID') || '0'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span><strong>Guest Capacity:</strong></span>

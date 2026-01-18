@@ -81,7 +81,7 @@ router.post('/create', async (request, env) => {
       adults,
       children = 0,
       total_price,
-      currency = 'USD',
+      currency = 'IDR',
       special_requests,
       source = 'direct',
     } = body;

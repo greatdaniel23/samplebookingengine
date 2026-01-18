@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useHomepageContent } from '@/hooks/useHomepageContent';
-import { 
-  Edit3, 
-  Save, 
+import {
+  Edit3,
+  Save,
   X,
   Home,
   Phone,
@@ -68,7 +68,7 @@ const SimplifiedHomepageManager: React.FC = () => {
         bedrooms: homepageContent.bedrooms || 0,
         bathrooms: homepageContent.bathrooms || 0,
         basePrice: homepageContent.basePrice || 0,
-        currency: 'USD',
+        currency: 'IDR',
         cancellationPolicy: homepageContent.cancellationPolicy || '',
         houseRules: homepageContent.houseRules || ''
       });
@@ -83,7 +83,7 @@ const SimplifiedHomepageManager: React.FC = () => {
 
   const handleSave = async () => {
     if (!formData) return;
-    
+
     setSaving(true);
     try {
       const result = await updateHomepageContent({
@@ -146,7 +146,7 @@ const SimplifiedHomepageManager: React.FC = () => {
         bedrooms: homepageContent.bedrooms || 0,
         bathrooms: homepageContent.bathrooms || 0,
         basePrice: homepageContent.basePrice || 0,
-        currency: 'USD',
+        currency: 'IDR',
         cancellationPolicy: homepageContent.cancellationPolicy || '',
         houseRules: homepageContent.houseRules || ''
       });
@@ -170,7 +170,7 @@ const SimplifiedHomepageManager: React.FC = () => {
       await refetch();
       setRetrying(false);
     };
-    
+
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -207,8 +207,8 @@ const SimplifiedHomepageManager: React.FC = () => {
         <div className="flex gap-3">
           {isEditing ? (
             <>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleCancel}
                 disabled={saving}
                 className="flex items-center gap-2"
@@ -216,7 +216,7 @@ const SimplifiedHomepageManager: React.FC = () => {
                 <X className="w-4 h-4" />
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleSave}
                 disabled={saving}
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
@@ -226,7 +226,7 @@ const SimplifiedHomepageManager: React.FC = () => {
               </Button>
             </>
           ) : (
-            <Button 
+            <Button
               onClick={() => setIsEditing(true)}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
             >
@@ -399,7 +399,7 @@ const SimplifiedHomepageManager: React.FC = () => {
       {/* Timing Only - Property Specs removed (don't exist in production database) */}
       <div className="grid grid-cols-1 gap-6">
         {/* Property Specifications Card - REMOVED because maxGuests, bedrooms, bathrooms, basePrice don't exist in production villa_info table */}
-        
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

@@ -23,7 +23,7 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
   const [selectedImage, setSelectedImage] = useState<string>(currentImage || '');
   const [dragActive, setDragActive] = useState(false);
 
-  const R2_PUBLIC_URL = 'https://pub-e303ec878512482fa87c065266e6bedd.r2.dev';
+  const R2_PUBLIC_URL = 'https://alphadigitalagency.id';
   const API_BASE_URL = paths.apiBase;
 
   console.log('R2ImagePicker - API_BASE_URL:', API_BASE_URL);
@@ -229,96 +229,96 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
             <DialogTitle>Select Image from R2 Storage</DialogTitle>
           </DialogHeader>
 
-            <div className="p-4 border-b bg-gray-50">
-              <div
-                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-                  }`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-              >
-                <label className="flex flex-col items-center justify-center gap-2 cursor-pointer">
-                  <Upload className="w-12 h-12 text-gray-400" />
-                  <div>
-                    <Button variant="default" className="bg-green-600 hover:bg-green-700" disabled={uploading} asChild>
-                      <span>{uploading ? `Uploading...` : 'Choose Files'}</span>
-                    </Button>
-                    <p className="text-sm text-gray-500 mt-2">or drag and drop images here</p>
-                  </div>
-                  <Input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
-                    multiple
-                    onChange={handleUpload}
-                    disabled={uploading}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              <p className="text-xs text-gray-500 mt-2 text-center">Max 10MB per file • Multiple files supported • JPEG, PNG, WebP, AVIF, GIF</p>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4">
-              {loading ? (
-                <div className="text-center py-8 text-gray-500">Loading images...</div>
-              ) : images.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  No images found. Upload your first image!
+          <div className="p-4 border-b bg-gray-50">
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                }`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              <label className="flex flex-col items-center justify-center gap-2 cursor-pointer">
+                <Upload className="w-12 h-12 text-gray-400" />
+                <div>
+                  <Button variant="default" className="bg-green-600 hover:bg-green-700" disabled={uploading} asChild>
+                    <span>{uploading ? `Uploading...` : 'Choose Files'}</span>
+                  </Button>
+                  <p className="text-sm text-gray-500 mt-2">or drag and drop images here</p>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {images.map((image) => (
-                    <div
-                      key={image.id}
-                      onClick={() => setSelectedImage(image.id)}
-                      className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${selectedImage === image.id
-                        ? 'border-blue-500 ring-2 ring-blue-300'
-                        : 'border-gray-200 hover:border-blue-300'
-                        }`}
-                    >
-                      <img
-                        src={getImageUrl(image)}
-                        alt={image.filename}
-                        className="w-full h-32 object-cover"
-                        onError={(e) => {
-                          console.error('Image load error:', image.id, 'URL:', getImageUrl(image));
-                          e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect fill="%23ddd"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999">Error</text></svg>';
-                        }}
-                      />
-                      <div className="p-2 bg-gray-50">
-                        <p className="text-xs text-gray-600 truncate" title={image.filename}>
-                          {image.filename}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {new Date(image.uploaded).toLocaleDateString()}
-                        </p>
-                      </div>
+                <Input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+                  multiple
+                  onChange={handleUpload}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            <p className="text-xs text-gray-500 mt-2 text-center">Max 10MB per file • Multiple files supported • JPEG, PNG, WebP, AVIF, GIF</p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4">
+            {loading ? (
+              <div className="text-center py-8 text-gray-500">Loading images...</div>
+            ) : images.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No images found. Upload your first image!
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {images.map((image) => (
+                  <div
+                    key={image.id}
+                    onClick={() => setSelectedImage(image.id)}
+                    className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${selectedImage === image.id
+                      ? 'border-blue-500 ring-2 ring-blue-300'
+                      : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                  >
+                    <img
+                      src={getImageUrl(image)}
+                      alt={image.filename}
+                      className="w-full h-32 object-cover"
+                      onError={(e) => {
+                        console.error('Image load error:', image.id, 'URL:', getImageUrl(image));
+                        e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect fill="%23ddd"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999">Error</text></svg>';
+                      }}
+                    />
+                    <div className="p-2 bg-gray-50">
+                      <p className="text-xs text-gray-600 truncate" title={image.filename}>
+                        {image.filename}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(image.uploaded).toLocaleDateString()}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="p-4 border-t flex justify-between items-center">
-              <p className="text-sm text-gray-600">
-                {selectedImage ? `Selected: ${images.find(img => img.id === selectedImage)?.filename || selectedImage}` : 'No image selected'}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setShowModal(false)}
-                  variant="outline"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSelect}
-                  disabled={!selectedImage}
-                >
-                  Select Image
-                </Button>
+                  </div>
+                ))}
               </div>
+            )}
+          </div>
+
+          <div className="p-4 border-t flex justify-between items-center">
+            <p className="text-sm text-gray-600">
+              {selectedImage ? `Selected: ${images.find(img => img.id === selectedImage)?.filename || selectedImage}` : 'No image selected'}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowModal(false)}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSelect}
+                disabled={!selectedImage}
+              >
+                Select Image
+              </Button>
             </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

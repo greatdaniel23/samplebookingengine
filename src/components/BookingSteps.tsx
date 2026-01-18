@@ -13,60 +13,60 @@ import { Room, Package } from '@/types';
 
 interface GuestFormData { firstName: string; lastName: string; email: string; phone: string; specialRequests?: string }
 
-interface BookingStepsProps { room?: Room; package?: Package; disabledDates?: (date: Date) => boolean; onBookingComplete: (b:{dateRange:DateRange;guests:number;guestInfo:GuestFormData;totalPrice:number})=>void; isBooking?: boolean }
+interface BookingStepsProps { room?: Room; package?: Package; disabledDates?: (date: Date) => boolean; onBookingComplete: (b: { dateRange: DateRange; guests: number; guestInfo: GuestFormData; totalPrice: number }) => void; isBooking?: boolean }
 
 // Child component props
-interface DateStepProps { dateRange: DateRange|undefined; setDateRange: (r:DateRange|undefined)=>void; guestCount:number; setGuestCount:(n:number)=>void; room?:Room; package?:Package; nights:number; disabledDates?: (d:Date)=>boolean; onNext:()=>void }
-interface GuestStepProps { data:GuestFormData; errors:Partial<Record<keyof GuestFormData,string>>; handleField:(f:keyof GuestFormData)=>(e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>)=>void; submitGuest:(e:React.FormEvent)=>void; canProceedGuest:boolean; setStep:(n:number)=>void }
-interface ReviewStepProps { room?:Room; package?:Package; guestCount:number; dateRange:DateRange|undefined; nights:number; basePrice:number; serviceFee:number; totalPrice:number; data:GuestFormData; isBooking:boolean; onConfirm:()=>void; onEdit:()=>void }
+interface DateStepProps { dateRange: DateRange | undefined; setDateRange: (r: DateRange | undefined) => void; guestCount: number; setGuestCount: (n: number) => void; room?: Room; package?: Package; nights: number; disabledDates?: (d: Date) => boolean; onNext: () => void }
+interface GuestStepProps { data: GuestFormData; errors: Partial<Record<keyof GuestFormData, string>>; handleField: (f: keyof GuestFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void; submitGuest: (e: React.FormEvent) => void; canProceedGuest: boolean; setStep: (n: number) => void }
+interface ReviewStepProps { room?: Room; package?: Package; guestCount: number; dateRange: DateRange | undefined; nights: number; basePrice: number; serviceFee: number; totalPrice: number; data: GuestFormData; isBooking: boolean; onConfirm: () => void; onEdit: () => void }
 
 // Date selection step component
 const DateStep: React.FC<DateStepProps> = ({ dateRange, setDateRange, guestCount, setGuestCount, room, package: pkg, nights, disabledDates, onNext }) => {
   const maxGuests = room?.occupancy || pkg?.max_guests || 2;
   const maxNights = pkg?.max_nights;
   const minNights = pkg?.min_nights || 1;
-  
+
   return (
-  <div className="space-y-6">
-    <div>
-      <Label className="text-lg font-medium mb-4 block">Select Your Dates</Label>
-      <Calendar
-        mode="range"
-        selected={dateRange}
-        onSelect={setDateRange}
-        numberOfMonths={1}
-        disabled={(date) => {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          return date < yesterday || (disabledDates && disabledDates(date));
-        }}
-        className="rounded-md border mx-auto"
-      />
-    </div>
-    <div>
-      <Label htmlFor="guests" className="text-lg font-medium">Number of Guests</Label>
-      <div className="flex items-center space-x-3 mt-2">
-        <Input id="guests" type="number" min={1} max={maxGuests} value={guestCount} onChange={(e) => setGuestCount(Number(e.target.value))} className="w-24" />
-        <span className="text-sm text-gray-500">(Maximum {maxGuests} guests)</span>
+    <div className="space-y-6">
+      <div>
+        <Label className="text-lg font-medium mb-4 block">Select Your Dates</Label>
+        <Calendar
+          mode="range"
+          selected={dateRange}
+          onSelect={setDateRange}
+          numberOfMonths={1}
+          disabled={(date) => {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            return date < yesterday || (disabledDates && disabledDates(date));
+          }}
+          className="rounded-md border mx-auto"
+        />
       </div>
-    </div>
-    {dateRange?.from && dateRange?.to && (
-      <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Check className="w-5 h-5 text-green-600" />
-          <p className="text-green-700 font-medium">{nights} night{nights !== 1 ? 's' : ''} selected</p>
+      <div>
+        <Label htmlFor="guests" className="text-lg font-medium">Number of Guests</Label>
+        <div className="flex items-center space-x-3 mt-2">
+          <Input id="guests" type="number" min={1} max={maxGuests} value={guestCount} onChange={(e) => setGuestCount(Number(e.target.value))} className="w-24" />
+          <span className="text-sm text-gray-500">(Maximum {maxGuests} guests)</span>
         </div>
-        <p className="text-green-600 text-sm">{format(dateRange.from, 'MMM d')} - {format(dateRange.to, 'MMM d, yyyy')}</p>
       </div>
-    )}
-    <Button
-      onClick={onNext}
-      disabled={!dateRange?.from || !dateRange?.to || nights === 0}
-      className="w-full btn-hotel-primary" size="lg"
-    >
-      Continue to Guest Information
-    </Button>
-  </div>
+      {dateRange?.from && dateRange?.to && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Check className="w-5 h-5 text-green-600" />
+            <p className="text-green-700 font-medium">{nights} night{nights !== 1 ? 's' : ''} selected</p>
+          </div>
+          <p className="text-green-600 text-sm">{format(dateRange.from, 'MMM d')} - {format(dateRange.to, 'MMM d, yyyy')}</p>
+        </div>
+      )}
+      <Button
+        onClick={onNext}
+        disabled={!dateRange?.from || !dateRange?.to || nights === 0}
+        className="w-full btn-hotel-primary" size="lg"
+      >
+        Continue to Guest Information
+      </Button>
+    </div>
   );
 };
 
@@ -143,11 +143,11 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ room, package: pkg, guestCount,
           <span>
             {pkg ? `Package: ${pkg.name}` : `${room?.name} × ${nights} nights`}
           </span>
-          <span>${basePrice.toFixed(2)}</span>
+          <span>Rp {basePrice.toLocaleString('id-ID')}</span>
         </div>
-        <div className="flex justify-between text-gray-600"><span>Service fee 10%</span><span>${serviceFee.toFixed(2)}</span></div>
+        <div className="flex justify-between text-gray-600"><span>Service fee 10%</span><span>Rp {serviceFee.toLocaleString('id-ID')}</span></div>
         <hr />
-        <div className="flex justify-between font-bold text-green-800"><span>Total</span><span>${totalPrice.toFixed(2)}</span></div>
+        <div className="flex justify-between font-bold text-green-800"><span>Total</span><span>Rp {totalPrice.toLocaleString('id-ID')}</span></div>
       </div>
     </div>
     <div className="flex gap-3 pt-2">

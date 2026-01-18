@@ -8,6 +8,7 @@ import { Suspense, lazy } from "react";
 import Index from "./pages/user/Index";
 import { AdminGuard } from "@/components/AdminGuard";
 import { BookingProvider } from "@/context/BookingContext";
+import { GTMLoader } from "@/components/GTMLoader";
 
 // Lazy load user pages
 const BookingPage = lazy(() => import("./pages/user/Booking"));
@@ -47,6 +48,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BookingProvider>
       <TooltipProvider>
+        <GTMLoader />
         <Toaster />
         <Sonner />
         <BrowserRouter>

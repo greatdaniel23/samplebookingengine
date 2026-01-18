@@ -56,6 +56,15 @@ export const PackagesPage: React.FC = () => {
 
   // Load packages and package types
   useEffect(() => {
+    // Track packages page view
+    import('@/utils/ga4Analytics').then(({ trackPackagesPage }) => {
+      trackPackagesPage({
+        filter_type: filters.type || 'all',
+        check_in: filters.checkIn || undefined,
+        check_out: filters.checkOut || undefined,
+      });
+    });
+
     loadPackages();
     loadPackageTypes();
   }, []);
@@ -86,6 +95,23 @@ export const PackagesPage: React.FC = () => {
   useEffect(() => {
     applyFilters();
   }, [packages, filters.search, filters.guests]);
+
+  // Track view_item_list when filtered packages update
+  useEffect(() => {
+    if (filteredPackages.length > 0) {
+      import('@/utils/ga4Analytics').then(({ trackViewItemList }) => {
+        trackViewItemList({
+          item_list_name: 'Packages List',
+          items: filteredPackages.map((pkg) => ({
+            item_id: pkg.id,
+            item_name: pkg.name,
+            price: Number(pkg.price || pkg.base_price || 0),
+            item_category: pkg.type || 'Package'
+          }))
+        });
+      });
+    }
+  }, [filteredPackages]);
 
   const loadPackages = async () => {
     try {
@@ -124,26 +150,26 @@ export const PackagesPage: React.FC = () => {
 
   const applyFilters = () => {
     let filtered = [...packages];
-    
+
     // Get today's date for validity check
     const today = new Date().toISOString().split('T')[0];
 
     // CRITICAL: Filter by is_active AND date validity
     filtered = filtered.filter(pkg => {
-      const isActive = pkg.is_active === 1 || pkg.is_active === true || 
-                      pkg.available === 1 || pkg.available === true;
-      
+      const isActive = pkg.is_active === 1 || pkg.is_active === true ||
+        pkg.available === 1 || pkg.available === true;
+
       // Check date validity
       let isDateValid = true;
       if (pkg.valid_from && today < pkg.valid_from) isDateValid = false;
       if (pkg.valid_until && today > pkg.valid_until) isDateValid = false;
-      
+
       return isActive && isDateValid;
     });
 
     // Filter by type (skip if empty)
     if (filters.type && filters.type !== 'all') {
-      filtered = filtered.filter(pkg => 
+      filtered = filtered.filter(pkg =>
         pkg.package_type === filters.type || pkg.type === filters.type
       );
     }
@@ -157,7 +183,7 @@ export const PackagesPage: React.FC = () => {
         if (typeof inclusions === 'string') {
           try { inclusions = JSON.parse(inclusions); } catch { inclusions = []; }
         }
-        
+
         return pkg.name.toLowerCase().includes(search) ||
           pkg.description.toLowerCase().includes(search) ||
           (Array.isArray(inclusions) && inclusions.some((item: string) => item.toLowerCase().includes(search)));
@@ -232,12 +258,13 @@ export const PackagesPage: React.FC = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
+      {/* Professional Hotel Header - Shared Component */}
+      {currentVillaData && <Header />}
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Professional Hotel Header - Shared Component */}
+
         {currentVillaData && (
           <section className="mb-8">
-            <Header />
-
             {/* Enhanced Photo Gallery Hero */}
             <div className="mb-8">
               <PhotoGallery images={currentVillaData.images} />

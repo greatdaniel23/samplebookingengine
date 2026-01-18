@@ -141,6 +141,28 @@ const BookingPage = () => {
         console.log("Final selectedRoom:", room);
         setSelectedRoom(room);
 
+        // Track book page view & begin_checkout
+        import('@/utils/ga4Analytics').then(({ trackBookPage, trackBeginCheckout }) => {
+          trackBookPage({
+            package_id: packageId || undefined,
+            package_name: pkg?.name,
+            room_id: room?.id || room?.room_id,
+            room_name: room?.name,
+            check_in: checkIn || undefined,
+            check_out: checkOut || undefined,
+            guests: guests,
+            price: finalPricePerNight || pkg?.price || pkg?.base_price,
+          });
+
+          trackBeginCheckout({
+            value: Number(finalPricePerNight || pkg?.price || pkg?.base_price || 0),
+            currency: 'IDR',
+            item_name: pkg?.name || room?.name,
+            item_id: packageId || pkg?.id,
+            item_category: pkg?.type || 'Package',
+          });
+        });
+
       } catch (err) {
         console.error("Error loading booking data:", err);
         setError(err instanceof Error ? err.message : "Failed to load booking data");
@@ -183,7 +205,7 @@ const BookingPage = () => {
     // Also check roomParam from URL as fallback
     const roomId = selectedRoom.id || selectedRoom.room_id || selectedRoom.roomId || roomParam;
     console.log('Resolved roomId:', roomId);
-    
+
     if (!roomId) {
       showError("Missing room information. Please go back and select a room.");
       return;
@@ -374,7 +396,7 @@ const BookingPage = () => {
                   <div className="border-t pt-2 mt-2">
                     <div className="flex justify-between text-sm text-gray-600">
                       <span>Package Base Price:</span>
-                      <span>${basePrice.toLocaleString()}/night</span>
+                      <span>Rp {basePrice.toLocaleString('id-ID')}/night</span>
                     </div>
                     {roomAdjustment !== 0 && (
                       <div className="flex justify-between text-sm text-gray-600">
@@ -382,20 +404,20 @@ const BookingPage = () => {
                         <span>
                           {adjustmentType === 'percentage'
                             ? `${roomAdjustment > 0 ? '+' : ''}${roomAdjustment}%`
-                            : `${roomAdjustment > 0 ? '+' : ''}$${Math.abs(roomAdjustment).toLocaleString()}`
+                            : `${roomAdjustment > 0 ? '+' : ''}Rp ${Math.abs(roomAdjustment).toLocaleString('id-ID')}`
                           }
                         </span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm font-medium text-gray-700 mt-1">
                       <span>Price per Night:</span>
-                      <span>${pricePerNight.toLocaleString()}</span>
+                      <span>Rp {pricePerNight.toLocaleString('id-ID')}</span>
                     </div>
                   </div>
 
                   <div className="border-t pt-2 flex justify-between text-lg font-bold">
                     <span>Total:</span>
-                    <span style={{ color: bookingTheme.colors.primary }}>${totalPrice.toLocaleString()}</span>
+                    <span style={{ color: bookingTheme.colors.primary }}>Rp {totalPrice.toLocaleString('id-ID')}</span>
                   </div>
                 </div>
               </CardContent>
@@ -410,7 +432,7 @@ const BookingPage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">First Name *</Label>
                     <Input
@@ -419,6 +441,7 @@ const BookingPage = () => {
                       value={guestForm.firstName}
                       onChange={handleInputChange}
                       required
+                      className="w-full"
                     />
                   </div>
                   <div>
@@ -429,6 +452,7 @@ const BookingPage = () => {
                       value={guestForm.lastName}
                       onChange={handleInputChange}
                       required
+                      className="w-full"
                     />
                   </div>
                 </div>

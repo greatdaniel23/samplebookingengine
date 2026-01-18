@@ -11,7 +11,7 @@ const DebugPackages: React.FC = () => {
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <h1>🐛 Debug: usePackages Hook</h1>
       <p><strong>Total packages returned by usePackages:</strong> {packages.length}</p>
-      
+
       <h2>📦 Packages from usePackages hook:</h2>
       {packages.length === 0 ? (
         <div style={{ background: '#f8d7da', padding: '10px', border: '1px solid #dc3545', borderRadius: '5px' }}>
@@ -20,19 +20,19 @@ const DebugPackages: React.FC = () => {
       ) : (
         <div>
           {packages.map(pkg => (
-            <div 
-              key={pkg.id} 
-              style={{ 
-                background: '#d4edda', 
-                padding: '10px', 
-                margin: '5px 0', 
-                border: '1px solid #28a745', 
-                borderRadius: '5px' 
+            <div
+              key={pkg.id}
+              style={{
+                background: '#d4edda',
+                padding: '10px',
+                margin: '5px 0',
+                border: '1px solid #28a745',
+                borderRadius: '5px'
               }}
             >
-              <strong>ID {pkg.id}: {pkg.name}</strong><br/>
-              Available: {pkg.available ? 'Yes' : 'No'}<br/>
-              Price: ${pkg.price}
+              <strong>ID {pkg.id}: {pkg.name}</strong><br />
+              Available: {pkg.available ? 'Yes' : 'No'}<br />
+              Price: Rp {pkg.price?.toLocaleString('id-ID')}
             </div>
           ))}
         </div>

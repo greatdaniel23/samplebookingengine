@@ -17,7 +17,7 @@ export const packageService = {
     guests?: number;
   }): Promise<{ success: boolean; data: Package[]; message: string; count: number }> {
     const params = new URLSearchParams();
-    
+
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -28,7 +28,7 @@ export const packageService = {
 
     const url = `${API_BASE_URL}/packages${params.toString() ? '?' + params.toString() : ''}`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch packages: ${response.status}`);
     }
@@ -42,29 +42,29 @@ export const packageService = {
   async getPackageById(id: string, includeRooms: boolean = true): Promise<{ success: boolean; data: Package; message: string }> {
     try {
       // Use /packages/{id} endpoint for single package fetch
-      const url = includeRooms 
+      const url = includeRooms
         ? `${API_BASE_URL}/packages/${id}?include_rooms=true`
         : `${API_BASE_URL}/packages/${id}`;
-      
+
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         // If including rooms fails with 500, try without rooms
         if (includeRooms && response.status === 500) {
           console.warn(`Room information unavailable for package ${id}, fetching basic package data`);
           return this.getPackageById(id, false);
         }
-        
+
         // If it's a 404 or other error, throw appropriately
         if (response.status === 404) {
           throw new Error(`Package with ID ${id} not found`);
         }
-        
+
         throw new Error(`Failed to fetch package ${id}: HTTP ${response.status}`);
       }
 
       const result = await response.json();
-      
+
       // Check if the API returned an error in the response body
       if (!result.success) {
         // If rooms are included and there's an error, try without rooms
@@ -79,7 +79,7 @@ export const packageService = {
     } catch (error) {
       // Fallback: if room information fails, try basic package fetch
       if (includeRooms && error.message && (
-        error.message.includes('max_occupancy') || 
+        error.message.includes('max_occupancy') ||
         error.message.includes('500') ||
         error.message.includes('column')
       )) {
@@ -99,12 +99,12 @@ export const packageService = {
     checkOut?: string
   ): Promise<{ success: boolean; data: Package[]; message: string; room_id: string; count: number }> {
     const params = new URLSearchParams({ room_id: roomId });
-    
+
     if (checkIn) params.append('check_in', checkIn);
     if (checkOut) params.append('check_out', checkOut);
 
     const response = await fetch(`${API_BASE_URL}/packages?${params.toString()}`);
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch room packages: ${response.status}`);
     }
@@ -130,7 +130,7 @@ export const packageService = {
     });
 
     const response = await fetch(`${API_BASE_URL}/packages?${params.toString()}`);
-    
+
     if (!response.ok) {
       throw new Error(`Failed to calculate package price: ${response.status}`);
     }
@@ -143,7 +143,7 @@ export const packageService = {
    */
   async getPackageTypes(): Promise<{ success: boolean; data: Array<{ package_type: string; count: number }>; message: string }> {
     const response = await fetch(`${API_BASE_URL}/packages?action=types`);
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch package types: ${response.status}`);
     }
@@ -173,14 +173,14 @@ export const packageService = {
    * Format package price for display
    */
   formatPackagePrice(pricing: PackagePricing): string {
-    return `$${pricing.final_price.toFixed(2)}`;
+    return `Rp ${pricing.final_price.toLocaleString('id-ID')}`;
   },
 
   /**
    * Format discount for display
    */
   formatDiscount(pricing: PackagePricing): string {
-    return `Save $${pricing.savings.toFixed(2)} (${pricing.discount_percentage}% off)`;
+    return `Save Rp ${pricing.savings.toLocaleString('id-ID')} (${pricing.discount_percentage}% off)`;
   },
 
   /**
@@ -200,9 +200,9 @@ export const packageService = {
    */
   getPackageTypeDisplayName(type: string): string {
     if (!type) return 'Package';
-    
+
     const normalizedType = type.toLowerCase();
-    
+
     const typeNames = {
       // API format mappings
       romance: 'Romantic Getaway',
@@ -227,9 +227,9 @@ export const packageService = {
    */
   getPackageTypeColor(type: string): string {
     if (!type) return 'bg-hotel-cream text-hotel-bronze';
-    
+
     const normalizedType = type.toLowerCase();
-    
+
     const typeColors = {
       // API format mappings using hotel theme colors
       romance: 'bg-hotel-cream text-hotel-gold',

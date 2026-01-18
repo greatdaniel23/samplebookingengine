@@ -11,7 +11,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const method = request.method;
   const path = url.pathname;
-  
+
   let body = null;
   // Skip JSON parsing for image upload (needs formData)
   if ((method === 'POST' || method === 'PUT' || method === 'DELETE') && path !== '/api/images/upload') {
@@ -127,6 +127,11 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
       return handlePayment(url, method, body, env);
     }
 
+    // GTM routes
+    if (path.startsWith('/api/gtm')) {
+      return handleGTM(url, method, body, env);
+    }
+
     return errorResponse('Endpoint not found', 404);
   } catch (error) {
     console.error('Request error:', error);
@@ -238,7 +243,7 @@ async function handleBookings(url: URL, method: string, body: any, env: Env): Pr
         body.adults || body.guests,
         body.children || 0,
         body.total_price,
-        body.currency || 'USD',
+        body.currency || 'IDR',
         body.special_requests || null,
         body.source || 'direct',
         'pending',
@@ -401,7 +406,7 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env): P
       if (is_featured !== undefined) { updates.push('is_featured = ?'); values.push(is_featured ? 1 : 0); }
       if (is_active !== undefined) { updates.push('is_active = ?'); values.push(is_active ? 1 : 0); }
       if (display_order !== undefined) { updates.push('display_order = ?'); values.push(display_order); }
-      
+
       updates.push("updated_at = datetime('now')");
       values.push(id);
 
@@ -522,7 +527,7 @@ async function handleInclusions(url: URL, method: string, body: any, env: Env): 
       if (description !== undefined) { updates.push('description = ?'); values.push(description); }
       if (package_type !== undefined) { updates.push('package_type = ?'); values.push(package_type); }
       if (is_active !== undefined) { updates.push('is_active = ?'); values.push(is_active ? 1 : 0); }
-      
+
       updates.push("updated_at = datetime('now')");
       values.push(id);
 
@@ -683,14 +688,14 @@ async function handleAuth(url: URL, method: string, body: any, env: Env): Promis
 
 // ==================== IMAGES ====================
 async function handleImages(url: URL, method: string, request: Request, env: Env): Promise<Response> {
-  const R2_PUBLIC_URL = 'https://pub-e303ec878512482fa87c065266e6bedd.r2.dev';
+  const R2_PUBLIC_URL = 'https://alphadigitalagency.id';
 
   // GET /api/images/list
   if (url.pathname === '/api/images/list' && method === 'GET') {
     try {
       const prefix = url.searchParams.get('prefix') || '';
       const listed = await env.IMAGES.list({ prefix });
-      
+
       return successResponse({
         files: listed.objects.map((obj) => ({
           id: obj.key,
@@ -762,7 +767,7 @@ async function handleImages(url: URL, method: string, request: Request, env: Env
   if (url.pathname.startsWith('/api/images/') && method === 'DELETE') {
     try {
       const imageKey = url.pathname.replace('/api/images/', '');
-      
+
       await env.IMAGES.delete(imageKey);
 
       return successResponse({ success: true, message: 'Image deleted', key: imageKey });
@@ -860,10 +865,10 @@ async function handleSettings(url: URL, method: string, body: any, env: Env): Pr
   if (method === 'POST') {
     try {
       const { admin_email, villa_name, from_email } = body;
-      
+
       // Get existing settings
       const existing = await env.CACHE.get('app_settings', 'json') as any || {};
-      
+
       // Merge with new values
       const updatedSettings = {
         ...existing,
@@ -889,10 +894,10 @@ async function handleSettings(url: URL, method: string, body: any, env: Env): Pr
   if (method === 'PUT' && settingKey) {
     try {
       const { value } = body;
-      
+
       // Get existing settings
       const existing = await env.CACHE.get('app_settings', 'json') as any || {};
-      
+
       // Update specific key
       existing[settingKey] = value;
       existing.updated_at = new Date().toISOString();
@@ -911,6 +916,81 @@ async function handleSettings(url: URL, method: string, body: any, env: Env): Pr
   }
 
   return errorResponse('Settings endpoint not found', 404);
+}
+
+// ==================== GTM ====================
+async function handleGTM(url: URL, method: string, body: any, env: Env): Promise<Response> {
+  const pathParts = url.pathname.split('/').filter(Boolean);
+  const gtmId = pathParts[2]; // For /api/gtm/:id
+
+  // GET /api/gtm - List all GTM codes
+  if (method === 'GET' && !gtmId) {
+    try {
+      const gtmCodes = await env.CACHE.get('gtm_codes', 'json') as any[] || [];
+      return successResponse({ gtm_codes: gtmCodes });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // POST /api/gtm - Add new GTM code
+  if (method === 'POST' && !gtmId) {
+    try {
+      const { container_id, name, enabled } = body;
+      if (!container_id) return errorResponse('container_id is required', 400);
+
+      const existing = await env.CACHE.get('gtm_codes', 'json') as any[] || [];
+      const newCode = {
+        id: Date.now().toString(),
+        container_id,
+        name: name || container_id,
+        enabled: enabled !== false,
+        created_at: new Date().toISOString(),
+      };
+      existing.push(newCode);
+      await env.CACHE.put('gtm_codes', JSON.stringify(existing));
+
+      return successResponse({ message: 'GTM code added successfully', gtm_code: newCode });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // PUT /api/gtm/:id - Update GTM code
+  if (method === 'PUT' && gtmId) {
+    try {
+      const { container_id, name, enabled } = body;
+      const existing = await env.CACHE.get('gtm_codes', 'json') as any[] || [];
+      const idx = existing.findIndex((c: any) => c.id === gtmId);
+      if (idx === -1) return errorResponse('GTM code not found', 404);
+
+      if (container_id !== undefined) existing[idx].container_id = container_id;
+      if (name !== undefined) existing[idx].name = name;
+      if (enabled !== undefined) existing[idx].enabled = enabled;
+      existing[idx].updated_at = new Date().toISOString();
+
+      await env.CACHE.put('gtm_codes', JSON.stringify(existing));
+      return successResponse({ message: 'GTM code updated', gtm_code: existing[idx] });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  // DELETE /api/gtm/:id - Remove GTM code
+  if (method === 'DELETE' && gtmId) {
+    try {
+      const existing = await env.CACHE.get('gtm_codes', 'json') as any[] || [];
+      const filtered = existing.filter((c: any) => c.id !== gtmId);
+      if (filtered.length === existing.length) return errorResponse('GTM code not found', 404);
+
+      await env.CACHE.put('gtm_codes', JSON.stringify(filtered));
+      return successResponse({ message: 'GTM code deleted' });
+    } catch (error) {
+      return errorResponse(error.message);
+    }
+  }
+
+  return errorResponse('GTM endpoint not found', 404);
 }
 
 // Helper function to get admin email (checks KV first, then env)
@@ -939,7 +1019,7 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
     // Send booking confirmation email
     if (action === 'booking-confirmation') {
       const { booking_data } = body;
-      
+
       if (!booking_data || !booking_data.guest_email) {
         return errorResponse('Missing booking_data or guest_email', 400);
       }
@@ -1018,7 +1098,7 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
     // Send status change notification
     if (action === 'status-change') {
       const { booking_data, old_status, new_status } = body;
-      
+
       const emailResult = {
         success: true,
         message: 'Status change notification sent',
@@ -1040,7 +1120,7 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
 // ==================== RESEND EMAIL SERVICE ====================
 async function sendEmailViaResend(env: Env, to: string, subject: string, html: string): Promise<{ id: string }> {
   const RESEND_API_KEY = env.RESEND_API_KEY;
-  
+
   if (!RESEND_API_KEY) {
     console.error('RESEND_API_KEY not configured');
     return { id: 'no-api-key' };
@@ -1062,7 +1142,7 @@ async function sendEmailViaResend(env: Env, to: string, subject: string, html: s
     });
 
     const result = await response.json();
-    
+
     if (!response.ok) {
       console.error('Resend API error:', result);
       return { id: 'error-' + Date.now(), error: JSON.stringify(result) };
@@ -1136,7 +1216,7 @@ function getBookingConfirmationHtml(booking: any, env: Env): string {
         </div>
         <div class="detail-row" style="border-bottom:none;">
           <span class="detail-label">Total Amount:</span>
-          <span class="detail-value"><strong>$${booking.total_amount || '0.00'}</strong></span>
+          <span class="detail-value"><strong>Rp ${Number(booking.total_amount || 0).toLocaleString('id-ID')}</strong></span>
         </div>
       </div>
       
@@ -1210,7 +1290,7 @@ function getAdminNotificationHtml(booking: any, env: Env): string {
           <span class="detail-label">Room/Package:</span> ${booking?.room_name || 'Standard Room'}
         </div>
         <div class="detail-row">
-          <span class="detail-label">Total Amount:</span> <strong>$${booking?.total_amount || '0.00'}</strong>
+          <span class="detail-label">Total Amount:</span> <strong>Rp ${Number(booking?.total_amount || 0).toLocaleString('id-ID')}</strong>
         </div>
         <div class="detail-row">
           <span class="detail-label">Booking Time:</span> ${new Date().toISOString()}
