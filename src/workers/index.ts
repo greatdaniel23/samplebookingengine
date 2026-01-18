@@ -3,6 +3,7 @@ import { handleRooms } from './routes/rooms';
 import { handlePackages } from './routes/packages';
 import { handleVilla } from './routes/villa';
 import { handlePayment } from './routes/payment';
+import { generateToken, verifyToken, getTokenFromHeader } from './utils/auth';
 
 // FORCE REBUILD - Timestamp: 2026-01-09 02:37
 // This comment exists only to force Wrangler to rebuild the Worker
@@ -69,7 +70,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Bookings routes
     if (path.startsWith('/api/bookings')) {
-      return handleBookings(url, method, body, env);
+      return handleBookings(url, method, body, env, request);
     }
 
     // Rooms routes
@@ -109,12 +110,12 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Admin routes
     if (path.startsWith('/api/admin')) {
-      return handleAdmin(url, method, body, env);
+      return handleAdmin(url, method, body, env, request);
     }
 
     // Settings routes
     if (path.startsWith('/api/settings')) {
-      return handleSettings(url, method, body, env);
+      return handleSettings(url, method, body, env, request);
     }
 
     // Email routes
@@ -161,12 +162,20 @@ function errorResponse(message: string, status = 500): Response {
 }
 
 // ==================== BOOKINGS ====================
-async function handleBookings(url: URL, method: string, body: any, env: Env): Promise<Response> {
+async function handleBookings(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
 
   // GET /api/bookings - list all bookings (default)
   if (pathParts.length === 2 && method === 'GET') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const limit = parseInt(url.searchParams.get('limit') || '100');
       const offset = parseInt(url.searchParams.get('offset') || '0');
       const result = await env.DB.prepare(
@@ -181,6 +190,14 @@ async function handleBookings(url: URL, method: string, body: any, env: Env): Pr
   // GET /api/bookings/list
   if (pathParts[2] === 'list' && method === 'GET') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const limit = parseInt(url.searchParams.get('limit') || '50');
       const offset = parseInt(url.searchParams.get('offset') || '0');
       const result = await env.DB.prepare(
@@ -655,11 +672,9 @@ async function handleAuth(url: URL, method: string, body: any, env: Env): Promis
 
       if (!user) return errorResponse('Invalid credentials', 401);
 
-      // TODO: Implement proper password verification (bcrypt)
-      // For now using placeholder
-      const token = Buffer.from(
-        JSON.stringify({ id: user.id, username: user.username, role: user.role })
-      ).toString('base64');
+      // Using proper JWT token generation
+      // This will use the simplified HMAC-SHA256 from utils/auth
+      const token = await generateToken(user.id, user.username, env.JWT_SECRET);
 
       return successResponse({
         token,
@@ -675,9 +690,13 @@ async function handleAuth(url: URL, method: string, body: any, env: Env): Promis
     try {
       if (!body.token) return errorResponse('Token required', 400);
 
-      // TODO: Implement proper JWT verification
-      const decoded = JSON.parse(Buffer.from(body.token, 'base64').toString());
-      return successResponse({ valid: true, user: decoded });
+      const payload = await verifyToken(body.token, env.JWT_SECRET);
+
+      if (payload) {
+        return successResponse({ valid: true, user: payload });
+      }
+
+      return errorResponse('Invalid token', 401);
     } catch (error) {
       return errorResponse('Invalid token', 401);
     }
@@ -780,7 +799,15 @@ async function handleImages(url: URL, method: string, request: Request, env: Env
 }
 
 // ==================== ADMIN ====================
-async function handleAdmin(url: URL, method: string, body: any, env: Env): Promise<Response> {
+async function handleAdmin(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
+  // Auth check
+  const authHeader = request.headers.get('Authorization');
+  const token = getTokenFromHeader(authHeader);
+
+  const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+
+  if (!valid) return errorResponse('Unauthorized', 401);
+
   // GET /api/admin/dashboard
   if (url.pathname === '/api/admin/dashboard' && method === 'GET') {
     try {
@@ -818,9 +845,19 @@ async function handleAdmin(url: URL, method: string, body: any, env: Env): Promi
 }
 
 // ==================== SETTINGS ====================
-async function handleSettings(url: URL, method: string, body: any, env: Env): Promise<Response> {
+async function handleSettings(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
   const settingKey = pathParts[2];
+
+  // Settings modification requires auth
+  if (method !== 'GET') {
+    const authHeader = request.headers.get('Authorization');
+    const token = getTokenFromHeader(authHeader);
+
+    const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+
+    if (!valid) return errorResponse('Unauthorized', 401);
+  }
 
   // GET /api/settings - Get all settings
   if (method === 'GET' && !settingKey) {
