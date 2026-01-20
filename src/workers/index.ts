@@ -295,6 +295,14 @@ async function handleBookings(url: URL, method: string, body: any, env: Env, req
   // PUT /api/bookings/:id/status
   if (pathParts[3] === 'status' && method === 'PUT') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const id = parseInt(pathParts[2]);
       const { status, payment_status } = body;
 
