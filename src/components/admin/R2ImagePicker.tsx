@@ -23,7 +23,7 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
   const [selectedImage, setSelectedImage] = useState<string>(currentImage || '');
   const [dragActive, setDragActive] = useState(false);
 
-  const R2_PUBLIC_URL = 'https://alphadigitalagency.id';
+  const R2_PUBLIC_URL = 'https://image.alphadigitalagency.id';
   const API_BASE_URL = paths.apiBase;
 
   console.log('R2ImagePicker - API_BASE_URL:', API_BASE_URL);

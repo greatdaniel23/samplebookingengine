@@ -773,7 +773,7 @@ const PackageDetails = () => {
                     const roomImages = rawImages.map((img: any) => {
                       const imgUrl = typeof img === 'string' ? img : (img.url || img);
                       // Apply URL conversion for mobile compatibility using existing formatRupiah import's r2 module
-                      return imgUrl.startsWith('https://pub-') ? imgUrl.replace('https://pub-e303ec878512482fa87c065266e6bedd.r2.dev', 'https://alphadigitalagency.id') : imgUrl;
+                      return imgUrl.startsWith('https://pub-') ? imgUrl.replace('https://pub-e303ec878512482fa87c065266e6bedd.r2.dev', 'https://image.alphadigitalagency.id') : imgUrl;
                     });
 
                     return (
