@@ -85,7 +85,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Inclusions routes
     if (path.startsWith('/api/inclusions')) {
-      return handleInclusions(url, method, body, env);
+      return handleInclusions(url, method, body, env, request);
     }
 
     // Villa routes
@@ -95,7 +95,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Amenities routes
     if (path.startsWith('/api/amenities')) {
-      return handleAmenities(url, method, body, env);
+      return handleAmenities(url, method, body, env, request);
     }
 
     // Auth routes
@@ -130,7 +130,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // GTM routes
     if (path.startsWith('/api/gtm')) {
-      return handleGTM(url, method, body, env);
+      return handleGTM(url, method, body, env, request);
     }
 
     return errorResponse('Endpoint not found', 404);
@@ -295,6 +295,12 @@ async function handleBookings(url: URL, method: string, body: any, env: Env, req
   // PUT /api/bookings/:id/status
   if (pathParts[3] === 'status' && method === 'PUT') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const id = parseInt(pathParts[2]);
       const { status, payment_status } = body;
 
@@ -345,8 +351,16 @@ async function handleBookings(url: URL, method: string, body: any, env: Env, req
 }
 
 // ==================== AMENITIES ====================
-async function handleAmenities(url: URL, method: string, body: any, env: Env): Promise<Response> {
+async function handleAmenities(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
+
+  // Require authentication for all non-GET methods
+  if (method !== 'GET') {
+    const authHeader = request.headers.get('Authorization');
+    const token = getTokenFromHeader(authHeader);
+    const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+    if (!valid) return errorResponse('Unauthorized', 401);
+  }
 
   // GET /api/amenities or /api/amenities/list
   if ((pathParts.length === 2 || pathParts[2] === 'list') && method === 'GET') {
@@ -468,8 +482,16 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env): P
 }
 
 // ==================== INCLUSIONS ====================
-async function handleInclusions(url: URL, method: string, body: any, env: Env): Promise<Response> {
+async function handleInclusions(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
+
+  // Require authentication for all non-GET methods
+  if (method !== 'GET') {
+    const authHeader = request.headers.get('Authorization');
+    const token = getTokenFromHeader(authHeader);
+    const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+    if (!valid) return errorResponse('Unauthorized', 401);
+  }
 
   // GET /api/inclusions or /api/inclusions/list - List all inclusions
   if ((pathParts.length === 2 || pathParts[2] === 'list') && method === 'GET') {
@@ -748,6 +770,12 @@ async function handleImages(url: URL, method: string, request: Request, env: Env
   // POST /api/images/upload
   if (url.pathname === '/api/images/upload' && method === 'POST') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const formData = await request.formData();
       const file = formData.get('file') as File;
       const prefix = (formData.get('prefix') as string) || '';
@@ -801,6 +829,12 @@ async function handleImages(url: URL, method: string, request: Request, env: Env
   // DELETE /api/images/:imageId (supports nested paths)
   if (url.pathname.startsWith('/api/images/') && method === 'DELETE') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const imageKey = url.pathname.replace('/api/images/', '');
 
       await env.IMAGES.delete(imageKey);
@@ -972,9 +1006,17 @@ async function handleSettings(url: URL, method: string, body: any, env: Env, req
 }
 
 // ==================== GTM ====================
-async function handleGTM(url: URL, method: string, body: any, env: Env): Promise<Response> {
+async function handleGTM(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
   const gtmId = pathParts[2]; // For /api/gtm/:id
+
+  // Require authentication for all non-GET methods
+  if (method !== 'GET') {
+    const authHeader = request.headers.get('Authorization');
+    const token = getTokenFromHeader(authHeader);
+    const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+    if (!valid) return errorResponse('Unauthorized', 401);
+  }
 
   // GET /api/gtm - List all GTM codes
   if (method === 'GET' && !gtmId) {
