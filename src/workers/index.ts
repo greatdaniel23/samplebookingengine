@@ -103,8 +103,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
       return handleAuth(url, method, body, env);
     }
 
-    // Images routes
-    if (path.startsWith('/api/images')) {
+    // Images routes (API and direct serving)
+    if (path.startsWith('/api/images') || path.startsWith('/images') || path.startsWith('/hero') || path.startsWith('/packages')) {
       return handleImages(url, method, request, env);
     }
 
@@ -723,7 +723,7 @@ async function handleAuth(url: URL, method: string, body: any, env: Env): Promis
 
 // ==================== IMAGES ====================
 async function handleImages(url: URL, method: string, request: Request, env: Env): Promise<Response> {
-  const R2_PUBLIC_URL = 'https://alphadigitalagency.id';
+  const R2_PUBLIC_URL = 'https://image.alphadigitalagency.id';
 
   // GET /api/images/list
   if (url.pathname === '/api/images/list' && method === 'GET') {
@@ -808,6 +808,37 @@ async function handleImages(url: URL, method: string, request: Request, env: Env
       return successResponse({ success: true, message: 'Image deleted', key: imageKey });
     } catch (error) {
       return errorResponse(error.message);
+    }
+  }
+
+  // GET /api/images/:key (serve image)
+  // Also handles requests like /image.png if routed correctly, assuming prefix matching logic or clean URLs
+  if ((method === 'GET' || method === 'HEAD') && !url.pathname.startsWith('/api/images/list') && !url.pathname.startsWith('/api/images/upload')) {
+    try {
+      // Extract key from path. 
+      // If path is /api/images/folder/image.png -> key is folder/image.png
+      // If path is /image.png (custom domain root) -> key is image.png
+      let key = url.pathname.replace(/^\/api\/images\//, '').replace(/^\//, '');
+
+      if (!key) return errorResponse('Image key missing', 400);
+
+      const object = await env.IMAGES.get(key);
+
+      if (object === null) {
+        return errorResponse('Image not found', 404);
+      }
+
+      const headers = new Headers();
+      object.writeHttpMetadata(headers);
+      headers.set('etag', object.httpEtag);
+      headers.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+      headers.set('Access-Control-Allow-Origin', '*'); // Images usually need generic CORS
+
+      return new Response(object.body, {
+        headers,
+      });
+    } catch (error) {
+      return errorResponse('Error serving image: ' + error.message, 500);
     }
   }
 

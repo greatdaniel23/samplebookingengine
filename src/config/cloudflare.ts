@@ -8,7 +8,7 @@ export const API_CONFIG = {
   WORKER_API_BASE: 'https://booking-engine-api-production.danielsantosomarketing2017.workers.dev/api',
 
   // R2 Image Storage
-  IMAGE_BUCKET_URL: 'https://alphadigitalagency.id',
+  IMAGE_BUCKET_URL: 'https://image.alphadigitalagency.id',
 
   // Endpoints
   BOOKINGS: '/bookings',

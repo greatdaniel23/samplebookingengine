@@ -1,5 +1,5 @@
 export const R2_CONFIG = {
-  publicUrl: 'https://alphadigitalagency.id',
+  publicUrl: 'https://image.alphadigitalagency.id',
   bucketName: 'imageroom',
   s3Endpoint: 'https://b2a5cc3520b42302ad302f7a4790fbee.r2.cloudflarestorage.com/imageroom',
   // Old R2 dev URL that needs to be replaced for mobile compatibility
@@ -30,7 +30,7 @@ export function getImageUrl(imagePath: string | null | undefined): string {
   if (imagePath.startsWith('http')) return imagePath;
 
   // Clean up path: remove leading slash and /images/ prefix
-  const cleanPath = imagePath.replace(/^\/?(images\/)?/, '');
+  const cleanPath = imagePath.replace(/^\//, '');
 
   return `${R2_CONFIG.publicUrl}/${cleanPath}`;
 }
