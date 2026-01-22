@@ -85,7 +85,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Inclusions routes
     if (path.startsWith('/api/inclusions')) {
-      return handleInclusions(url, method, body, env);
+      return handleInclusions(url, method, body, env, request);
     }
 
     // Villa routes
@@ -95,7 +95,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Amenities routes
     if (path.startsWith('/api/amenities')) {
-      return handleAmenities(url, method, body, env);
+      return handleAmenities(url, method, body, env, request);
     }
 
     // Auth routes
@@ -295,6 +295,12 @@ async function handleBookings(url: URL, method: string, body: any, env: Env, req
   // PUT /api/bookings/:id/status
   if (pathParts[3] === 'status' && method === 'PUT') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const id = parseInt(pathParts[2]);
       const { status, payment_status } = body;
 
@@ -345,7 +351,7 @@ async function handleBookings(url: URL, method: string, body: any, env: Env, req
 }
 
 // ==================== AMENITIES ====================
-async function handleAmenities(url: URL, method: string, body: any, env: Env): Promise<Response> {
+async function handleAmenities(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
 
   // GET /api/amenities or /api/amenities/list
@@ -400,6 +406,12 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env): P
   // POST /api/amenities - Create new amenity
   if (pathParts.length === 2 && method === 'POST') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const { name, category, description, icon, is_featured, is_active, display_order } = body;
       if (!name) return errorResponse('Name is required', 400);
 
@@ -425,6 +437,12 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env): P
   // PUT /api/amenities/:id - Update amenity
   if (pathParts[2] && !isNaN(Number(pathParts[2])) && method === 'PUT') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const id = parseInt(pathParts[2]);
       const { name, category, description, icon, is_featured, is_active, display_order } = body;
 
@@ -456,6 +474,12 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env): P
   // DELETE /api/amenities/:id - Delete amenity
   if (pathParts[2] && !isNaN(Number(pathParts[2])) && method === 'DELETE') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const id = parseInt(pathParts[2]);
       await env.DB.prepare('DELETE FROM amenities WHERE id = ?').bind(id).run();
       return successResponse({ message: 'Amenity deleted successfully' });
@@ -468,7 +492,7 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env): P
 }
 
 // ==================== INCLUSIONS ====================
-async function handleInclusions(url: URL, method: string, body: any, env: Env): Promise<Response> {
+async function handleInclusions(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
 
   // GET /api/inclusions or /api/inclusions/list - List all inclusions
@@ -528,6 +552,12 @@ async function handleInclusions(url: URL, method: string, body: any, env: Env): 
   // POST /api/inclusions - Create new inclusion
   if (pathParts.length === 2 && method === 'POST') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const { name, description, package_type, is_active } = body;
       if (!name) return errorResponse('Name is required', 400);
 
@@ -550,6 +580,12 @@ async function handleInclusions(url: URL, method: string, body: any, env: Env): 
   // PUT /api/inclusions/:id - Update inclusion
   if (pathParts[2] && !isNaN(Number(pathParts[2])) && method === 'PUT') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const id = parseInt(pathParts[2]);
       const { name, description, package_type, is_active } = body;
 
@@ -577,6 +613,12 @@ async function handleInclusions(url: URL, method: string, body: any, env: Env): 
   // DELETE /api/inclusions/:id - Delete inclusion
   if (pathParts[2] && !isNaN(Number(pathParts[2])) && method === 'DELETE') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const id = parseInt(pathParts[2]);
       // Also remove from package_inclusions
       await env.DB.prepare('DELETE FROM package_inclusions WHERE inclusion_id = ?').bind(id).run();
