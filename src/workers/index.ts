@@ -130,7 +130,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // GTM routes
     if (path.startsWith('/api/gtm')) {
-      return handleGTM(url, method, body, env);
+      return handleGTM(url, method, body, env, request);
     }
 
     return errorResponse('Endpoint not found', 404);
@@ -1003,9 +1003,19 @@ async function handleSettings(url: URL, method: string, body: any, env: Env, req
 }
 
 // ==================== GTM ====================
-async function handleGTM(url: URL, method: string, body: any, env: Env): Promise<Response> {
+async function handleGTM(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
   const gtmId = pathParts[2]; // For /api/gtm/:id
+
+  // Auth check for non-GET methods
+  if (method !== 'GET') {
+    const authHeader = request.headers.get('Authorization');
+    const token = getTokenFromHeader(authHeader);
+
+    const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+
+    if (!valid) return errorResponse('Unauthorized', 401);
+  }
 
   // GET /api/gtm - List all GTM codes
   if (method === 'GET' && !gtmId) {
