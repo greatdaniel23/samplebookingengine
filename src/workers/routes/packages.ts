@@ -17,16 +17,41 @@ export async function handlePackages(url: URL, method: string, body: any, env: E
   // GET /api/packages - list all packages
   if (pathParts.length === 2 && method === 'GET') {
     try {
-      const result = await env.DB.prepare(
-        'SELECT * FROM packages WHERE is_active = 1 ORDER BY name'
-      ).all();
+      const result = await env.DB.prepare(`
+        SELECT json_group_array(
+          json_object(
+            'id', id,
+            'name', name,
+            'description', description,
+            'package_type', package_type,
+            'base_price', base_price,
+            'discount_percentage', discount_percentage,
+            'duration_days', duration_days,
+            'max_guests', max_guests,
+            'is_active', is_active,
+            'is_featured', is_featured,
+            'display_order', display_order,
+            'base_room_id', base_room_id,
+            'marketing_category_id', marketing_category_id,
+            'valid_from', valid_from,
+            'valid_until', valid_until,
+            'min_nights', min_nights,
+            'max_nights', max_nights,
+            'images', CASE WHEN json_valid(images) THEN json(images) ELSE json('[]') END,
+            'inclusions', inclusions,
+            'exclusions', exclusions,
+            'terms_conditions', terms_conditions,
+            'cancellation_policy', cancellation_policy,
+            'created_at', created_at,
+            'updated_at', updated_at
+          )
+        ) as data
+        FROM packages WHERE is_active = 1 ORDER BY name
+      `).first();
 
-      const packages = result.results.map(parsePackage);
+      const jsonString = (result as any)?.data || '[]';
 
-      return new Response(JSON.stringify({
-        success: true,
-        data: packages
-      }), {
+      return new Response(`{"success":true,"data":${jsonString}}`, {
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
