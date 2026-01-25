@@ -1,5 +1,7 @@
 # DOKU Payment Integration
 
+> **See Also:** For comprehensive API reference, including request parameters and full Node.js examples, please see [`DOKU_API_REFERENCE.md`](DOKU_API_REFERENCE.md).
+
 This document outlines the integration with the DOKU Payment Gateway for the Booking Engine.
 
 ## Configuration
