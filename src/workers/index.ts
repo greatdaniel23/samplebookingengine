@@ -228,6 +228,14 @@ async function handleBookings(url: URL, method: string, body: any, env: Env, req
   // GET /api/bookings/:id
   if (pathParts[2] && !isNaN(Number(pathParts[2])) && method === 'GET') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const id = parseInt(pathParts[2]);
       const result = await env.DB.prepare('SELECT * FROM bookings WHERE id = ?').bind(id).first();
       if (!result) return errorResponse('Booking not found', 404);
@@ -295,6 +303,14 @@ async function handleBookings(url: URL, method: string, body: any, env: Env, req
   // PUT /api/bookings/:id/status
   if (pathParts[3] === 'status' && method === 'PUT') {
     try {
+      // Auth check
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+
+      const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+
+      if (!valid) return errorResponse('Unauthorized', 401);
+
       const id = parseInt(pathParts[2]);
       const { status, payment_status } = body;
 
