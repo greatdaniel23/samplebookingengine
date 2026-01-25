@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Archive } from 'lucide-react';
+import { Plus, Pencil, Archive } from 'lucide-react';
 
 const BookingsSection: React.FC = () => {
   const [bookings, setBookings] = useState<any[]>([]);
@@ -92,39 +92,7 @@ const BookingsSection: React.FC = () => {
     }
   };
 
-  const deleteBooking = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this booking?')) return;
 
-    try {
-      const apiUrl = paths.buildApiUrl('bookings');
-      console.log('DELETE URL:', apiUrl); // Debug logging
-
-      // Use DELETE method for Cloudflare Worker
-      const response = await fetch(`${apiUrl}/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (!response.ok) {
-        console.error('Response status:', response.status);
-        console.error('Response statusText:', response.statusText);
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const result = await response.json();
-      if (result.success) {
-        alert('Booking deleted successfully!');
-        fetchBookings();
-      } else {
-        throw new Error(result.error || 'Failed to delete booking');
-      }
-    } catch (error) {
-      console.error('Error deleting booking:', error);
-      alert('Error deleting booking: ' + error);
-    }
-  };
 
   const handleFormChange = (field: string, value: any) => {
     setFormData(prev => {
@@ -344,13 +312,7 @@ const BookingsSection: React.FC = () => {
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteBooking(booking.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
+
                       </div>
                     </td>
                   </tr>
