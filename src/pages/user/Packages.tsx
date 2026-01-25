@@ -86,15 +86,10 @@ export const PackagesPage: React.FC = () => {
     }
   }, [searchParams]);
 
-  // Reload packages when date/type filters change (server-side filtering)
-  useEffect(() => {
-    loadPackages();
-  }, [filters.checkIn, filters.checkOut, filters.type]);
-
-  // Apply client-side filters when packages change
+  // Apply client-side filters when packages or filters change
   useEffect(() => {
     applyFilters();
-  }, [packages, filters.search, filters.guests]);
+  }, [packages, filters.search, filters.guests, filters.checkIn, filters.checkOut, filters.type]);
 
   // Track view_item_list when filtered packages update
   useEffect(() => {
