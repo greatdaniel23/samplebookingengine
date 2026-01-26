@@ -405,17 +405,32 @@ const BookingSummary = () => {
     sendConfirmationEmails();
   }, [bookingData, emailsSent, isUsingFallbackData, roomData, packageData]);
 
-  // Track GA4 Page View (Confirmation or View Cart)
+  // Track GA4 Page View and Purchase Event
   useEffect(() => {
     if (!bookingData) return;
 
-    import('@/utils/ga4Analytics').then(({ trackConfirmationPage, trackViewCart }) => {
+    import('@/utils/ga4Analytics').then(({ trackConfirmationPage, trackViewCart, trackPurchase }) => {
       if (bookingData.status === 'confirmed') {
+        // 1. Track virtual page view for confirmation
         trackConfirmationPage({
           booking_reference: bookingData.reference,
           total_amount: bookingData.pricing.totalPrice,
           package_name: packageData?.name || roomData?.name || '',
         });
+
+        // 2. Track purchase event (ONLY ONCE per session)
+        const purchaseKey = `purchase_tracked_${bookingData.reference}`;
+        if (!sessionStorage.getItem(purchaseKey)) {
+          trackPurchase({
+            transaction_id: bookingData.reference,
+            value: bookingData.pricing.totalPrice,
+            currency: 'IDR',
+            item_name: packageData?.name || roomData?.name || 'General Booking',
+            item_id: bookingData.packageId || bookingData.roomId || 'unknown',
+            item_category: packageData ? 'Package' : 'Room'
+          });
+          sessionStorage.setItem(purchaseKey, 'true');
+        }
       } else {
         // Pending status -> View Cart / Review
         trackViewCart({
@@ -476,14 +491,31 @@ Total: $${bookingData?.pricing.totalPrice}
   const handlePayment = async () => {
     if (!bookingData) return;
 
-    // Track GA4 add_payment_info event
+    // Track GA4 add_payment_info AND purchase event (per user request)
     console.log('🔍 DEBUG: bookingData.pricing.totalPrice =', bookingData.pricing.totalPrice);
-    const { trackAddPaymentInfo } = await import('@/utils/ga4Analytics');
+    const { trackAddPaymentInfo, trackPurchase } = await import('@/utils/ga4Analytics');
+
+    // 1. Track Add Payment Info
     trackAddPaymentInfo({
       value: Number(bookingData.pricing.totalPrice),
       currency: 'IDR',
       payment_type: 'Doku'
     });
+
+    // 2. Track Purchase (triggered on button click)
+    // We set the session storage flag so it doesn't fire again on the confirmation page
+    const purchaseKey = `purchase_tracked_${bookingData.reference}`;
+    if (!sessionStorage.getItem(purchaseKey)) {
+      trackPurchase({
+        transaction_id: bookingData.reference,
+        value: bookingData.pricing.totalPrice,
+        currency: 'IDR',
+        item_name: packageData?.name || roomData?.name || 'General Booking',
+        item_id: bookingData.packageId || bookingData.roomId || 'unknown',
+        item_category: packageData ? 'Package' : 'Room'
+      });
+      sessionStorage.setItem(purchaseKey, 'true');
+    }
 
     setPaymentLoading(true);
     try {

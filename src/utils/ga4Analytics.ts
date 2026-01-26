@@ -88,6 +88,7 @@ export function trackPurchase(params: {
     dataLayer.push({ ecommerce: null });
     // Use raw integer value only - no formatting, no decimals
     const rawValue = Math.round(Number(params.value) || 0);
+
     // Push new ecommerce event with proper structure
     dataLayer.push({
         event: 'purchase',
