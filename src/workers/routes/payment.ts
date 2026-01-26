@@ -33,11 +33,8 @@ interface CreatePaymentBody {
 // Helper to convert ArrayBuffer to base64 safely
 function toBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
+  // Efficient conversion avoiding loop concatenation for small buffers (e.g. payment signatures)
+  return btoa(String.fromCharCode.apply(null, bytes as unknown as number[]));
 }
 
 // Generate SHA256 digest - DOKU requires base64 of SHA256 bytes
