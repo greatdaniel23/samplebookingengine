@@ -125,7 +125,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Payment routes (DOKU)
     if (path.startsWith('/api/payment')) {
-      return handlePayment(url, method, body, env);
+      return handlePayment(url, method, body, env, request);
     }
 
     // GTM routes
