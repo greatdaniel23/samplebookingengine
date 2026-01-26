@@ -53,12 +53,23 @@ const Index = () => {
     });
 
     if (!isLoading && safePackages.length > 0) {
-      handleBookingSearch({
-        checkIn: dateFilters.checkIn,
-        checkOut: dateFilters.checkOut,
-        adults: dateFilters.adults,
-        children: dateFilters.children
+      // OPTIMIZATION: Use already loaded safePackages for initial view instead of calling API again
+      const totalGuests = dateFilters.adults + (dateFilters.children || 0);
+
+      // Filter packages based on validity dates and guests
+      // safePackages are already filtered for "today" validity by the hook
+      // We double check date validity and guest count here
+      const initialFiltered = safePackages.filter(pkg => {
+        const guestsValid = pkg.max_guests >= totalGuests;
+        const datesValid = packageService.isPackageValidForDates(
+          pkg,
+          dateFilters.checkIn,
+          dateFilters.checkOut
+        );
+        return guestsValid && datesValid;
       });
+
+      setFilteredPackages(initialFiltered);
     }
   }, [safePackages, isLoading]); // Run when packages are loaded
 
