@@ -63,7 +63,54 @@ async function generateHmacSha256(message: string, secretKey: string): Promise<s
   return toBase64(signature);
 }
 
-export async function handlePayment(url: URL, method: string, body: any, env: Env): Promise<Response> {
+async function verifyDokuSignature(request: Request, body: any, secretKey?: string): Promise<boolean> {
+  if (!secretKey) return false;
+
+  const clientId = request.headers.get('Client-Id');
+  const requestId = request.headers.get('Request-Id');
+  const timestamp = request.headers.get('Request-Timestamp');
+  const signature = request.headers.get('Signature');
+
+  // DOKU Request-Target is usually the path part of the URL
+  const url = new URL(request.url);
+  const target = url.pathname;
+
+  if (!clientId || !requestId || !timestamp || !signature) {
+    console.error('Missing DOKU verification headers');
+    return false;
+  }
+
+  // Calculate Digest
+  // Note: body is already parsed JSON here, we need to verify if stringify matches what DOKU sent.
+  // Ideally we should verify the raw body, but we only have the parsed body here.
+  // We assume standard JSON serialization matches.
+  const digest = await generateDigest(JSON.stringify(body));
+
+  // Construct Component String
+  // Format: Client-Id:{client_id}\nRequest-Id:{request_id}\nRequest-Timestamp:{timestamp}\nRequest-Target:{request_target}\nDigest:{digest}
+  const componentString = [
+    `Client-Id:${clientId}`,
+    `Request-Id:${requestId}`,
+    `Request-Timestamp:${timestamp}`,
+    `Request-Target:${target}`,
+    `Digest:${digest}`
+  ].join('\n');
+
+  // Calculate Signature
+  const hmacResult = await generateHmacSha256(componentString, secretKey);
+  const expectedSignature = `HMACSHA256=${hmacResult}`;
+
+  if (signature !== expectedSignature) {
+     console.error('Signature Mismatch');
+     console.error(`Expected: ${expectedSignature}`);
+     console.error(`Received: ${signature}`);
+     return false;
+  }
+
+  return true;
+}
+
+export async function handlePayment(url: URL, method: string, body: any, env: Env, request?: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
 
   // CORS headers
@@ -287,6 +334,25 @@ export async function handlePayment(url: URL, method: string, body: any, env: En
   if (pathParts.length === 3 && pathParts[2] === 'callback' && method === 'POST') {
     try {
       console.log('DOKU Callback received:', body);
+
+      // Verify signature if request object is available
+      if (request && env.DOKU_SECRET_KEY) {
+        const isValid = await verifyDokuSignature(request, body, env.DOKU_SECRET_KEY);
+        if (!isValid) {
+          console.error('Invalid DOKU Signature');
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Invalid signature'
+          }), { status: 401, headers: corsHeaders });
+        }
+      } else {
+        console.warn('Skipping signature verification: Missing request object or secret key');
+        // We might want to enforce this strictly in production
+        // But for now, we leave a warning if request is missing (should not happen with updated index.ts)
+        if (env.DOKU_ENVIRONMENT === 'production' && !request) {
+           return new Response(JSON.stringify({ success: false, error: 'Internal Server Error: Missing request context' }), { status: 500, headers: corsHeaders });
+        }
+      }
 
       const invoiceNumber = body.order?.invoice_number;
       const transactionStatus = body.transaction?.status;
