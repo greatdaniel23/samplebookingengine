@@ -14,3 +14,8 @@
 **Vulnerability:** The `PUT /api/bookings/:id/status` and `GET /api/bookings/:id` endpoints were completely unauthenticated. Attackers could view any booking by ID or change its status (e.g., to "confirmed" or "paid") without credentials.
 **Learning:** `handleBookings` had auth checks for the *list* endpoint but missed them for specific ID operations. Copy-paste errors or partial implementation often lead to these gaps.
 **Prevention:** Use a middleware pattern or a router library that enforces auth at the route group level, rather than manual checks inside every `if` block.
+
+## 2026-05-21 - PII Leakage in Public Search Endpoint
+**Vulnerability:** The `GET /api/bookings/dates/search` endpoint returned all columns (`SELECT *`) including guest names, emails, and phone numbers to unauthenticated users.
+**Learning:** Developers often default to `SELECT *` for convenience, not realizing that for public endpoints this exposes sensitive internal data.
+**Prevention:** Always explicitly select only the necessary columns for public endpoints (e.g., `SELECT check_in, check_out, status`).
