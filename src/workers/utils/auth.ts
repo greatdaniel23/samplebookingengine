@@ -1,12 +1,68 @@
 import { JWTPayload } from '../types';
 
 /**
- * Verify password against bcrypt hash
+ * Verify password against PBKDF2 hash
  */
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  // TODO: Implement proper bcrypt verification
-  console.warn('Using placeholder password verification - implement proper bcrypt check');
-  return false;
+export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  const [saltHex, hashHex] = storedHash.split(':');
+  if (!saltHex || !hashHex) return false;
+
+  const salt = fromHex(saltHex);
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits', 'deriveKey']
+  );
+  const hash = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    key,
+    256
+  );
+
+  return toHex(new Uint8Array(hash)) === hashHex;
+}
+
+/**
+ * Hash password using PBKDF2
+ */
+export async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits', 'deriveKey']
+  );
+  const hash = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    key,
+    256
+  );
+
+  return toHex(salt) + ':' + toHex(new Uint8Array(hash));
+}
+
+function toHex(buffer: Uint8Array): string {
+  return Array.from(buffer).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function fromHex(hexString: string): Uint8Array {
+  return new Uint8Array(hexString.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
 }
 
 /**

@@ -1,5 +1,10 @@
 # Sentinel Journal 🛡️
 
+## 2026-05-24 - Critical Password Verification Bypass Fixed
+**Vulnerability:** The `/api/auth/login` endpoint was accepting any password for a valid username. The `verifyPassword` function was a stub that returned `false`, but the `handleAuth` route handler ignored this result and issued a JWT token anyway.
+**Learning:** Never assume authentication middleware or helper functions are fully implemented, especially if they are marked with TODOs. Always check the return value of verification functions.
+**Prevention:** Implement strict password verification using strong hashing (PBKDF2/bcrypt) before issuing tokens. Ensure route handlers abort if verification fails.
+
 ## 2025-01-26 - Critical Missing Auth in Catalog Management
 **Vulnerability:** Several administrative endpoints (`/api/amenities`, `/api/inclusions`, `/api/gtm`, `/api/images`) allowed state-changing operations (POST, PUT, DELETE) without any authentication.
 **Learning:** Checking auth in the main dispatcher or route handler is crucial. It seems new handlers were added without copying the auth pattern from existing ones like `handleAdmin`.
