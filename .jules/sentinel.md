@@ -1,5 +1,10 @@
 # Sentinel Journal 🛡️
 
+## 2026-01-09 - Critical Auth Bypass in Login Endpoint
+**Vulnerability:** The `/api/auth/login` endpoint looked up the user by username but completely skipped verifying the password against the stored hash. This allowed full account takeover (including admin) by just knowing the username.
+**Learning:** `handleAuth` (or the logic inside `handleRequest`) selected `password_hash` but never used it. Always trace the full authentication flow from request to token generation.
+**Prevention:** Implement unit tests that explicitly check for login failures with invalid credentials, not just success paths. Ensure explicit password verification step is present.
+
 ## 2025-01-26 - Critical Missing Auth in Catalog Management
 **Vulnerability:** Several administrative endpoints (`/api/amenities`, `/api/inclusions`, `/api/gtm`, `/api/images`) allowed state-changing operations (POST, PUT, DELETE) without any authentication.
 **Learning:** Checking auth in the main dispatcher or route handler is crucial. It seems new handlers were added without copying the auth pattern from existing ones like `handleAdmin`.
