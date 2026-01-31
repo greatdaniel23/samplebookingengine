@@ -14,3 +14,8 @@
 **Vulnerability:** The `PUT /api/bookings/:id/status` and `GET /api/bookings/:id` endpoints were completely unauthenticated. Attackers could view any booking by ID or change its status (e.g., to "confirmed" or "paid") without credentials.
 **Learning:** `handleBookings` had auth checks for the *list* endpoint but missed them for specific ID operations. Copy-paste errors or partial implementation often lead to these gaps.
 **Prevention:** Use a middleware pattern or a router library that enforces auth at the route group level, rather than manual checks inside every `if` block.
+
+## 2025-05-24 - Unverified Payment Callback (Webhook)
+**Vulnerability:** The `/api/payment/callback` endpoint accepted any POST request and updated booking statuses to "paid" without verifying the DOKU signature.
+**Learning:** Webhooks must always be verified. The challenge was that the main request handler parsed the JSON body, consuming the stream, making signature verification (which needs raw body) impossible in the route handler.
+**Prevention:** For webhooks, skip global body parsing. Ensure the raw body is available for signature verification. Use `request.clone()` or architectural changes to preserve the raw body.

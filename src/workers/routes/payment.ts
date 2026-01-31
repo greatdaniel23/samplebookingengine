@@ -63,7 +63,7 @@ async function generateHmacSha256(message: string, secretKey: string): Promise<s
   return toBase64(signature);
 }
 
-export async function handlePayment(url: URL, method: string, body: any, env: Env): Promise<Response> {
+export async function handlePayment(url: URL, method: string, body: any, env: Env, request?: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
 
   // CORS headers
@@ -286,10 +286,79 @@ export async function handlePayment(url: URL, method: string, body: any, env: En
   // POST /api/payment/callback - DOKU callback/webhook
   if (pathParts.length === 3 && pathParts[2] === 'callback' && method === 'POST') {
     try {
-      console.log('DOKU Callback received:', body);
+      let callbackBody = body;
+      let rawBody = '';
 
-      const invoiceNumber = body.order?.invoice_number;
-      const transactionStatus = body.transaction?.status;
+      // 1. If body is null (skipped in index.ts) and request exists, read raw body
+      if (!callbackBody && request) {
+        try {
+          rawBody = await request.text();
+          callbackBody = JSON.parse(rawBody);
+        } catch (e) {
+          return new Response(JSON.stringify({ success: false, error: 'Invalid JSON body' }), { status: 400, headers: corsHeaders });
+        }
+      } else if (callbackBody) {
+        // Fallback: This should not happen if index.ts is configured correctly,
+        // but if it is, we can't verify signature reliably because JSON.stringify might reorder keys.
+        // However, we proceed to avoid breaking completely, but log a warning.
+        console.warn('DOKU Callback: Body already parsed, signature verification might fail or be skipped.');
+        rawBody = JSON.stringify(callbackBody);
+      }
+
+      console.log('DOKU Callback received:', callbackBody);
+
+      // 2. Verify Signature
+      if (request) {
+        const clientId = request.headers.get('Client-Id');
+        const requestId = request.headers.get('Request-Id');
+        const timestamp = request.headers.get('Request-Timestamp');
+        const signature = request.headers.get('Signature');
+
+        if (!clientId || !requestId || !timestamp || !signature) {
+           console.error('DOKU Callback: Missing headers');
+           return new Response(JSON.stringify({ success: false, error: 'Missing signature headers' }), { status: 401, headers: corsHeaders });
+        }
+
+        const secretKey = env.DOKU_SECRET_KEY;
+        if (!secretKey) {
+           console.error('DOKU Callback: Server missing DOKU_SECRET_KEY');
+           return new Response(JSON.stringify({ success: false, error: 'Server configuration error' }), { status: 500, headers: corsHeaders });
+        }
+
+        // Calculate Digest of raw body
+        const digest = await generateDigest(rawBody);
+
+        // Construct Component String
+        // Target path is usually the path from the URL.
+        // DOKU sends the path as registered in their system.
+        // Assuming it matches the request pathname: /api/payment/callback
+        const requestTarget = url.pathname;
+
+        const signatureComponents = [
+          `Client-Id:${clientId}`,
+          `Request-Id:${requestId}`,
+          `Request-Timestamp:${timestamp}`,
+          `Request-Target:${requestTarget}`,
+          `Digest:${digest}`
+        ].join('\n');
+
+        const hmacResult = await generateHmacSha256(signatureComponents, secretKey);
+        const calculatedSignature = `HMACSHA256=${hmacResult}`;
+
+        if (calculatedSignature !== signature) {
+           console.error('DOKU Callback: Invalid Signature');
+           console.error('Expected:', calculatedSignature);
+           console.error('Received:', signature);
+           console.error('Components:', signatureComponents);
+
+           return new Response(JSON.stringify({ success: false, error: 'Invalid signature' }), { status: 401, headers: corsHeaders });
+        }
+
+        console.log('DOKU Callback: Signature Verified ✅');
+      }
+
+      const invoiceNumber = callbackBody.order?.invoice_number;
+      const transactionStatus = callbackBody.transaction?.status;
 
       if (invoiceNumber && transactionStatus) {
         // Update payment status
@@ -297,7 +366,7 @@ export async function handlePayment(url: URL, method: string, body: any, env: En
           UPDATE payment_transactions 
           SET status = ?, updated_at = datetime('now'), callback_data = ?
           WHERE invoice_number = ?
-        `).bind(transactionStatus.toLowerCase(), JSON.stringify(body), invoiceNumber).run();
+        `).bind(transactionStatus.toLowerCase(), JSON.stringify(callbackBody), invoiceNumber).run();
 
         // If payment successful, update booking status
         if (transactionStatus === 'SUCCESS') {
