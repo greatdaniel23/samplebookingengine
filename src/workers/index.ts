@@ -14,8 +14,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
   const path = url.pathname;
 
   let body = null;
-  // Skip JSON parsing for image upload (needs formData)
-  if ((method === 'POST' || method === 'PUT' || method === 'DELETE') && path !== '/api/images/upload') {
+  // Skip JSON parsing for image upload (needs formData) and payment callback (needs raw body for signature)
+  if ((method === 'POST' || method === 'PUT' || method === 'DELETE') && path !== '/api/images/upload' && path !== '/api/payment/callback') {
     try {
       body = await request.json();
     } catch (e) {
@@ -125,7 +125,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Payment routes (DOKU)
     if (path.startsWith('/api/payment')) {
-      return handlePayment(url, method, body, env);
+      return handlePayment(url, method, body, env, request);
     }
 
     // GTM routes
