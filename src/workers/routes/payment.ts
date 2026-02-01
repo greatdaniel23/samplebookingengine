@@ -37,6 +37,18 @@ function toBase64(buffer: ArrayBuffer): string {
   return btoa(String.fromCharCode.apply(null, bytes as unknown as number[]));
 }
 
+// Constant-time string comparison to prevent timing attacks
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let mismatch = 0;
+  for (let i = 0; i < a.length; i++) {
+    mismatch |= (a.charCodeAt(i) ^ b.charCodeAt(i));
+  }
+  return mismatch === 0;
+}
+
 // Generate SHA256 digest - DOKU requires base64 of SHA256 bytes
 async function generateDigest(body: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -63,7 +75,7 @@ async function generateHmacSha256(message: string, secretKey: string): Promise<s
   return toBase64(signature);
 }
 
-export async function handlePayment(url: URL, method: string, body: any, env: Env): Promise<Response> {
+export async function handlePayment(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
 
   // CORS headers
@@ -286,7 +298,80 @@ export async function handlePayment(url: URL, method: string, body: any, env: En
   // POST /api/payment/callback - DOKU callback/webhook
   if (pathParts.length === 3 && pathParts[2] === 'callback' && method === 'POST') {
     try {
-      console.log('DOKU Callback received:', body);
+      // 1. Get credentials
+      const clientId = env.DOKU_CLIENT_ID?.trim();
+      const secretKey = env.DOKU_SECRET_KEY?.trim();
+
+      if (!clientId || !secretKey) {
+        console.error('DOKU credentials missing for callback verification');
+        return new Response(JSON.stringify({ success: false, error: 'Server configuration error' }), { status: 500, headers: corsHeaders });
+      }
+
+      // 2. Read raw body (skipped in index.ts for this route)
+      const rawBody = await request.text();
+      let parsedBody;
+      try {
+        parsedBody = JSON.parse(rawBody);
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, error: 'Invalid JSON body' }), { status: 400, headers: corsHeaders });
+      }
+
+      // 3. Verify Signature
+      const incomingClientId = request.headers.get('Client-Id');
+      const incomingRequestId = request.headers.get('Request-Id');
+      const incomingTimestamp = request.headers.get('Request-Timestamp');
+      const incomingSignature = request.headers.get('Signature');
+
+      if (!incomingClientId || !incomingRequestId || !incomingTimestamp || !incomingSignature) {
+         return new Response(JSON.stringify({ success: false, error: 'Missing signature headers' }), { status: 401, headers: corsHeaders });
+      }
+
+      if (incomingClientId !== clientId) {
+         return new Response(JSON.stringify({ success: false, error: 'Invalid Client ID' }), { status: 401, headers: corsHeaders });
+      }
+
+      // 4. Verify Timestamp (Replay Protection)
+      const requestTime = new Date(incomingTimestamp).getTime();
+      const now = Date.now();
+      const fiveMinutes = 5 * 60 * 1000;
+
+      if (isNaN(requestTime)) {
+          return new Response(JSON.stringify({ success: false, error: 'Invalid Timestamp format' }), { status: 400, headers: corsHeaders });
+      }
+
+      // Allow 5 minutes drift
+      if (Math.abs(now - requestTime) > fiveMinutes) {
+          return new Response(JSON.stringify({ success: false, error: 'Request timestamp expired' }), { status: 401, headers: corsHeaders });
+      }
+
+      // Calculate Digest
+      const digest = await generateDigest(rawBody);
+
+      // Construct Signature Component String
+      // Format: Client-Id:{...}\nRequest-Id:{...}\nRequest-Timestamp:{...}\nRequest-Target:{...}\nDigest:{...}
+      const requestTarget = url.pathname; // e.g. /api/payment/callback
+
+      const signatureComponents = [
+        `Client-Id:${incomingClientId}`,
+        `Request-Id:${incomingRequestId}`,
+        `Request-Timestamp:${incomingTimestamp}`,
+        `Request-Target:${requestTarget}`,
+        `Digest:${digest}`
+      ].join('\n');
+
+      const hmacResult = await generateHmacSha256(signatureComponents, secretKey);
+      const calculatedSignature = `HMACSHA256=${hmacResult}`;
+
+      // Use constant-time comparison
+      if (!constantTimeEqual(incomingSignature, calculatedSignature)) {
+         console.warn('DOKU Signature Mismatch');
+         // Log details safely (mask secrets if printed)
+         console.log(`Expected: ${calculatedSignature}, Got: ${incomingSignature}`);
+         return new Response(JSON.stringify({ success: false, error: 'Invalid Signature' }), { status: 401, headers: corsHeaders });
+      }
+
+      console.log('DOKU Callback verified successfully');
+      const body = parsedBody; // Use local parsed body
 
       const invoiceNumber = body.order?.invoice_number;
       const transactionStatus = body.transaction?.status;
@@ -297,7 +382,7 @@ export async function handlePayment(url: URL, method: string, body: any, env: En
           UPDATE payment_transactions 
           SET status = ?, updated_at = datetime('now'), callback_data = ?
           WHERE invoice_number = ?
-        `).bind(transactionStatus.toLowerCase(), JSON.stringify(body), invoiceNumber).run();
+        `).bind(transactionStatus.toLowerCase(), rawBody, invoiceNumber).run();
 
         // If payment successful, update booking status
         if (transactionStatus === 'SUCCESS') {
