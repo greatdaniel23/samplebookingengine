@@ -508,9 +508,20 @@ async function handleInclusions(url: URL, method: string, body: any, env: Env, r
   // GET /api/inclusions or /api/inclusions/list - List all inclusions
   if ((pathParts.length === 2 || pathParts[2] === 'list') && method === 'GET') {
     try {
+      // Try to get from KV first
+      const cacheKey = 'inclusions_list';
+      const cached = await env.CACHE.get(cacheKey, 'json');
+      if (cached) {
+        return successResponse({ inclusions: cached });
+      }
+
       const result = await env.DB.prepare(
         'SELECT * FROM inclusions WHERE is_active = 1 ORDER BY package_type, name ASC'
       ).all();
+
+      // Store in KV (cache for 1 hour)
+      await env.CACHE.put(cacheKey, JSON.stringify(result.results), { expirationTtl: 3600 });
+
       return successResponse({ inclusions: result.results });
     } catch (error) {
       return errorResponse(error.message);
