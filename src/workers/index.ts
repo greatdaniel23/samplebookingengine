@@ -1168,31 +1168,53 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
   const action = pathParts[2];
 
   try {
+    // Sentinel Fix: Prevent Open Relay/IDOR by looking up booking from DB
+    // We expect booking_reference in body (or inside booking_data for compat)
+    const bookingRef = body.booking_reference || body.booking_data?.booking_reference;
+
+    if (!bookingRef) {
+      return errorResponse('Missing booking_reference', 400);
+    }
+
+    // Fetch confirmed booking details + room name from DB
+    // This ensures we only send emails for valid bookings and use the REAL email on file
+    const booking = await env.DB.prepare(`
+      SELECT b.*, r.name as room_name
+      FROM bookings b
+      LEFT JOIN rooms r ON b.room_id = r.id
+      WHERE b.booking_reference = ?
+    `).bind(bookingRef).first();
+
+    if (!booking) {
+      return errorResponse('Booking not found', 404);
+    }
+
     // Send booking confirmation email
     if (action === 'booking-confirmation') {
-      const { booking_data } = body;
+      // Use email from DB, ignore client provided email
+      const guestEmail = (booking as any).email;
 
-      if (!booking_data || !booking_data.guest_email) {
-        return errorResponse('Missing booking_data or guest_email', 400);
+      if (!guestEmail) {
+        return errorResponse('No email found for this booking', 404);
       }
 
       // Send real email via Resend API
-      const emailHtml = getBookingConfirmationHtml(booking_data, env);
+      const emailHtml = getBookingConfirmationHtml(booking, env);
       const resendResult = await sendEmailViaResend(
         env,
-        booking_data.guest_email,
+        guestEmail,
         `🎉 Booking Confirmation - ${env.VILLA_NAME || 'Best Villa Bali'}`,
         emailHtml
       );
 
       // Store email record in KV
       await env.CACHE.put(
-        `email:${booking_data.booking_reference}:guest`,
+        `email:${bookingRef}:guest`,
         JSON.stringify({
-          to: booking_data.guest_email,
+          to: guestEmail,
           type: 'booking_confirmation',
           sent_at: new Date().toISOString(),
-          booking_data: booking_data,
+          booking_data: booking,
           resend_id: resendResult.id,
         }),
         { expirationTtl: 86400 * 30 }
@@ -1201,8 +1223,8 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
       return successResponse({
         success: true,
         message: 'Booking confirmation email sent successfully',
-        recipient: booking_data.guest_email,
-        booking_reference: booking_data.booking_reference,
+        recipient: guestEmail, // Confirmed recipient
+        booking_reference: bookingRef,
         timestamp: new Date().toISOString(),
         email_id: resendResult.id,
         resend_error: (resendResult as any).error || null,
@@ -1211,27 +1233,26 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
 
     // Send admin notification email
     if (action === 'admin-notification') {
-      const { booking_data } = body;
       // Get admin email from KV (dynamic) or fallback to env
       const adminEmail = await getAdminEmail(env);
 
       // Send real email via Resend API
-      const emailHtml = getAdminNotificationHtml(booking_data, env);
+      const emailHtml = getAdminNotificationHtml(booking, env);
       const resendResult = await sendEmailViaResend(
         env,
         adminEmail,
-        `🔔 New Booking Alert - ${booking_data?.booking_reference || 'New Booking'}`,
+        `🔔 New Booking Alert - ${bookingRef}`,
         emailHtml
       );
 
       // Store email record
       await env.CACHE.put(
-        `email:${booking_data?.booking_reference}:admin`,
+        `email:${bookingRef}:admin`,
         JSON.stringify({
           to: adminEmail,
           type: 'admin_notification',
           sent_at: new Date().toISOString(),
-          booking_data: booking_data,
+          booking_data: booking,
           resend_id: resendResult.id,
         }),
         { expirationTtl: 86400 * 30 }
@@ -1241,7 +1262,7 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
         success: true,
         message: 'Admin notification email sent successfully',
         recipient: adminEmail,
-        booking_reference: booking_data?.booking_reference,
+        booking_reference: bookingRef,
         timestamp: new Date().toISOString(),
         email_id: resendResult.id,
       });
@@ -1249,12 +1270,13 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
 
     // Send status change notification
     if (action === 'status-change') {
-      const { booking_data, old_status, new_status } = body;
+      const { old_status, new_status } = body;
 
+      // Note: We use the validated bookingRef
       const emailResult = {
         success: true,
-        message: 'Status change notification sent',
-        booking_reference: booking_data?.booking_reference,
+        message: 'Status change notification logged',
+        booking_reference: bookingRef,
         status_change: `${old_status} → ${new_status}`,
         timestamp: new Date().toISOString(),
       };
