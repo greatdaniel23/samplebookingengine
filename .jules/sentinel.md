@@ -19,3 +19,8 @@
 **Vulnerability:** The DOKU callback endpoint `/api/payment/callback` was accepting payment confirmations without verifying the signature, allowing attackers to mark bookings as paid.
 **Learning:** The monolithic `handleRequest` in `src/workers/index.ts` automatically consumed the request body as JSON for all POST requests. This made signature verification impossible because the raw body stream was lost/altered.
 **Prevention:** Explicitly exclude webhook endpoints from global body parsing logic in the main handler. Use `request.clone()` or skip parsing to preserve the raw body for cryptographic verification.
+
+## 2026-05-26 - Open Relay in Email Service
+**Vulnerability:** The `/api/email/booking-confirmation` endpoint accepted arbitrary email addresses in the request body, allowing attackers to send spam emails using the villa's domain and template (Open Relay).
+**Learning:** Trusting client input (`booking_data`) for sensitive operations like email sending is dangerous. Even if the endpoint is "public" (for client use), it must verify the data against the backend's source of truth.
+**Prevention:** Never use email addresses provided in the request body for sending automated notifications. Always look up the verified email address from the database using a reference ID.
