@@ -376,9 +376,19 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env, re
   // GET /api/amenities or /api/amenities/list
   if ((pathParts.length === 2 || pathParts[2] === 'list') && method === 'GET') {
     try {
+      // Try to get from KV first
+      const cacheKey = 'amenities_list';
+      const cached = await env.CACHE.get(cacheKey, 'json');
+      if (cached) {
+        return successResponse(cached);
+      }
+
       const result = await env.DB.prepare(
         'SELECT * FROM amenities WHERE is_active = 1 ORDER BY display_order ASC'
       ).all();
+      // Store in KV (cache for 1 hour)
+      await env.CACHE.put(cacheKey, JSON.stringify(result.results), { expirationTtl: 3600 });
+
       return successResponse(result.results);
     } catch (error) {
       return errorResponse(error.message);
@@ -441,6 +451,9 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env, re
         display_order || 0
       ).run();
 
+      // Invalidate cache
+      await env.CACHE.delete('amenities_list');
+
       return successResponse({ id: result.meta.last_row_id, message: 'Amenity created successfully' });
     } catch (error) {
       return errorResponse(error.message);
@@ -472,6 +485,9 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env, re
         `UPDATE amenities SET ${updates.join(', ')} WHERE id = ?`
       ).bind(...values).run();
 
+      // Invalidate cache
+      await env.CACHE.delete('amenities_list');
+
       return successResponse({ message: 'Amenity updated successfully' });
     } catch (error) {
       return errorResponse(error.message);
@@ -483,6 +499,9 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env, re
     try {
       const id = parseInt(pathParts[2]);
       await env.DB.prepare('DELETE FROM amenities WHERE id = ?').bind(id).run();
+      // Invalidate cache
+      await env.CACHE.delete('amenities_list');
+
       return successResponse({ message: 'Amenity deleted successfully' });
     } catch (error) {
       return errorResponse(error.message);
