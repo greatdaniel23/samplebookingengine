@@ -1,7 +1,28 @@
 import { Env } from '../types';
+import { getTokenFromHeader, verifyToken } from '../utils/auth';
 
-export async function handlePackages(url: URL, method: string, body: any, env: Env): Promise<Response> {
+export async function handlePackages(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
+
+  // Auth check for non-GET methods
+  if (method !== 'GET') {
+    const authHeader = request.headers.get('Authorization');
+    const token = getTokenFromHeader(authHeader);
+    const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
+
+    if (!valid) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Unauthorized'
+      }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+  }
 
   const parsePackage = (pkg: any) => {
     try {
