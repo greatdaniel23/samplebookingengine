@@ -3,7 +3,7 @@ import { handleRooms } from './routes/rooms';
 import { handlePackages } from './routes/packages';
 import { handleVilla } from './routes/villa';
 import { handlePayment } from './routes/payment';
-import { generateToken, verifyToken, getTokenFromHeader } from './utils/auth';
+import { generateToken, verifyToken, getTokenFromHeader, verifyPassword } from './utils/auth';
 
 // FORCE REBUILD - Timestamp: 2026-01-09 02:37
 // This comment exists only to force Wrangler to rebuild the Worker
@@ -751,6 +751,10 @@ async function handleAuth(url: URL, method: string, body: any, env: Env): Promis
       ).bind(body.username).first();
 
       if (!user) return errorResponse('Invalid credentials', 401);
+
+      // Verify password
+      const isValidPassword = await verifyPassword(body.password, user.password_hash);
+      if (!isValidPassword) return errorResponse('Invalid credentials', 401);
 
       // Using proper JWT token generation
       // This will use the simplified HMAC-SHA256 from utils/auth
