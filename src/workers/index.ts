@@ -3,7 +3,7 @@ import { handleRooms } from './routes/rooms';
 import { handlePackages } from './routes/packages';
 import { handleVilla } from './routes/villa';
 import { handlePayment } from './routes/payment';
-import { generateToken, verifyToken, getTokenFromHeader } from './utils/auth';
+import { generateToken, verifyToken, getTokenFromHeader, verifyPassword } from './utils/auth';
 
 // FORCE REBUILD - Timestamp: 2026-01-09 02:37
 // This comment exists only to force Wrangler to rebuild the Worker
@@ -14,8 +14,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
   const path = url.pathname;
 
   let body = null;
-  // Skip JSON parsing for image upload (needs formData)
-  if ((method === 'POST' || method === 'PUT' || method === 'DELETE') && path !== '/api/images/upload') {
+  // Skip JSON parsing for image upload (needs formData) and payment callback (needs raw body for signature)
+  if ((method === 'POST' || method === 'PUT' || method === 'DELETE') && path !== '/api/images/upload' && path !== '/api/payment/callback') {
     try {
       body = await request.json();
     } catch (e) {
@@ -75,12 +75,12 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Rooms routes
     if (path.startsWith('/api/rooms')) {
-      return handleRooms(url, method, body, env);
+      return handleRooms(url, method, body, env, request);
     }
 
     // Packages routes
     if (path.startsWith('/api/packages')) {
-      return handlePackages(url, method, body, env);
+      return handlePackages(url, method, body, env, request);
     }
 
     // Inclusions routes
@@ -90,7 +90,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Villa routes
     if (path.startsWith('/api/villa')) {
-      return handleVilla(url, method, body, env);
+      return handleVilla(url, method, body, env, request);
     }
 
     // Amenities routes
@@ -125,7 +125,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Payment routes (DOKU)
     if (path.startsWith('/api/payment')) {
-      return handlePayment(url, method, body, env);
+      return handlePayment(url, method, body, env, request);
     }
 
     // GTM routes
@@ -377,9 +377,19 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env, re
   // GET /api/amenities or /api/amenities/list
   if ((pathParts.length === 2 || pathParts[2] === 'list') && method === 'GET') {
     try {
+      // Try to get from KV first
+      const cacheKey = 'amenities_list';
+      const cached = await env.CACHE.get(cacheKey, 'json');
+      if (cached) {
+        return successResponse(cached);
+      }
+
       const result = await env.DB.prepare(
         'SELECT * FROM amenities WHERE is_active = 1 ORDER BY display_order ASC'
       ).all();
+      // Store in KV (cache for 1 hour)
+      await env.CACHE.put(cacheKey, JSON.stringify(result.results), { expirationTtl: 3600 });
+
       return successResponse(result.results);
     } catch (error) {
       return errorResponse(error.message);
@@ -442,6 +452,9 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env, re
         display_order || 0
       ).run();
 
+      // Invalidate cache
+      await env.CACHE.delete('amenities_list');
+
       return successResponse({ id: result.meta.last_row_id, message: 'Amenity created successfully' });
     } catch (error) {
       return errorResponse(error.message);
@@ -473,6 +486,9 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env, re
         `UPDATE amenities SET ${updates.join(', ')} WHERE id = ?`
       ).bind(...values).run();
 
+      // Invalidate cache
+      await env.CACHE.delete('amenities_list');
+
       return successResponse({ message: 'Amenity updated successfully' });
     } catch (error) {
       return errorResponse(error.message);
@@ -484,6 +500,9 @@ async function handleAmenities(url: URL, method: string, body: any, env: Env, re
     try {
       const id = parseInt(pathParts[2]);
       await env.DB.prepare('DELETE FROM amenities WHERE id = ?').bind(id).run();
+      // Invalidate cache
+      await env.CACHE.delete('amenities_list');
+
       return successResponse({ message: 'Amenity deleted successfully' });
     } catch (error) {
       return errorResponse(error.message);
@@ -509,9 +528,20 @@ async function handleInclusions(url: URL, method: string, body: any, env: Env, r
   // GET /api/inclusions or /api/inclusions/list - List all inclusions
   if ((pathParts.length === 2 || pathParts[2] === 'list') && method === 'GET') {
     try {
+      // Try to get from KV first
+      const cacheKey = 'inclusions_list';
+      const cached = await env.CACHE.get(cacheKey, 'json');
+      if (cached) {
+        return successResponse({ inclusions: cached });
+      }
+
       const result = await env.DB.prepare(
         'SELECT * FROM inclusions WHERE is_active = 1 ORDER BY package_type, name ASC'
       ).all();
+
+      // Store in KV (cache for 1 hour)
+      await env.CACHE.put(cacheKey, JSON.stringify(result.results), { expirationTtl: 3600 });
+
       return successResponse({ inclusions: result.results });
     } catch (error) {
       return errorResponse(error.message);
@@ -722,6 +752,11 @@ async function handleAuth(url: URL, method: string, body: any, env: Env): Promis
       ).bind(body.username).first();
 
       if (!user) return errorResponse('Invalid credentials', 401);
+
+      const isValidPassword = await verifyPassword(body.password, user.password_hash);
+      if (!isValidPassword) {
+        return errorResponse('Invalid credentials', 401);
+      }
 
       // Using proper JWT token generation
       // This will use the simplified HMAC-SHA256 from utils/auth
@@ -1161,28 +1196,52 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
     // Send booking confirmation email
     if (action === 'booking-confirmation') {
       const { booking_data } = body;
+      // Use booking_reference from body, but verify against DB
+      const ref = booking_data?.booking_reference;
 
-      if (!booking_data || !booking_data.guest_email) {
-        return errorResponse('Missing booking_data or guest_email', 400);
+      if (!ref) {
+        return errorResponse('Missing booking_reference', 400);
       }
 
+      // Verify booking exists and get trusted data (prevent Open Relay)
+      const booking = await env.DB.prepare(`
+        SELECT b.*, r.name as room_name, p.name as package_name
+        FROM bookings b
+        LEFT JOIN rooms r ON b.room_id = r.id
+        LEFT JOIN packages p ON b.package_id = p.id
+        WHERE b.booking_reference = ?
+      `).bind(ref).first();
+
+      if (!booking) {
+        return errorResponse('Booking not found', 404);
+      }
+
+      // Construct trusted data object for template
+      const trustedData = {
+        ...booking,
+        guest_email: booking.email,
+        guest_name: `${booking.first_name} ${booking.last_name}`,
+        room_name: booking.room_name || booking.package_name || 'Standard Room',
+        total_amount: booking.total_price
+      };
+
       // Send real email via Resend API
-      const emailHtml = getBookingConfirmationHtml(booking_data, env);
+      const emailHtml = getBookingConfirmationHtml(trustedData, env);
       const resendResult = await sendEmailViaResend(
         env,
-        booking_data.guest_email,
+        trustedData.guest_email, // Use verified email from DB
         `🎉 Booking Confirmation - ${env.VILLA_NAME || 'Best Villa Bali'}`,
         emailHtml
       );
 
       // Store email record in KV
       await env.CACHE.put(
-        `email:${booking_data.booking_reference}:guest`,
+        `email:${ref}:guest`,
         JSON.stringify({
-          to: booking_data.guest_email,
+          to: trustedData.guest_email,
           type: 'booking_confirmation',
           sent_at: new Date().toISOString(),
-          booking_data: booking_data,
+          booking_data: trustedData,
           resend_id: resendResult.id,
         }),
         { expirationTtl: 86400 * 30 }
@@ -1191,8 +1250,8 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
       return successResponse({
         success: true,
         message: 'Booking confirmation email sent successfully',
-        recipient: booking_data.guest_email,
-        booking_reference: booking_data.booking_reference,
+        recipient: trustedData.guest_email,
+        booking_reference: ref,
         timestamp: new Date().toISOString(),
         email_id: resendResult.id,
         resend_error: (resendResult as any).error || null,
@@ -1202,21 +1261,49 @@ async function handleEmail(url: URL, method: string, body: any, env: Env): Promi
     // Send admin notification email
     if (action === 'admin-notification') {
       const { booking_data } = body;
+      const ref = booking_data?.booking_reference;
+
+      if (!ref) {
+        return errorResponse('Missing booking_reference', 400);
+      }
+
+      // Verify booking exists (prevent admin spam)
+      const booking = await env.DB.prepare(`
+        SELECT b.*, r.name as room_name, p.name as package_name
+        FROM bookings b
+        LEFT JOIN rooms r ON b.room_id = r.id
+        LEFT JOIN packages p ON b.package_id = p.id
+        WHERE b.booking_reference = ?
+      `).bind(ref).first();
+
+      if (!booking) {
+        return errorResponse('Booking not found', 404);
+      }
+
+      // Construct trusted data
+      const trustedData = {
+        ...booking,
+        guest_email: booking.email,
+        guest_name: `${booking.first_name} ${booking.last_name}`,
+        room_name: booking.room_name || booking.package_name || 'Standard Room',
+        total_amount: booking.total_price
+      };
+
       // Get admin email from KV (dynamic) or fallback to env
       const adminEmail = await getAdminEmail(env);
 
       // Send real email via Resend API
-      const emailHtml = getAdminNotificationHtml(booking_data, env);
+      const emailHtml = getAdminNotificationHtml(trustedData, env);
       const resendResult = await sendEmailViaResend(
         env,
         adminEmail,
-        `🔔 New Booking Alert - ${booking_data?.booking_reference || 'New Booking'}`,
+        `🔔 New Booking Alert - ${ref}`,
         emailHtml
       );
 
       // Store email record
       await env.CACHE.put(
-        `email:${booking_data?.booking_reference}:admin`,
+        `email:${ref}:admin`,
         JSON.stringify({
           to: adminEmail,
           type: 'admin_notification',
