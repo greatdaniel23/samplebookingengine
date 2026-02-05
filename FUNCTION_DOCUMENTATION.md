@@ -12,7 +12,7 @@ The backend logic is primarily located in `src/workers/`.
 ### API Endpoints
 
 #### Bookings
-**Handler**: `handleBookings` (Internal in `index.ts` / `src/workers/routes/bookings.ts` logic)
+**Handler**: `handleBookings` (`src/workers/routes/bookings.ts`)
 - `GET /api/bookings` or `/api/bookings/list`: List all bookings (paginated).
 - `GET /api/bookings/:id`: Get details of a specific booking.
 - `GET /api/bookings/ref/:reference`: Get booking by reference code.
