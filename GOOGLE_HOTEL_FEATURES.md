@@ -38,3 +38,25 @@ Use these details when filling out the "Official Site" or "Connectivity Partner"
 *   **Supported Currencies**: IDR
 *   **Supported Languages**: English
 *   **Server Location**: Global (Edge/Cloudflare)
+
+## 7. Recommended Updates for Full Compliance
+To ensure fully automated integration with Google Hotel Ads (ARI), the following updates are recommended:
+
+### A. Inventory Feed Endpoint (ARI)
+*   **Current Status**: Manual API endpoints exist.
+*   **Requirement**: Create a dedicated endpoint (e.g., `/api/feed/google`) to generate a dynamic **XML or CSV feed** listing all active packages, rates, and availability.
+*   **Format**: Must follow Google's [Transaction (Property Data) Feed](https://developers.google.com/hotels/hotel-prices/xml-reference/transaction-messages) specifications.
+
+### B. Structured Data (JSON-LD)
+*   **Current Status**: Missing on package detail pages.
+*   **Requirement**: Inject `Product` and `Hotel/LodgingBusiness` schema markup into the `<head>` of `PackageDetails.tsx`.
+*   **Benefit**: Enables Google to parse price, availability, and ratings directly from the page source for "Free Booking Links".
+
+### C. XML Sitemap
+*   **Current Status**: Missing.
+*   **Requirement**: Generate a dynamic `sitemap.xml` that lists all active package URLs.
+*   **Benefit**: Ensures Googlebot discovers new packages immediately.
+
+### D. Conversion Tracking Verification
+*   **Current Status**: GTM is present.
+*   **Requirement**: Verify that the `purchase` event in GA4/GTM sends the specific parameters required by Google Hotel Ads: `hvalue` (total value), `hcurrency` (IDR), and `oid` (booking reference).
