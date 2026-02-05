@@ -1,12 +1,16 @@
 import { JWTPayload } from '../types';
+import bcrypt from 'bcryptjs';
 
 /**
  * Verify password against bcrypt hash
  */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  // TODO: Implement proper bcrypt verification
-  console.warn('Using placeholder password verification - implement proper bcrypt check');
-  return false;
+  try {
+    return await bcrypt.compare(password, hash);
+  } catch (error) {
+    console.error('Password verification error:', error);
+    return false;
+  }
 }
 
 /**
