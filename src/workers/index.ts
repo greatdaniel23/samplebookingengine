@@ -345,8 +345,9 @@ async function handleBookings(url: URL, method: string, body: any, env: Env, req
         return errorResponse('Missing query parameters: check_in_before, check_out_after', 400);
       }
 
+      // SECURITY: Select only necessary fields to prevent PII leakage
       const result = await env.DB.prepare(
-        `SELECT * FROM bookings
+        `SELECT check_in, check_out, status FROM bookings
          WHERE check_in <= ? AND check_out >= ?
          ORDER BY check_in ASC`
       ).bind(checkOutAfter, checkInBefore).all();
