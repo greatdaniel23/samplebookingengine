@@ -75,12 +75,12 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Rooms routes
     if (path.startsWith('/api/rooms')) {
-      return handleRooms(url, method, body, env);
+      return handleRooms(url, method, body, env, request);
     }
 
     // Packages routes
     if (path.startsWith('/api/packages')) {
-      return handlePackages(url, method, body, env);
+      return handlePackages(url, method, body, env, request);
     }
 
     // Inclusions routes
@@ -90,7 +90,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Villa routes
     if (path.startsWith('/api/villa')) {
-      return handleVilla(url, method, body, env);
+      return handleVilla(url, method, body, env, request);
     }
 
     // Amenities routes
