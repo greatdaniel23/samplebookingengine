@@ -110,7 +110,32 @@ export async function handleBookings(url: URL, method: string, body: any, env: E
   if (pathParts[2] === 'ref' && pathParts[3] && method === 'GET') {
     try {
       const ref = pathParts[3];
-      const result = await env.DB.prepare('SELECT * FROM bookings WHERE booking_reference = ?').bind(ref).first();
+
+      // Check for admin auth to optionally return full details
+      const authHeader = request.headers.get('Authorization');
+      const token = getTokenFromHeader(authHeader);
+      const isAdmin = token ? await verifyToken(token, env.JWT_SECRET) : false;
+
+      let result;
+
+      if (isAdmin) {
+        // Admin gets full record
+        result = await env.DB.prepare('SELECT * FROM bookings WHERE booking_reference = ?').bind(ref).first();
+      } else {
+        // Public/Guest gets restricted fields to prevent PII leakage
+        // Explicitly select only fields needed for the frontend confirmation page
+        result = await env.DB.prepare(`
+          SELECT
+            id, booking_reference, room_id, package_id,
+            first_name, last_name, email, phone,
+            check_in, check_out, guests, adults, children,
+            total_price, currency, status, payment_status,
+            special_requests, created_at
+          FROM bookings
+          WHERE booking_reference = ?
+        `).bind(ref).first();
+      }
+
       if (!result) return errorResponse('Booking not found', 404);
       return successResponse(result);
     } catch (error: any) {
