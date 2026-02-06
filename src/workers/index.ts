@@ -4,6 +4,7 @@ import { handlePackages } from './routes/packages';
 import { handleVilla } from './routes/villa';
 import { handlePayment } from './routes/payment';
 import { handleBookings } from "./routes/bookings";
+import { handleGoogleHotelFeed } from './routes/feed';
 import { generateToken, verifyToken, getTokenFromHeader, verifyPassword } from './utils/auth';
 
 // FORCE REBUILD - Timestamp: 2026-01-09 02:37
@@ -132,6 +133,11 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     // GTM routes
     if (path.startsWith('/api/gtm')) {
       return handleGTM(url, method, body, env, request);
+    }
+
+    // Google Hotel Feed
+    if (path === '/api/feed/google-hotels') {
+      return handleGoogleHotelFeed(url, method, env);
     }
 
     return errorResponse('Endpoint not found', 404);
