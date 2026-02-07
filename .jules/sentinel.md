@@ -19,3 +19,8 @@
 **Vulnerability:** The `GET /api/bookings/dates/search` endpoint returned all columns (`SELECT *`) including guest names, emails, and phone numbers to unauthenticated users.
 **Learning:** Developers often default to `SELECT *` for convenience, not realizing that for public endpoints this exposes sensitive internal data.
 **Prevention:** Always explicitly select only the necessary columns for public endpoints (e.g., `SELECT check_in, check_out, status`).
+
+## 2026-02-06 - PII Leakage in Booking Reference Endpoint
+**Vulnerability:** The `GET /api/bookings/ref/:reference` endpoint returned all columns (`SELECT *`) to unauthenticated users, potentially leaking sensitive internal fields like `admin_notes` or `payment_gateway_id`.
+**Learning:** Public endpoints that rely on "secret" IDs (like booking references) must still filter their output to the minimum viable data.
+**Prevention:** Implement explicit column selection for public access, and conditional logic to allow admins to see full details.
