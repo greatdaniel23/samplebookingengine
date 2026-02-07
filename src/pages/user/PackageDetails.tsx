@@ -394,6 +394,40 @@ const PackageDetails = () => {
 
   const finalPrice = calculateFinalPrice();
 
+  // JSON-LD Structured Data
+  useEffect(() => {
+    if (!pkg) return;
+
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "Offer",
+      "name": pkg.name,
+      "description": pkg.description,
+      "price": finalPrice,
+      "priceCurrency": "IDR",
+      "availability": "https://schema.org/InStock",
+      "validFrom": pkg.valid_from,
+      "validThrough": pkg.valid_until,
+      "itemOffered": {
+        "@type": "HotelRoom",
+        "name": selectedRoom?.name || pkg.name,
+        "description": selectedRoom?.description || pkg.description,
+        "image": getPackageImageUrl()
+      }
+    };
+
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify(schema);
+    document.head.appendChild(script);
+
+    return () => {
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
+    };
+  }, [pkg, selectedRoom, finalPrice]);
+
   const handleBookNow = () => {
     // Require dates and room selection before proceeding to booking
     if (!tempCheckIn || !tempCheckOut) {
