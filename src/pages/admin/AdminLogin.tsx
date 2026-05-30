@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { paths } from '@/config/paths';
+import { setAuthToken } from '@/config/cloudflare';
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -10,7 +11,6 @@ const AdminLogin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if already logged in
     const isAdminLoggedIn = sessionStorage.getItem('adminLoggedIn');
     if (isAdminLoggedIn === 'true') {
       navigate('/admin');
@@ -23,17 +23,27 @@ const AdminLogin = () => {
     setError('');
 
     try {
-      // For demo purposes, using simple credentials
-      // In production, this should be a proper API call
-      if (credentials.username === 'admin' && credentials.password === 'admin123') {
+      const response = await fetch(paths.buildApiUrl('auth/login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: credentials.username,
+          password: credentials.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.data?.token) {
+        setAuthToken(data.data.token);
         sessionStorage.setItem('adminLoggedIn', 'true');
         sessionStorage.setItem('adminUser', credentials.username);
         navigate('/admin');
       } else {
-        setError('Invalid username or password');
+        setError('Could not sign in. Please verify your credentials and try again.');
       }
     } catch (err) {
-      setError('Login failed. Please try again.');
+      setError('Could not sign in. Please verify your credentials and try again.');
     } finally {
       setLoading(false);
     }
@@ -47,83 +57,128 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-hotel-cream to-white flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        {/* Back to home link */}
-        <div className="mb-8">
-          <Link 
-            to="/" 
-            className="flex items-center text-hotel-gold hover:text-hotel-bronze transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Link>
+    <div className="min-h-screen bg-samudra-paper flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+
+        {/* Brand block */}
+        <div className="text-center mb-12">
+          <p className="font-script text-samudra-gold text-[28px] leading-none mb-4">
+            samudra
+          </p>
+          <div className="h-px w-[60px] mx-auto mb-6" style={{ background: 'rgba(31,27,23,0.4)' }} />
+          <h1 className="font-display text-[32px] font-light tracking-[0.32em] uppercase text-samudra-ink">
+            Admin Access
+          </h1>
         </div>
 
-        {/* Login Card */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-hotel-gold rounded-full flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-hotel-navy">Admin Login</h1>
-            <p className="text-hotel-bronze mt-2">Access the villa management system</p>
-          </div>
+        {/* Form card */}
+        <div className="w-full bg-samudra-paper border border-samudra-paper-deep p-8 space-y-6">
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+            <div
+              className="text-[12px] italic pl-3 mt-2"
+              style={{ color: '#7a3d31', borderLeft: '1px solid #7a3d31' }}
+            >
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="username"
+                className="eyebrow block mb-2"
+              >
                 Username
               </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  name="username"
-                  value={credentials.username}
-                  onChange={handleChange}
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
-                  placeholder="Enter your username"
-                />
-              </div>
+              <input
+                id="username"
+                type="text"
+                name="username"
+                value={credentials.username}
+                onChange={handleChange}
+                required
+                className="h-11 w-full bg-samudra-paper border px-3 text-[14px] text-samudra-ink transition-colors focus:outline-none"
+                style={{
+                  borderColor: 'rgba(31,27,23,0.3)',
+                  fontFamily: 'var(--font-label)',
+                }}
+                onFocus={e => {
+                  e.target.style.borderColor = 'var(--teal)';
+                  e.target.style.boxShadow = '0 0 0 2px rgba(30,68,63,0.2)';
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor = 'rgba(31,27,23,0.3)';
+                  e.target.style.boxShadow = 'none';
+                }}
+                placeholder=""
+                autoComplete="username"
+              />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="password"
+                className="eyebrow block mb-2"
+              >
                 Password
               </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="password"
-                  name="password"
-                  value={credentials.password}
-                  onChange={handleChange}
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:border-transparent"
-                  placeholder="Enter your password"
-                />
-              </div>
+              <input
+                id="password"
+                type="password"
+                name="password"
+                value={credentials.password}
+                onChange={handleChange}
+                required
+                className="h-11 w-full bg-samudra-paper border px-3 text-[14px] text-samudra-ink transition-colors focus:outline-none"
+                style={{
+                  borderColor: 'rgba(31,27,23,0.3)',
+                  fontFamily: 'var(--font-label)',
+                }}
+                onFocus={e => {
+                  e.target.style.borderColor = 'var(--teal)';
+                  e.target.style.boxShadow = '0 0 0 2px rgba(30,68,63,0.2)';
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor = 'rgba(31,27,23,0.3)';
+                  e.target.style.boxShadow = 'none';
+                }}
+                placeholder=""
+                autoComplete="current-password"
+              />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-hotel-gold text-white py-3 px-4 rounded-lg hover:bg-hotel-bronze transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              className="w-full h-11 bg-samudra-ink text-samudra-paper text-[11px] tracking-[0.3em] uppercase font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-samudra-teal"
+              style={{ fontFamily: 'var(--font-label)', cursor: loading ? 'wait' : 'pointer' }}
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
-
-          
         </div>
+
+        {/* Back to home link */}
+        <div className="mt-8 text-center">
+          <Link
+            to="/"
+            aria-label="Back to public homepage"
+            className="eyebrow inline-flex items-center gap-2 text-samudra-ink-mute hover:underline transition-all"
+          >
+            <span>&#8592;</span>
+            <span>Back to Homepage</span>
+          </Link>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-16 text-center">
+          <div className="h-px w-20 mx-auto mb-4 bg-samudra-paper-deep" />
+          <p className="eyebrow text-samudra-ink-mute">
+            Samudra &middot; Uluwatu &middot; Bali &middot; 2026
+          </p>
+        </div>
+
       </div>
     </div>
   );

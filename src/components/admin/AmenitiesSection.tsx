@@ -1,19 +1,36 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import {
   ClipboardList, Home, Package, Eye, Check,
   Wifi, Car, Heart, Map, Coffee, Bath, Snowflake, Wind, Bed, Lock, Sparkles, Shirt,
   Utensils, ChefHat, Wine, Flame, Tv, Baby, Users, GlassWater,
   Waves, TreePine, Sun, Bell, Clock, Music, Battery, Plane, Bike, UserCheck,
-  Zap, Activity, Leaf, Shield, Star, Plus, Edit3, Trash2, Archive, Phone,
-  Camera, Flower, PartyPopper, Gift, Mountain, Apple, Bus, Headphones, X
+  Zap, Activity, Leaf, Shield, Star, Plus, Edit3, Trash2, Archive, Phone
 } from 'lucide-react';
 import { paths } from '@/config/paths';
+import { apiClient } from '@/utils/apiClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const AmenitiesSection: React.FC = () => {
   // Icon mapper function to convert string names to Lucide React components
@@ -50,6 +67,7 @@ const AmenitiesSection: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingAmenity, setEditingAmenity] = useState<any>(null);
+  const [deleteAmenityTarget, setDeleteAmenityTarget] = useState<any>(null);
   const [createFormData, setCreateFormData] = useState({
     name: '',
     category: '',
@@ -67,32 +85,9 @@ const AmenitiesSection: React.FC = () => {
     is_active: true
   });
 
-  // Inclusions state
-  const [inclusions, setInclusions] = useState<any[]>([]);
-  const [inclusionsLoading, setInclusionsLoading] = useState(false);
-  const [selectedInclusionCategory, setSelectedInclusionCategory] = useState('all');
-  const [inclusionSearchTerm, setInclusionSearchTerm] = useState('');
-  const [showCreateInclusionModal, setShowCreateInclusionModal] = useState(false);
-  const [editingInclusion, setEditingInclusion] = useState<any>(null);
-  const [inclusionFormData, setInclusionFormData] = useState({
-    name: '',
-    category: 'meals',
-    description: '',
-    icon: 'check',
-    is_featured: false,
-    is_active: true
-  });
-
   useEffect(() => {
     fetchAmenities();
   }, []);
-
-  // Auto-load inclusions when switching to inclusions tab
-  useEffect(() => {
-    if (activeAmenitiesTab === 'inclusions' && inclusions.length === 0) {
-      fetchInclusions();
-    }
-  }, [activeAmenitiesTab]);
 
   const fetchUsageStats = async (amenitiesList: any[]) => {
     try {
@@ -177,20 +172,9 @@ const AmenitiesSection: React.FC = () => {
   const handleCreateAmenity = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const apiUrl = paths.buildApiUrl('amenities');
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(createFormData)
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const result = await response.json();
+      const result = await apiClient.post<any>('/api/amenities', createFormData);
       if (result.success) {
-        alert('Amenity created successfully!');
+        toast.success('Amenity created');
         setShowCreateModal(false);
         setCreateFormData({
           name: '',
@@ -200,13 +184,13 @@ const AmenitiesSection: React.FC = () => {
           is_featured: false,
           is_active: true
         });
-        fetchAmenities(); // Refresh the list
+        fetchAmenities();
       } else {
         throw new Error(result.error || 'Failed to create amenity');
       }
     } catch (error) {
       console.error('Error creating amenity:', error);
-      alert('Error creating amenity: ' + error);
+      toast.error(error instanceof Error ? error.message : 'Could not create amenity');
     }
   };
 
@@ -228,56 +212,36 @@ const AmenitiesSection: React.FC = () => {
     if (!editingAmenity) return;
 
     try {
-      const apiUrl = paths.buildApiUrl(`amenities/${editingAmenity.id}`);
-      const response = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editFormData)
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const result = await response.json();
+      const result = await apiClient.put<any>(`/api/amenities/${editingAmenity.id}`, editFormData);
       if (result.success) {
-        alert('Amenity updated successfully!');
+        toast.success('Amenity updated');
         setShowEditModal(false);
         setEditingAmenity(null);
-        fetchAmenities(); // Refresh the list
+        fetchAmenities();
       } else {
         throw new Error(result.error || 'Failed to update amenity');
       }
     } catch (error) {
       console.error('Error updating amenity:', error);
-      alert('Error updating amenity: ' + error);
+      toast.error(error instanceof Error ? error.message : 'Could not update amenity');
     }
   };
 
   const handleDeleteAmenity = async (amenityId: string) => {
-    if (!confirm('Are you sure you want to delete this amenity?')) return;
 
     try {
-      const apiUrl = paths.buildApiUrl(`amenities/${amenityId}`);
-      const response = await fetch(apiUrl, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const result = await response.json();
+      const result = await apiClient.delete<any>(`/api/amenities/${amenityId}`);
       if (result.success) {
-        alert('Amenity deleted successfully!');
-        fetchAmenities(); // Refresh the list
+        toast.success('Amenity removed');
+        fetchAmenities();
       } else {
         throw new Error(result.error || 'Failed to delete amenity');
       }
     } catch (error) {
       console.error('Error deleting amenity:', error);
-      alert('Error deleting amenity: ' + error);
+      toast.error(error instanceof Error ? error.message : 'Could not remove amenity');
+    } finally {
+      setDeleteAmenityTarget(null);
     }
   };
 
@@ -292,7 +256,7 @@ const AmenitiesSection: React.FC = () => {
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center">
-          <div className="p-3 rounded-full bg-hotel-navy/20 text-hotel-navy">
+          <div className="p-3 rounded-full bg-samudra-ink/20 text-samudra-ink">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
             </svg>
@@ -306,7 +270,7 @@ const AmenitiesSection: React.FC = () => {
 
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center">
-          <div className="p-3 rounded-full bg-hotel-sage/20 text-hotel-sage">
+          <div className="p-3 rounded-full bg-samudra-teal/20 text-samudra-teal">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
             </svg>
@@ -320,7 +284,7 @@ const AmenitiesSection: React.FC = () => {
 
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center">
-          <div className="p-3 rounded-full bg-hotel-gold/20 text-hotel-gold">
+          <div className="p-3 rounded-full bg-samudra-gold/20 text-samudra-gold">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
             </svg>
@@ -334,7 +298,7 @@ const AmenitiesSection: React.FC = () => {
 
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center">
-          <div className="p-3 rounded-full bg-hotel-bronze/20 text-hotel-bronze">
+          <div className="p-3 rounded-full bg-samudra-ink-mute/20 text-samudra-ink-mute">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
@@ -399,7 +363,7 @@ const AmenitiesSection: React.FC = () => {
                 <tr key={amenity.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      {React.createElement(getIconComponent(amenity.icon), { className: "w-6 h-6 mr-3 text-hotel-gold" })}
+                      {React.createElement(getIconComponent(amenity.icon), { className: "w-6 h-6 mr-3 text-samudra-gold" })}
                       <div className="text-sm font-medium text-gray-900">{amenity.name}</div>
                     </div>
                   </td>
@@ -412,14 +376,14 @@ const AmenitiesSection: React.FC = () => {
                     {amenity.description}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs ${amenity.is_active === 1 ? 'bg-hotel-sage/20 text-hotel-sage' : 'bg-hotel-bronze/20 text-hotel-bronze'
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs ${amenity.is_active === 1 ? 'bg-samudra-teal/20 text-samudra-teal' : 'bg-samudra-ink-mute/20 text-samudra-ink-mute'
                       }`}>
                       {amenity.is_active === 1 ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {amenity.is_featured === 1 ? (
-                      <svg className="w-5 h-5 text-hotel-gold" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-samudra-gold" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.518 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363 1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                       </svg>
                     ) : (
@@ -429,13 +393,13 @@ const AmenitiesSection: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => handleEditAmenity(amenity)}
-                      className="text-hotel-sage hover:text-hotel-sage-dark mr-3"
+                      className="text-samudra-teal hover:text-samudra-teal mr-3"
                     >
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDeleteAmenity(amenity.id)}
-                      className="text-hotel-bronze hover:text-hotel-bronze/80"
+                      onClick={() => setDeleteAmenityTarget(amenity)}
+                      className="text-[#7a3d31] hover:text-[#5a2d21]"
                     >
                       Delete
                     </button>
@@ -479,261 +443,6 @@ const AmenitiesSection: React.FC = () => {
     </div>
   );
 
-  // Inclusions Functions
-  const fetchInclusions = async () => {
-    try {
-      setInclusionsLoading(true);
-      const response = await fetch(paths.buildApiUrl('inclusions'));
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Inclusions API response:', data);
-        if (data.success) {
-          // API returns: { success: true, data: { inclusions: [...] } }
-          const inclusionsList = data.data?.inclusions || [];
-          console.log('Setting inclusions:', inclusionsList.length, 'items');
-          setInclusions(inclusionsList);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching inclusions:', error);
-    } finally {
-      setInclusionsLoading(false);
-    }
-  };
-
-  const handleInclusionSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const url = editingInclusion
-        ? paths.buildApiUrl(`inclusions/${editingInclusion.id}`)
-        : paths.buildApiUrl('inclusions');
-
-      const method = editingInclusion ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(inclusionFormData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          alert(editingInclusion ? 'Inclusion updated successfully!' : 'Inclusion created successfully!');
-          resetInclusionForm();
-          fetchInclusions();
-        } else {
-          alert('Error: ' + data.error);
-        }
-      }
-    } catch (error) {
-      console.error('Error saving inclusion:', error);
-      alert('Error saving inclusion');
-    }
-  };
-
-  const handleEditInclusion = (inclusion: any) => {
-    setEditingInclusion(inclusion);
-    setInclusionFormData({
-      name: inclusion.name,
-      category: inclusion.category,
-      description: inclusion.description,
-      icon: inclusion.icon,
-      is_featured: Boolean(inclusion.is_featured),
-      is_active: Boolean(inclusion.is_active)
-    });
-    setShowCreateInclusionModal(true);
-  };
-
-  const handleDeleteInclusion = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this inclusion?')) return;
-
-    try {
-      const response = await fetch(paths.buildApiUrl(`inclusions/${id}`), {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          alert('Inclusion deleted successfully!');
-          fetchInclusions();
-        }
-      }
-    } catch (error) {
-      console.error('Error deleting inclusion:', error);
-      alert('Error deleting inclusion');
-    }
-  };
-
-  const resetInclusionForm = () => {
-    setInclusionFormData({
-      name: '',
-      category: 'meals',
-      description: '',
-      icon: 'check',
-      is_featured: false,
-      is_active: true
-    });
-    setEditingInclusion(null);
-    setShowCreateInclusionModal(false);
-  };
-
-  const getInclusionIcon = (iconName: string) => {
-    const iconMap: { [key: string]: any } = {
-      'check': Check, 'check-circle': Check, 'coffee': Coffee, 'utensils': Utensils,
-      'heart': Heart, 'cup-soda': Coffee, 'apple': Apple, 'wine': Wine,
-      'car': Car, 'plane': Plane, 'bus': Bus, 'bike': Bike,
-      'sparkles': Sparkles, 'map': Map, 'chef-hat': ChefHat, 'sun': Sun,
-      'music': Music, 'home': Home, 'mountain': Mountain,
-      'headphones': Headphones, 'shirt': Shirt, 'clock': Clock, 'phone': Phone,
-      'archive': Archive, 'waves': Waves, 'activity': Activity, 'leaf': Leaf,
-      'dumbbell': Zap, 'zap': Zap, 'gift': Gift, 'party-popper': PartyPopper,
-      'camera': Camera, 'flower': Flower, 'star': Star
-    };
-    return iconMap[iconName?.toLowerCase()] || Check;
-  };
-
-  const renderInclusionsManagement = () => {
-    const inclusionCategories = [
-      { value: 'all', label: 'All Categories' },
-      { value: 'meals', label: '🍽️ Meals' },
-      { value: 'transport', label: '🚗 Transport' },
-      { value: 'activities', label: '🎯 Activities' },
-      { value: 'services', label: '🛎️ Services' },
-      { value: 'wellness', label: '🧘 Wellness' },
-      { value: 'special', label: '🎁 Special' }
-    ];
-
-    const filteredInclusions = inclusions.filter(inc => {
-      const matchesSearch = inc.name?.toLowerCase().includes(inclusionSearchTerm.toLowerCase()) ||
-        inc.description?.toLowerCase().includes(inclusionSearchTerm.toLowerCase());
-      const matchesCategory = selectedInclusionCategory === 'all' || inc.category === selectedInclusionCategory;
-      return matchesSearch && matchesCategory;
-    });
-
-    return (
-      <div className="space-y-6">
-        {/* Search and Filter Controls */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Search Inclusions</label>
-              <input
-                type="text"
-                value={inclusionSearchTerm}
-                onChange={(e) => setInclusionSearchTerm(e.target.value)}
-                placeholder="Search by name or description..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="md:w-48">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Category</label>
-              <select
-                value={selectedInclusionCategory}
-                onChange={(e) => setSelectedInclusionCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {inclusionCategories.map(cat => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Inclusions Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Featured</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {inclusionsLoading ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Loading inclusions...</td>
-                  </tr>
-                ) : filteredInclusions.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                      {inclusions.length === 0 ? 'No inclusions found. Add some inclusions to get started.' : 'No inclusions found matching your criteria'}
-                    </td>
-                  </tr>
-                ) : (
-                  filteredInclusions.map((inclusion) => {
-                    const IconComponent = getInclusionIcon(inclusion.icon);
-                    return (
-                      <tr key={inclusion.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <IconComponent className="w-6 h-6 mr-3 text-hotel-gold" />
-                            <div className="text-sm font-medium text-gray-900">{inclusion.name}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800 capitalize">
-                            {inclusion.category || 'general'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                          {inclusion.description || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs ${
-                            inclusion.is_active ? 'bg-hotel-sage/20 text-hotel-sage' : 'bg-hotel-bronze/20 text-hotel-bronze'
-                          }`}>
-                            {inclusion.is_active ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {inclusion.is_featured ? (
-                            <svg className="w-5 h-5 text-hotel-gold" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.518 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                            </svg>
-                          ) : (
-                            <span className="text-gray-300">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => handleEditInclusion(inclusion)}
-                            className="text-hotel-sage hover:text-hotel-sage-dark mr-3"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteInclusion(inclusion.id)}
-                            className="text-hotel-bronze hover:text-hotel-bronze/80"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredInclusions.length === 0 && !inclusionsLoading && inclusions.length > 0 && (
-            <div className="text-center py-12">
-              <Check className="h-12 w-12 mx-auto mb-4 opacity-50 text-gray-400" />
-              <p className="text-gray-500">No inclusions found matching your criteria</p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="space-y-6">
@@ -742,13 +451,13 @@ const AmenitiesSection: React.FC = () => {
         <div className="flex items-start">
           <Sparkles className="w-6 h-6 text-gray-600 mt-0.5 mr-3" />
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">✨ Amenities & Features Catalog</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Amenities & Features Catalog</h3>
             <p className="text-gray-600 text-sm">
               <strong>Amenities enhance rooms and packages</strong> by adding value and features that attract guests.
               They can be highlighted in packages or assigned to rooms to showcase property benefits.
             </p>
             <div className="mt-2 text-xs text-gray-600">
-              💡 <strong>Business Logic:</strong> Room amenities = Built-in features → Package amenities = Added value → Customer sees complete experience
+              <strong>Business Logic:</strong> Room amenities = Built-in features → Package amenities = Added value → Customer sees complete experience
             </div>
           </div>
         </div>
@@ -757,29 +466,13 @@ const AmenitiesSection: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold">
-            {activeAmenitiesTab === 'inclusions' ? "What's Included Management" : 'Amenities Management'}
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {activeAmenitiesTab === 'inclusions' 
-              ? 'Manage package inclusions and benefits for customers'
-              : 'Manage property features that enhance rooms and packages'}
-          </p>
+          <h2 className="text-xl font-semibold">Amenities Management</h2>
+          <p className="text-sm text-muted-foreground mt-1">Manage property features that enhance rooms and packages</p>
         </div>
-        {activeAmenitiesTab === 'inclusions' ? (
-          <Button onClick={() => {
-            fetchInclusions();
-            setShowCreateInclusionModal(true);
-          }}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Inclusion
-          </Button>
-        ) : (
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add New Amenity
-          </Button>
-        )}
+        <Button onClick={() => setShowCreateModal(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add New Amenity
+        </Button>
       </div>
 
       {/* Statistics */}
@@ -791,7 +484,6 @@ const AmenitiesSection: React.FC = () => {
           <nav className="flex space-x-8 px-6">
             {[
               { id: 'catalog', label: 'Amenities Catalog', Icon: ClipboardList },
-              { id: 'inclusions', label: 'What\'s Included', Icon: Check },
               { id: 'rooms', label: 'Room Assignment', Icon: Home },
               { id: 'packages', label: 'Package Perks', Icon: Package },
               { id: 'preview', label: 'Sales Tool Preview', Icon: Eye }
@@ -800,7 +492,7 @@ const AmenitiesSection: React.FC = () => {
                 key={tab.id}
                 onClick={() => setActiveAmenitiesTab(tab.id)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${activeAmenitiesTab === tab.id
-                  ? 'border-hotel-gold text-hotel-gold'
+                  ? 'border-samudra-gold text-samudra-gold'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
               >
@@ -814,18 +506,18 @@ const AmenitiesSection: React.FC = () => {
         <div className="p-6">
           {loading && (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-hotel-gold"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-samudra-gold"></div>
             </div>
           )}
 
           {error && (
-            <div className="bg-hotel-cream border border-hotel-bronze rounded-md p-4 mb-6">
+            <div className="bg-samudra-paper-soft border border-samudra-ink-mute rounded-md p-4 mb-6">
               <div className="flex">
-                <svg className="w-5 h-5 text-hotel-bronze" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-samudra-ink-mute" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-hotel-navy">Error loading amenities</h3>
+                  <h3 className="text-sm font-medium text-samudra-ink">Error loading amenities</h3>
                   <div className="mt-2 text-sm text-red-700">{error}</div>
                 </div>
               </div>
@@ -835,7 +527,6 @@ const AmenitiesSection: React.FC = () => {
           {!loading && !error && (
             <>
               {activeAmenitiesTab === 'catalog' && renderAmenitiesCatalog()}
-              {activeAmenitiesTab === 'inclusions' && renderInclusionsManagement()}
               {activeAmenitiesTab === 'rooms' && renderRoomAssignment()}
               {activeAmenitiesTab === 'packages' && renderPackagePerks()}
               {activeAmenitiesTab === 'preview' && renderSalesToolPreview()}
@@ -844,330 +535,213 @@ const AmenitiesSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Create Amenity Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Create New Amenity</h3>
+      {/* Create Amenity Dialog */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="max-w-md bg-samudra-paper border border-samudra-paper-deep p-8" style={{ boxShadow: '0 32px 96px rgba(10,14,20,0.22), 0 4px 16px rgba(10,14,20,0.10)' }}>
+          <DialogHeader className="mb-6">
+            <DialogTitle className="font-display text-[28px] font-light text-samudra-ink">New Amenity</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateAmenity} className="space-y-4">
+            <div>
+              <label className="eyebrow block mb-2">Amenity Name *</label>
+              <input
+                type="text"
+                value={createFormData.name}
+                onChange={(e) => setCreateFormData({ ...createFormData, name: e.target.value })}
+                className="h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors"
+                style={{ fontFamily: 'var(--font-label)' }}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="eyebrow block mb-2">Category *</label>
+              <input
+                type="text"
+                value={createFormData.category}
+                onChange={(e) => setCreateFormData({ ...createFormData, category: e.target.value })}
+                className="h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors"
+                style={{ fontFamily: 'var(--font-label)' }}
+                placeholder="e.g., Technology, Comfort, Entertainment"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="eyebrow block mb-2">Description</label>
+              <textarea
+                value={createFormData.description}
+                onChange={(e) => setCreateFormData({ ...createFormData, description: e.target.value })}
+                className="w-full bg-samudra-paper border border-samudra-paper-deep px-3 py-2 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors resize-none"
+                style={{ fontFamily: 'var(--font-label)' }}
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <label className="eyebrow block mb-2">Icon</label>
+              <input
+                type="text"
+                value={createFormData.icon}
+                onChange={(e) => setCreateFormData({ ...createFormData, icon: e.target.value })}
+                className="h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors"
+                style={{ fontFamily: 'var(--font-label)' }}
+                placeholder="e.g., wifi, coffee, star"
+              />
+            </div>
+
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={createFormData.is_featured}
+                  onChange={(e) => setCreateFormData({ ...createFormData, is_featured: e.target.checked })}
+                  className="w-4 h-4 accent-samudra-teal"
+                />
+                <span className="eyebrow">Featured</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={createFormData.is_active}
+                  onChange={(e) => setCreateFormData({ ...createFormData, is_active: e.target.checked })}
+                  className="w-4 h-4 accent-samudra-teal"
+                />
+                <span className="eyebrow">Active</span>
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-samudra-paper-deep">
               <button
+                type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="h-11 border border-samudra-paper-deep text-samudra-ink-mute eyebrow px-6 hover:border-samudra-ink hover:text-samudra-ink transition-colors"
               >
-                <X className="w-6 h-6" />
+                Cancel
               </button>
-            </div>
-
-            <form onSubmit={handleCreateAmenity} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amenity Name</label>
-                <input
-                  type="text"
-                  value={createFormData.name}
-                  onChange={(e) => setCreateFormData({ ...createFormData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <input
-                  type="text"
-                  value={createFormData.category}
-                  onChange={(e) => setCreateFormData({ ...createFormData, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold"
-                  placeholder="e.g., Technology, Comfort, Entertainment"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  value={createFormData.description}
-                  onChange={(e) => setCreateFormData({ ...createFormData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
-                <input
-                  type="text"
-                  value={createFormData.icon}
-                  onChange={(e) => setCreateFormData({ ...createFormData, icon: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold"
-                  placeholder="e.g., 🌟, 🏊‍♂️, 📶"
-                />
-              </div>
-
-              <div className="flex items-center">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={createFormData.is_featured}
-                    onChange={(e) => setCreateFormData({ ...createFormData, is_featured: e.target.checked })}
-                    className="rounded border-gray-300 text-hotel-gold focus:ring-hotel-gold"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Featured amenity</span>
-                </label>
-              </div>
-
-              <div className="flex items-center">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={createFormData.is_active}
-                    onChange={(e) => setCreateFormData({ ...createFormData, is_active: e.target.checked })}
-                    className="rounded border-gray-300 text-hotel-gold focus:ring-hotel-gold"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Active amenity</span>
-                </label>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-hotel-gold rounded-md hover:bg-hotel-gold-dark"
-                >
-                  Create Amenity
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Amenity Modal */}
-      {showEditModal && editingAmenity && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Edit Amenity</h3>
               <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingAmenity(null);
-                }}
-                className="text-gray-400 hover:text-gray-600"
+                type="submit"
+                className="h-11 bg-samudra-ink text-samudra-paper eyebrow px-7 hover:bg-samudra-teal transition-colors"
               >
-                <X className="w-6 h-6" />
+                Create Amenity
               </button>
             </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-            <form onSubmit={handleUpdateAmenity} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amenity Name</label>
+      {/* Edit Amenity Dialog */}
+      <Dialog open={showEditModal && !!editingAmenity} onOpenChange={(open) => { if (!open) { setShowEditModal(false); setEditingAmenity(null); } }}>
+        <DialogContent className="max-w-md bg-samudra-paper border border-samudra-paper-deep p-8" style={{ boxShadow: '0 32px 96px rgba(10,14,20,0.22), 0 4px 16px rgba(10,14,20,0.10)' }}>
+          <DialogHeader className="mb-6">
+            <DialogTitle className="font-display text-[28px] font-light text-samudra-ink">Edit Amenity</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateAmenity} className="space-y-4">
+            <div>
+              <label className="eyebrow block mb-2">Amenity Name *</label>
+              <input
+                type="text"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                className="h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors"
+                style={{ fontFamily: 'var(--font-label)' }}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="eyebrow block mb-2">Category *</label>
+              <input
+                type="text"
+                value={editFormData.category}
+                onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
+                className="h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors"
+                style={{ fontFamily: 'var(--font-label)' }}
+                placeholder="e.g., Technology, Comfort, Entertainment"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="eyebrow block mb-2">Description</label>
+              <textarea
+                value={editFormData.description}
+                onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                className="w-full bg-samudra-paper border border-samudra-paper-deep px-3 py-2 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors resize-none"
+                style={{ fontFamily: 'var(--font-label)' }}
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <label className="eyebrow block mb-2">Icon</label>
+              <input
+                type="text"
+                value={editFormData.icon}
+                onChange={(e) => setEditFormData({ ...editFormData, icon: e.target.value })}
+                className="h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors"
+                style={{ fontFamily: 'var(--font-label)' }}
+                placeholder="e.g., wifi, coffee, star"
+              />
+            </div>
+
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
-                  type="text"
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold"
-                  required
+                  type="checkbox"
+                  checked={editFormData.is_featured}
+                  onChange={(e) => setEditFormData({ ...editFormData, is_featured: e.target.checked })}
+                  className="w-4 h-4 accent-samudra-teal"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <span className="eyebrow">Featured</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
-                  type="text"
-                  value={editFormData.category}
-                  onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold"
-                  placeholder="e.g., Technology, Comfort, Entertainment"
-                  required
+                  type="checkbox"
+                  checked={editFormData.is_active}
+                  onChange={(e) => setEditFormData({ ...editFormData, is_active: e.target.checked })}
+                  className="w-4 h-4 accent-samudra-teal"
                 />
-              </div>
+                <span className="eyebrow">Active</span>
+              </label>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  value={editFormData.description}
-                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
-                <input
-                  type="text"
-                  value={editFormData.icon}
-                  onChange={(e) => setEditFormData({ ...editFormData, icon: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-hotel-gold"
-                  placeholder="e.g., 🌟, 🏊‍♂️, 📶"
-                />
-              </div>
-
-              <div className="flex items-center">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={editFormData.is_featured}
-                    onChange={(e) => setEditFormData({ ...editFormData, is_featured: e.target.checked })}
-                    className="rounded border-gray-300 text-hotel-gold focus:ring-hotel-gold"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Featured amenity</span>
-                </label>
-              </div>
-
-              <div className="flex items-center">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={editFormData.is_active}
-                    onChange={(e) => setEditFormData({ ...editFormData, is_active: e.target.checked })}
-                    className="rounded border-gray-300 text-hotel-gold focus:ring-hotel-gold"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Active amenity</span>
-                </label>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setEditingAmenity(null);
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-hotel-gold rounded-md hover:bg-hotel-gold-dark"
-                >
-                  Update Amenity
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Create/Edit Inclusion Modal */}
-      {showCreateInclusionModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">
-                {editingInclusion ? 'Edit Inclusion' : 'Create New Inclusion'}
-              </h3>
+            <div className="flex justify-end gap-3 pt-4 border-t border-samudra-paper-deep">
               <button
-                onClick={resetInclusionForm}
-                className="text-gray-400 hover:text-gray-600"
+                type="button"
+                onClick={() => { setShowEditModal(false); setEditingAmenity(null); }}
+                className="h-11 border border-samudra-paper-deep text-samudra-ink-mute eyebrow px-6 hover:border-samudra-ink hover:text-samudra-ink transition-colors"
               >
-                <X className="w-6 h-6" />
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="h-11 bg-samudra-ink text-samudra-paper eyebrow px-7 hover:bg-samudra-teal transition-colors"
+              >
+                Update Amenity
               </button>
             </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-            <form onSubmit={handleInclusionSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-                <input
-                  type="text"
-                  value={inclusionFormData.name}
-                  onChange={(e) => setInclusionFormData({ ...inclusionFormData, name: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-hotel-gold"
-                  required
-                />
-              </div>
+      {/* Delete Amenity Confirm */}
+      <AlertDialog open={!!deleteAmenityTarget} onOpenChange={(open) => { if (!open) setDeleteAmenityTarget(null); }}>
+        <AlertDialogContent className="bg-samudra-paper border border-samudra-paper-deep">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-[22px] font-normal text-samudra-ink">Remove amenity?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[13px] text-samudra-ink-mute" style={{ fontFamily: 'var(--font-label)' }}>
+              This amenity will be removed from all suites and packages currently using it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-3 justify-end mt-4">
+            <AlertDialogCancel className="h-11 border border-samudra-ink text-samudra-ink bg-samudra-paper text-[11px] tracking-[0.3em] uppercase px-6" style={{ fontFamily: 'var(--font-label)' }}>Keep</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteAmenityTarget && handleDeleteAmenity(deleteAmenityTarget.id)}
+              className="h-11 bg-[#7a3d31] text-samudra-paper text-[11px] tracking-[0.3em] uppercase px-6" style={{ fontFamily: 'var(--font-label)' }}>Remove</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <select
-                    value={inclusionFormData.category}
-                    onChange={(e) => setInclusionFormData({ ...inclusionFormData, category: e.target.value })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-hotel-gold"
-                  >
-                    <option value="meals">Meals</option>
-                    <option value="transport">Transport</option>
-                    <option value="activities">Activities</option>
-                    <option value="services">Services</option>
-                    <option value="wellness">Wellness</option>
-                    <option value="special">Special</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
-                  <select
-                    value={inclusionFormData.icon}
-                    onChange={(e) => setInclusionFormData({ ...inclusionFormData, icon: e.target.value })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-hotel-gold"
-                  >
-                    {['check', 'coffee', 'utensils', 'heart', 'car', 'plane', 'bus', 'bike',
-                      'sparkles', 'map', 'chef-hat', 'sun', 'music', 'home', 'mountain',
-                      'headphones', 'shirt', 'phone', 'archive', 'waves', 'activity',
-                      'leaf', 'zap', 'gift', 'camera', 'flower'].map(icon => (
-                        <option key={icon} value={icon}>{icon}</option>
-                      ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  value={inclusionFormData.description}
-                  onChange={(e) => setInclusionFormData({ ...inclusionFormData, description: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-hotel-gold"
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex items-center gap-4">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={inclusionFormData.is_featured}
-                    onChange={(e) => setInclusionFormData({ ...inclusionFormData, is_featured: e.target.checked })}
-                    className="rounded border-gray-300 text-hotel-gold focus:ring-hotel-gold mr-2"
-                  />
-                  <span className="text-sm text-gray-700">Featured inclusion</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={inclusionFormData.is_active}
-                    onChange={(e) => setInclusionFormData({ ...inclusionFormData, is_active: e.target.checked })}
-                    className="rounded border-gray-300 text-hotel-gold focus:ring-hotel-gold mr-2"
-                  />
-                  <span className="text-sm text-gray-700">Active inclusion</span>
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={resetInclusionForm}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-hotel-gold rounded-md hover:bg-hotel-gold-dark"
-                >
-                  {editingInclusion ? 'Update Inclusion' : 'Create Inclusion'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

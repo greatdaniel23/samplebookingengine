@@ -27,6 +27,7 @@ if (import.meta.env.PROD || FORCE_SUPPRESS) {
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./globals.css";
+import "./styles/samudra-admin-theme.css";
 // Load diagnostics only in development AND when not force-suppressed.
 if (import.meta.env.DEV && !FORCE_SUPPRESS) {
 	// Dynamic import prevents inclusion if tree-shaken in production build.

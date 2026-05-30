@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '@/config/paths';
+import { apiClient } from '@/utils/apiClient';
 
 export interface VillaInfo {
   id: number;
@@ -96,36 +97,16 @@ export const useVillaInfo = () => {
 
   const updateVillaInfo = async (data: Partial<VillaInfo>) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/villa`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text);
-        throw new Error('Server returned non-JSON response');
-      }
-      
-      const result = await response.json();
-      
+      const result = await apiClient.put<any>('/api/villa', data);
       if (result.success) {
-        await fetchVillaInfo(); // Refresh data
+        await fetchVillaInfo();
         return { success: true };
       } else {
         return { success: false, error: result.error };
       }
     } catch (err) {
       console.error('Villa info update error:', err);
-      return { success: false, error: 'Failed to update villa information' };
+      return { success: false, error: err instanceof Error ? err.message : 'Failed to update villa information' };
     }
   };
 

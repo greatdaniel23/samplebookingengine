@@ -1,5 +1,6 @@
 // Calendar sync and iCal integration service with automatic sync
 import { paths } from '../config/paths';
+import { getAuthToken } from '../config/cloudflare';
 import { icalService, type ExternalBlock, type ConflictDetection } from './icalService';
 
 // Unified calendar item types (internal bookings + external blocks)
@@ -211,7 +212,11 @@ class CalendarService {
   /** Fetch raw bookings (no server-side date filtering yet) */
   async fetchBookings(): Promise<BookingRange[]> {
     try {
-      const res = await fetch(`${this.apiBase}bookings.php`);
+      const token = getAuthToken();
+      const headers: Record<string, string> = token
+        ? { 'Authorization': `Bearer ${token}` }
+        : {};
+      const res = await fetch(`${this.apiBase}bookings`, { headers });
       const json = await res.json();
       if (!json.success) return [];
       return (json.data || []).map((b: any) => ({
@@ -234,10 +239,12 @@ class CalendarService {
       if (params.source) qs.append('source', params.source);
       if (params.from) qs.append('from', params.from);
       if (params.to) qs.append('to', params.to);
-      const res = await fetch(`${this.apiBase}external_blocks.php?${qs.toString()}`);
+      const res = await fetch(`${this.apiBase}calendar/external-blocks?${qs.toString()}`);
       const json = await res.json();
       if (!json.success) return [];
-      return (json.data || []).map((e: any) => ({
+      // Response shape: { success: true, data: { success: true, data: [...] } } or flat
+      const rows = json.data?.data ?? json.data ?? [];
+      return (Array.isArray(rows) ? rows : []).map((e: any) => ({
         id: Number(e.id),
         start_date: e.start_date,
         end_date: e.end_date,
@@ -311,8 +318,8 @@ class CalendarService {
         ...(options.to_date && { to_date: options.to_date })
       });
 
-      const url = `${this.apiBase}ical.php?${params}`;
-      
+      const url = `${this.apiBase}calendar/ical?${params}`;
+
       // Create download link
       const link = document.createElement('a');
       link.href = url;
@@ -333,14 +340,15 @@ class CalendarService {
    */
   async getSubscriptionUrls(): Promise<CalendarUrls> {
     try {
-      const response = await fetch(`${this.apiBase}ical.php?action=subscribe`);
+      const response = await fetch(`${this.apiBase}calendar/subscribe`);
       const data = await response.json();
       
       if (!data.success) {
         throw new Error(data.error || 'Failed to get subscription URLs');
       }
-      
-      return data;
+
+      // Worker wraps response in { success: true, data: { subscribe_url, ... } }
+      return data.data ?? data;
     } catch (error) {
       console.error('❌ Failed to get subscription URLs:', error);
       throw error;
@@ -360,14 +368,14 @@ class CalendarService {
         ...(options.to_date && { to_date: options.to_date })
       });
 
-      const response = await fetch(`${this.apiBase}ical.php?${params}`);
+      const response = await fetch(`${this.apiBase}calendar/ical?${params}`);
       const data = await response.json();
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Failed to get calendar data');
       }
-      
-      return data;
+
+      return data.data ?? data;
     } catch (error) {
       console.error('❌ Failed to get calendar data:', error);
       throw error;
@@ -490,8 +498,8 @@ class CalendarService {
   isValidCalendarUrl(url: string): boolean {
     try {
       const urlObj = new URL(url);
-      return urlObj.pathname.includes('ical.php') && 
-             urlObj.searchParams.get('action') === 'calendar';
+      return urlObj.pathname.includes('/calendar/ical') ||
+             urlObj.pathname.includes('ical.php');
     } catch {
       return false;
     }
@@ -524,7 +532,7 @@ class CalendarService {
    */
   async getPackageCalendarInfo(packageId: string | number): Promise<PackageCalendarInfo> {
     try {
-      const response = await fetch(`${this.apiBase}ical.php?action=package_calendar&package_id=${encodeURIComponent(packageId)}`);
+      const response = await fetch(`${this.apiBase}calendar/subscribe?package_id=${encodeURIComponent(packageId)}`);
       const result = await response.json();
       
       if (!result.success) {
@@ -559,7 +567,7 @@ class CalendarService {
         params.append('to_date', options.to_date);
       }
 
-      const response = await fetch(`${this.apiBase}ical.php?${params.toString()}`);
+      const response = await fetch(`${this.apiBase}calendar/ical?${params.toString()}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -577,20 +585,21 @@ class CalendarService {
    */
   async getPackageSubscriptionUrls(packageId: string | number): Promise<CalendarUrls> {
     try {
-      const response = await fetch(`${this.apiBase}ical.php?action=subscribe&package_id=${encodeURIComponent(packageId)}`);
+      const response = await fetch(`${this.apiBase}calendar/subscribe?package_id=${encodeURIComponent(packageId)}`);
       const result = await response.json();
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to get subscription URLs');
       }
-      
+
+      // Worker wraps in { success: true, data: { subscribe_url, webcal_url, instructions } }
+      const d = result.data ?? result;
+
       return {
-        ical: result.subscribe_url,
-        webcal: result.webcal_url,
-        google_calendar: result.instructions.google_calendar,
-        outlook: result.instructions.outlook,
-        apple_calendar: result.instructions.apple_calendar,
-        airbnb: result.instructions.airbnb
+        subscribe_url: d.subscribe_url,
+        webcal_url: d.webcal_url,
+        success: true,
+        instructions: d.instructions || {},
       };
     } catch (error) {
       console.error('❌ Failed to get package subscription URLs:', error);

@@ -1,59 +1,55 @@
 import { useState, useEffect } from 'react';
 import { paths } from '@/config/paths';
+import { apiClient } from '@/utils/apiClient';
 
 export interface HomepageContent {
-  // Hero Section
+  // Hero Section — from homepage_settings table
   hero_title: string;
   hero_subtitle: string;
   hero_description: string;
-  
-  // Basic Info (compatible with existing villa info structure)
+
+  // Basic Info
   name: string;
   location: string;
   description: string;
   rating: number;
   reviews: number;
-  
+
   // Contact Information
   phone: string;
   email: string;
   website: string;
-  
+
   // Address Details
   address: string;
   city: string;
   state: string;
   country: string;
   zipcode: string;
-  
+
   // Property Specifications
   maxGuests: number;
   bedrooms: number;
   bathrooms: number;
   basePrice: number;
-  
-  // Timing Information - support both formats
+
+  // Timing
   checkIn: string;
   checkOut: string;
-  checkInTime?: string;
-  checkOutTime?: string;
-  
-  // Property Policies
+
+  // Policies
   cancellationPolicy: string;
   houseRules: string;
   termsConditions: string;
-  
-  // Social Media Links
+
+  // Social Media
   facebook: string;
   instagram: string;
   twitter: string;
-  
-  // Media Content
+
+  // Media
   images: string[];
-  amenities: Array<{
-    name: string;
-    icon: string;
-  }>;
+  amenities: Array<{ name: string; icon: string }>;
 }
 
 interface UseHomepageContentResult {
@@ -77,95 +73,83 @@ export const useHomepageContent = (): UseHomepageContentResult => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Use working villa API instead of broken homepage
-      // Add cache-busting parameter to ensure fresh data
-      const apiUrl = paths.buildApiUrl('villa') + `?t=${Date.now()}`;
-      
-      console.log('🔄 Fetching villa data from:', apiUrl);
-      
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-        mode: 'cors',
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+
+      // Fetch from homepage_settings (hero + social + policies)
+      const hsUrl = paths.buildApiUrl('homepage-settings');
+      const hsRes = await fetch(hsUrl, { headers: { Accept: 'application/json' } });
+      if (!hsRes.ok) throw new Error(`homepage-settings HTTP ${hsRes.status}`);
+      const hsResult = await hsRes.json();
+      if (!hsResult.success) throw new Error(hsResult.error || 'Failed to fetch homepage settings');
+      const hs = hsResult.data;
+
+      // Also fetch villa_info for the basic property data that's maintained there
+      const villaUrl = paths.buildApiUrl('villa');
+      const villaRes = await fetch(villaUrl, { headers: { Accept: 'application/json' } });
+      // villa data is best-effort; if it fails we fall back to homepage_settings values
+      let villa: any = {};
+      if (villaRes.ok) {
+        const villaResult = await villaRes.json();
+        if (villaResult.success && villaResult.data) villa = villaResult.data;
       }
-      
-      const result = await response.json();
-      
-      
-      if (result.success && result.data) {
-        // Transform villa API response to match frontend interface
-        // villa.php returns data from villa_info table with snake_case fields
-        const transformedData: HomepageContent = {
-          // Hero section - derive from villa data
-          hero_title: result.data.name || 'Rumah Daisy Cantik',
-          hero_subtitle: 'Luxury Villa Experience in Bali',
-          hero_description: result.data.description || 'Experience unparalleled luxury and comfort',
-          
-          // Map villa_info table fields correctly
-          name: result.data.name || 'Rumah Daisy Cantik',
-          location: result.data.location || `${result.data.city || ''}, ${result.data.state || ''}, ${result.data.country || ''}`.replace(/(^, |, $|, , )/g, '') || 'Bali, Indonesia',
-          description: result.data.description || '',
-          rating: parseFloat(result.data.rating) || 4.9,
-          reviews: parseInt(result.data.reviews) || 0,
-          
-          // Contact information (villa_info fields)
-          phone: result.data.phone || '',
-          email: result.data.email || '',
-          website: result.data.website || '',
-          
-          // Address details (villa_info fields)
-          address: result.data.address || '',
-          city: result.data.city || '',
-          state: result.data.state || '',
-          country: result.data.country || '',
-          zipcode: result.data.zipCode || result.data.postal_code || '', // API maps postal_code to zipCode
-          
-          // Property specifications (from villa_info, with defaults)
-          maxGuests: parseInt(result.data.max_guests) || 8,
-          bedrooms: parseInt(result.data.bedrooms) || 4,
-          bathrooms: parseInt(result.data.bathrooms) || 3,
-          basePrice: parseFloat(result.data.price_per_night) || 0,
-          
-          // Timing (villa_info fields - API maps to camelCase)
-          checkIn: result.data.checkInTime || result.data.check_in_time || '15:00',
-          checkOut: result.data.checkOutTime || result.data.check_out_time || '11:00',
-          
-          // Policies (villa_info fields - API maps to camelCase)
-          cancellationPolicy: result.data.cancellationPolicy || result.data.cancellation_policy || '',
-          houseRules: result.data.houseRules || result.data.house_rules || '',
-          termsConditions: '', // Not in villa_info table
-          
-          // Social media (from villa_info.social_media JSON)
-          facebook: result.data.socialMedia?.facebook || '',
-          instagram: result.data.socialMedia?.instagram || '',
-          twitter: result.data.socialMedia?.twitter || '',
-          
-          // Media content (villa_info fields)
-          images: Array.isArray(result.data.images) ? result.data.images : [],
-          amenities: Array.isArray(result.data.amenities) ? result.data.amenities : []
-        };
-        
-        
-        setHomepageContent(transformedData);
-        
-      } else {
-        throw new Error(result.message || 'Failed to fetch homepage content');
-      }
+
+      // Merge: homepage_settings is canonical for hero + social + policies
+      // villa_info is canonical for basic contact + specs (until the two-table consolidation)
+      const merged: HomepageContent = {
+        // Hero — homepage_settings owns this
+        hero_title: hs.hero_title || '',
+        hero_subtitle: hs.hero_subtitle || '',
+        hero_description: hs.hero_description || '',
+
+        // Basic info — prefer homepage_settings, fall back to villa
+        name: hs.property_name || villa.name || '',
+        location: hs.property_location || villa.location || '',
+        description: hs.property_description || villa.description || '',
+        rating: hs.property_rating ?? villa.rating ?? 4.8,
+        reviews: hs.property_reviews ?? villa.reviews ?? 0,
+
+        // Contact — prefer homepage_settings columns, fall back to villa
+        phone: hs.contact_phone || villa.phone || '',
+        email: hs.contact_email || villa.email || '',
+        website: hs.contact_website || villa.website || '',
+
+        // Address
+        address: hs.address_street || villa.address || '',
+        city: hs.address_city || villa.city || '',
+        state: hs.address_state || villa.state || '',
+        country: hs.address_country || villa.country || '',
+        zipcode: hs.address_zipcode || villa.zipCode || '',
+
+        // Specs
+        maxGuests: hs.spec_max_guests ?? villa.maxGuests ?? 8,
+        bedrooms: hs.spec_bedrooms ?? villa.bedrooms ?? 4,
+        bathrooms: hs.spec_bathrooms ?? villa.bathrooms ?? 3,
+        basePrice: hs.spec_base_price ?? 0,
+
+        // Timing
+        checkIn: hs.timing_check_in || villa.checkInTime || '15:00',
+        checkOut: hs.timing_check_out || villa.checkOutTime || '11:00',
+
+        // Policies — homepage_settings owns this
+        cancellationPolicy: hs.policy_cancellation || villa.cancellationPolicy || '',
+        houseRules: hs.policy_house_rules || villa.houseRules || '',
+        termsConditions: hs.policy_terms_conditions || '',
+
+        // Social — homepage_settings owns this
+        facebook: hs.social_facebook || '',
+        instagram: hs.social_instagram || '',
+        twitter: hs.social_twitter || '',
+
+        // Media
+        images: (() => {
+          try { return JSON.parse(hs.images_json || '[]'); } catch { return []; }
+        })(),
+        amenities: Array.isArray(villa.amenities) ? villa.amenities : [],
+      };
+
+      setHomepageContent(merged);
     } catch (err) {
-      console.error('🚨 Homepage content fetch error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch homepage content';
-      setError(errorMessage);
-      
-      // DON'T set fallback data - let the error show so user knows there's an issue
-      // The previous hardcoded fallback was overwriting real database values
-      // setHomepageContent(null) will show error state in UI
+      console.error('Homepage content fetch error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch homepage content');
       setHomepageContent(null);
     } finally {
       setLoading(false);
@@ -174,99 +158,68 @@ export const useHomepageContent = (): UseHomepageContentResult => {
 
   const updateHomepageContent = async (data: Partial<HomepageContent>) => {
     try {
-      const apiUrl = paths.buildApiUrl('villa');
-      
-      
-      
-      // SAFE UPDATE - Send all villa_info table fields that exist in production
-      const apiData: any = {};
-      
-      // Core basic info - these should always work
-      if (data.name !== undefined) apiData.name = data.name;
-      if (data.description !== undefined) apiData.description = data.description;
-      
-      // Contact info - basic fields
-      if (data.phone !== undefined) apiData.phone = data.phone;
-      if (data.email !== undefined) apiData.email = data.email;
-      if (data.website !== undefined) apiData.website = data.website;
-      
-      // Address fields - these exist in villa_info table
-      if (data.address !== undefined) apiData.address = data.address;
-      if (data.city !== undefined) apiData.city = data.city;
-      if (data.state !== undefined) apiData.state = data.state;
-      if (data.country !== undefined) apiData.country = data.country;
-      if (data.zipcode !== undefined) apiData.postal_code = data.zipcode; // Map zipcode to postal_code for database
-      
-      // Policies - should work since these are text fields
-      if (data.cancellationPolicy !== undefined) apiData.cancellationPolicy = data.cancellationPolicy;
-      if (data.houseRules !== undefined) apiData.houseRules = data.houseRules;
-      
-      // Property specifications - these exist in villa_info table
-      if (data.maxGuests !== undefined) apiData.max_guests = data.maxGuests;
-      if (data.bedrooms !== undefined) apiData.total_rooms = data.bedrooms; 
-      if (data.bathrooms !== undefined) apiData.total_bathrooms = data.bathrooms;
-      
-      // Rating and reviews
-      if (data.rating !== undefined) apiData.rating = data.rating;
-      if (data.reviews !== undefined) apiData.reviews = data.reviews;
-      
-      // Timing - support both checkIn/checkInTime formats
-      if (data.checkIn !== undefined) apiData.check_in_time = data.checkIn;
-      if (data.checkOut !== undefined) apiData.check_out_time = data.checkOut;
-      if (data.checkInTime !== undefined) apiData.check_in_time = data.checkInTime;
-      if (data.checkOutTime !== undefined) apiData.check_out_time = data.checkOutTime;
-      
-      // Ensure we always have required fields if nothing else is provided
-      if (Object.keys(apiData).length === 0) {
-        apiData.name = 'Rumah Daisy Cantik';
-        apiData.description = '';
+      // Write hero + social + policies to homepage_settings
+      const hsPayload: Record<string, any> = {};
+      if (data.hero_title !== undefined) hsPayload.hero_title = data.hero_title;
+      if (data.hero_subtitle !== undefined) hsPayload.hero_subtitle = data.hero_subtitle;
+      if (data.hero_description !== undefined) hsPayload.hero_description = data.hero_description;
+      if (data.name !== undefined) hsPayload.property_name = data.name;
+      if (data.location !== undefined) hsPayload.property_location = data.location;
+      if (data.description !== undefined) hsPayload.property_description = data.description;
+      if (data.phone !== undefined) hsPayload.contact_phone = data.phone;
+      if (data.email !== undefined) hsPayload.contact_email = data.email;
+      if (data.website !== undefined) hsPayload.contact_website = data.website;
+      if (data.address !== undefined) hsPayload.address_street = data.address;
+      if (data.city !== undefined) hsPayload.address_city = data.city;
+      if (data.state !== undefined) hsPayload.address_state = data.state;
+      if (data.country !== undefined) hsPayload.address_country = data.country;
+      if (data.zipcode !== undefined) hsPayload.address_zipcode = data.zipcode;
+      if (data.maxGuests !== undefined) hsPayload.spec_max_guests = data.maxGuests;
+      if (data.bedrooms !== undefined) hsPayload.spec_bedrooms = data.bedrooms;
+      if (data.bathrooms !== undefined) hsPayload.spec_bathrooms = data.bathrooms;
+      if (data.basePrice !== undefined) hsPayload.spec_base_price = data.basePrice;
+      if (data.checkIn !== undefined) hsPayload.timing_check_in = data.checkIn;
+      if (data.checkOut !== undefined) hsPayload.timing_check_out = data.checkOut;
+      if (data.cancellationPolicy !== undefined) hsPayload.policy_cancellation = data.cancellationPolicy;
+      if (data.houseRules !== undefined) hsPayload.policy_house_rules = data.houseRules;
+      if (data.termsConditions !== undefined) hsPayload.policy_terms_conditions = data.termsConditions;
+      if (data.facebook !== undefined) hsPayload.social_facebook = data.facebook;
+      if (data.instagram !== undefined) hsPayload.social_instagram = data.instagram;
+      if (data.twitter !== undefined) hsPayload.social_twitter = data.twitter;
+      if (data.images !== undefined) hsPayload.images_json = JSON.stringify(data.images);
+
+      if (Object.keys(hsPayload).length > 0) {
+        // Direct Worker URL + auth (homepage-settings has no Pages-Function proxy)
+        const result = await apiClient.put<any>('/api/homepage-settings', hsPayload);
+        if (!result.success) throw new Error(result.error || 'Update failed');
       }
-      
-      
-      
-      console.log('🔄 Sending update to API:', apiData);
-      
-      const response = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(apiData)
-      });
-      
-      if (!response.ok) {
-        // Get error details from response
-        let errorText = `HTTP error! status: ${response.status}`;
-        try {
-          const errorBody = await response.text();
-          console.error('🚨 API Error Response:', errorBody);
-          errorText += ` - ${errorBody}`;
-        } catch (e) {
-          console.error('🚨 Could not read error response');
-        }
-        throw new Error(errorText);
+
+      // Also mirror basic villa info to villa_info table for public site rendering
+      const villaPayload: Record<string, any> = {};
+      if (data.name !== undefined) villaPayload.name = data.name;
+      if (data.description !== undefined) villaPayload.description = data.description;
+      if (data.phone !== undefined) villaPayload.phone = data.phone;
+      if (data.email !== undefined) villaPayload.email = data.email;
+      if (data.website !== undefined) villaPayload.website = data.website;
+      if (data.address !== undefined) villaPayload.address = data.address;
+      if (data.maxGuests !== undefined) villaPayload.max_guests = data.maxGuests;
+      if (data.bedrooms !== undefined) villaPayload.total_rooms = data.bedrooms;
+      if (data.bathrooms !== undefined) villaPayload.total_bathrooms = data.bathrooms;
+      if (data.checkIn !== undefined) villaPayload.check_in_time = data.checkIn;
+      if (data.checkOut !== undefined) villaPayload.check_out_time = data.checkOut;
+      if (data.cancellationPolicy !== undefined) villaPayload.cancellationPolicy = data.cancellationPolicy;
+      if (data.houseRules !== undefined) villaPayload.houseRules = data.houseRules;
+
+      if (Object.keys(villaPayload).length > 0) {
+        // Best effort — ignore villa write errors since homepage_settings is now canonical
+        apiClient.put('/api/villa', villaPayload).catch(() => {});
       }
-      
-      const result = await response.json();
-      
-      
-      if (result.success) {
-        // Refresh data after successful update
-        await fetchHomepageContent();
-        return { 
-          success: true, 
-          message: result.message || 'Homepage content updated successfully'
-        };
-      } else {
-        throw new Error(result.message || 'Failed to update homepage content');
-      }
+
+      await fetchHomepageContent();
+      return { success: true, message: 'Homepage content updated successfully' };
     } catch (err) {
-      console.error('🚨 Homepage content update error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to update homepage content';
-      return { 
-        success: false, 
-        error: errorMessage
-      };
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -274,11 +227,5 @@ export const useHomepageContent = (): UseHomepageContentResult => {
     fetchHomepageContent();
   }, []);
 
-  return {
-    homepageContent,
-    loading,
-    error,
-    refetch: fetchHomepageContent,
-    updateHomepageContent
-  };
+  return { homepageContent, loading, error, refetch: fetchHomepageContent, updateHomepageContent };
 };

@@ -25,19 +25,14 @@ const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 // Lazy load shared pages
 const NotFound = lazy(() => import("./pages/shared/NotFound"));
 
-// Lazy load debug pages
-const ApiDebug = lazy(() => import("./pages/debug/ApiDebug"));
-const DebugPackages = lazy(() => import("./components/DebugPackages"));
-const ComprehensiveDebug = lazy(() => import("./components/ComprehensiveDebug"));
-const ApiUrlTester = lazy(() => import("./components/ApiUrlTester"));
-const ApiTestComponent = lazy(() => import("./components/ApiTestComponent"));
+// Debug pages removed — P1-1 remediation 2026-05-18
 
 // Loading component for lazy-loaded routes
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
     <div className="flex flex-col items-center space-y-4">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-hotel-gold"></div>
-      <p className="text-hotel-navy">Loading...</p>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-samudra-gold"></div>
+      <p className="text-samudra-ink">Loading...</p>
     </div>
   </div>
 );
@@ -74,11 +69,6 @@ const App = () => (
                 </AdminGuard>
               } />
               <Route path="/images" element={<ImageGalleryPage />} />
-              <Route path="/debug-packages" element={<DebugPackages />} />
-              <Route path="/api-debug" element={<ApiDebug />} />
-              <Route path="/api-test" element={<ApiTestComponent />} />
-              <Route path="/env-debug" element={<ComprehensiveDebug />} />
-              <Route path="/api-url-test" element={<ApiUrlTester />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

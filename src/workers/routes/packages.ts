@@ -1,16 +1,13 @@
 import { Env } from '../types';
-import { getTokenFromHeader, verifyToken } from '../utils/auth';
+import { requireAuth } from '../utils/auth';
 
 export async function handlePackages(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
 
   // Auth check for non-GET methods
   if (method !== 'GET') {
-    const authHeader = request.headers.get('Authorization');
-    const token = getTokenFromHeader(authHeader);
-    const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
-
-    if (!valid) {
+    const auth = await requireAuth(request, env);
+    if (!auth.valid) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Unauthorized'
@@ -58,6 +55,7 @@ export async function handlePackages(url: URL, method: string, body: any, env: E
             'valid_until', valid_until,
             'min_nights', min_nights,
             'max_nights', max_nights,
+            'image_url', image_url,
             'images', CASE WHEN json_valid(images) THEN json(images) ELSE json('[]') END,
             'inclusions', inclusions,
             'exclusions', exclusions,
@@ -147,12 +145,12 @@ export async function handlePackages(url: URL, method: string, body: any, env: E
            FROM package_rooms pr
            JOIN rooms r ON pr.room_id = r.id
            WHERE pr.package_id = ?
-           ORDER BY pr.is_default DESC, pr.availability_priority`
+           ORDER BY pr.is_default DESC, pr.id ASC`
         : `SELECT pr.*, r.name as room_name, r.description as room_description, r.images as room_images
            FROM package_rooms pr
            JOIN rooms r ON pr.room_id = r.id
            WHERE pr.package_id = ? AND pr.is_active = 1
-           ORDER BY pr.is_default DESC, pr.availability_priority`;
+           ORDER BY pr.is_default DESC, pr.id ASC`;
       
       const result = await env.DB.prepare(query).bind(packageId).all();
       
@@ -545,8 +543,10 @@ export async function handlePackages(url: URL, method: string, body: any, env: E
   if (pathParts.length === 4 && pathParts[3] === 'amenities' && method === 'GET') {
     try {
       const packageId = parseInt(pathParts[2]);
+      // NOTE: custom_note column was removed from package_amenities — do NOT select it.
+      // The K3 migration added is_highlighted; custom_note was never migrated and does not exist.
       const result = await env.DB.prepare(`
-        SELECT pa.amenity_id as id, a.name, a.description, a.category, a.icon, pa.is_highlighted, pa.custom_note
+        SELECT pa.amenity_id as id, a.name, a.description, a.category, a.icon, pa.is_highlighted
         FROM package_amenities pa
         JOIN amenities a ON pa.amenity_id = a.id
         WHERE pa.package_id = ? AND pa.is_active = 1 AND a.is_active = 1
@@ -563,9 +563,11 @@ export async function handlePackages(url: URL, method: string, body: any, env: E
         },
       });
     } catch (error: any) {
+      // Log full detail server-side only — never echo raw DB error to client.
+      console.error('Error loading package amenities:', error);
       return new Response(JSON.stringify({
         success: false,
-        error: error.message
+        error: 'Could not load amenities'
       }), {
         status: 500,
         headers: {
@@ -826,9 +828,15 @@ export async function handlePackages(url: URL, method: string, body: any, env: E
   }
 
   // DELETE /api/packages - soft delete package
+  // Accepts id from: (a) request body JSON, or (b) URL search param ?id=N
+  // This guards against null-body crash ("Cannot destructure property 'id' of null")
+  // which leaked a raw JS runtime trace to the client.
   if (pathParts.length === 2 && method === 'DELETE') {
     try {
-      const { id } = body;
+      // Prefer body.id; fall back to ?id= query param for clients that don't send body on DELETE.
+      const bodyId = body?.id;
+      const queryId = url.searchParams.get('id');
+      const id = bodyId ?? (queryId ? parseInt(queryId, 10) : null);
 
       if (!id) {
         return new Response(JSON.stringify({
@@ -836,6 +844,23 @@ export async function handlePackages(url: URL, method: string, body: any, env: E
           error: 'Package ID is required'
         }), {
           status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      }
+
+      // Check package exists before soft-delete so we can return a meaningful 404
+      const existing = await env.DB.prepare(
+        'SELECT id FROM packages WHERE id = ? AND is_active = 1'
+      ).bind(id).first();
+      if (!existing) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Package not found'
+        }), {
+          status: 404,
           headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
@@ -857,9 +882,11 @@ export async function handlePackages(url: URL, method: string, body: any, env: E
         },
       });
     } catch (error: any) {
+      // Log detail server-side only — never echo raw JS trace to client.
+      console.error('Error deleting package:', error);
       return new Response(JSON.stringify({
         success: false,
-        error: error.message
+        error: 'Could not delete package'
       }), {
         status: 500,
         headers: {

@@ -280,7 +280,7 @@ const RoomDetails: React.FC = () => {
         </nav>
         <div className="container mx-auto px-4 py-8 text-center">
           <div className="max-w-md mx-auto">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Room Not Found</h1>
+            <h1 className="font-display text-2xl font-medium text-gray-900 mb-4">Room Not Found</h1>
             <p className="text-gray-600 mb-6">{error || 'The room you are looking for could not be found.'}</p>
             <button
               onClick={handleBackToRooms}
@@ -393,8 +393,8 @@ const RoomDetails: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">{room.name}</h1>
-                <p className="text-gray-600 text-lg leading-relaxed">
+                <h1 className="font-display text-3xl md:text-4xl font-medium text-gray-900 mb-4">{room.name}</h1>
+                <p className="text-base text-gray-600 leading-relaxed">
                   {room.description || `Experience comfort and luxury in our ${room.type || 'beautiful'} room. 
                   Perfect for ${room.capacity || room.occupancy || 2} guests, this room offers modern amenities 
                   and a peaceful atmosphere for your stay.`}
@@ -440,7 +440,7 @@ const RoomDetails: React.FC = () => {
               <div className="border-t pt-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-xl font-bold text-gray-900">
                       {villaInfo?.currency === 'IDR' ? 'Rp ' : '$'}{room.price}
                     </p>
                     <p className="text-sm text-gray-500">per night</p>
@@ -479,7 +479,7 @@ const RoomDetails: React.FC = () => {
           <div className="lg:col-span-2 space-y-8">
             {features.length > 0 && (
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Room Features</h2>
+                <h2 className="font-display text-2xl font-medium text-gray-900 mb-4">Room Features</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {features.map((feature, index) => (
                     <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
@@ -494,7 +494,7 @@ const RoomDetails: React.FC = () => {
             {/* Room Amenities */}
             {roomAmenities.length > 0 && (
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Amenities</h2>
+                <h2 className="font-display text-2xl font-medium text-gray-900 mb-4">Amenities</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {roomAmenities.map((amenity, index) => (
                     <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
@@ -508,7 +508,7 @@ const RoomDetails: React.FC = () => {
 
             {/* Policies */}
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Policies</h2>
+              <h2 className="font-display text-2xl font-medium text-gray-900 mb-4">Policies</h2>
               <div className="space-y-4">
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">

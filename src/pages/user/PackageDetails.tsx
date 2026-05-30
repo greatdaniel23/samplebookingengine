@@ -54,7 +54,9 @@ import {
   Camera,
   Flower,
   PartyPopper,
-  Search
+  Search,
+  X,
+  ChevronDown
 } from 'lucide-react';
 import NotFound from '../shared/NotFound';
 import BookingSkeleton from '@/components/BookingSkeleton';
@@ -107,6 +109,9 @@ const PackageDetails = () => {
   const [tempCheckOut, setTempCheckOut] = useState(checkOut || '');
   const [tempGuests, setTempGuests] = useState(guests);
   const [showGuestDropdown, setShowGuestDropdown] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [taxPercentage, setTaxPercentage] = useState(11);
+  const [serviceFeePercentage, setServiceFeePercentage] = useState(10);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
 
   // Room image lightbox state
@@ -338,6 +343,25 @@ const PackageDetails = () => {
     fetchPackage();
   }, [packageId]);
 
+  // Fetch tax & service fee from villa settings
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch(paths.buildApiUrl('villa'));
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            if (result.data.tax_percentage !== undefined) setTaxPercentage(parseFloat(result.data.tax_percentage));
+            if (result.data.service_fee_percentage !== undefined) setServiceFeePercentage(parseFloat(result.data.service_fee_percentage));
+          }
+        }
+      } catch (err) {
+        // Use defaults (11% tax, 10% service fee)
+      }
+    };
+    fetchSettings();
+  }, []);
+
   if (loading) {
     return <BookingSkeleton />;
   }
@@ -362,7 +386,7 @@ const PackageDetails = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto bg-white border border-gray-200 rounded-lg shadow-sm">
           <div className="p-6 text-center">
-            <h2 className="text-xl font-semibold mb-2 text-hotel-navy">Package Not Available</h2>
+            <h2 className="font-display text-xl font-medium text-gray-900 mb-2">Package Not Available</h2>
             <p className="text-hotel-bronze mb-4">
               This package is currently not available for booking.
             </p>
@@ -393,6 +417,9 @@ const PackageDetails = () => {
   };
 
   const finalPrice = calculateFinalPrice();
+  const serviceFeeAmount = Math.round(finalPrice * (serviceFeePercentage / 100));
+  const taxAmount = Math.round((finalPrice + serviceFeeAmount) * (taxPercentage / 100));
+  const totalWithFeesAndTax = finalPrice + serviceFeeAmount + taxAmount;
 
   const handleBookNow = () => {
     // Require dates and room selection before proceeding to booking
@@ -417,6 +444,9 @@ const PackageDetails = () => {
     params.set('finalPrice', finalPrice.toString());
     params.set('roomAdjustment', (selectedRoom?.price_adjustment || 0).toString());
     params.set('adjustmentType', selectedRoom?.adjustment_type || 'fixed');
+    params.set('taxPercentage', taxPercentage.toString());
+    params.set('serviceFeePercentage', serviceFeePercentage.toString());
+    params.set('totalWithFees', totalWithFeesAndTax.toString());
 
     // Track book now click
     import('@/utils/ga4Analytics').then(({ trackButtonClick }) => {
@@ -579,8 +609,8 @@ const PackageDetails = () => {
           <p className="text-hotel-gold text-xs md:text-sm font-semibold mb-3 uppercase tracking-widest">
             {packageConfig.badge}
           </p>
-          <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-medium mb-4 leading-tight tracking-tight text-hotel-charcoal">{pkg.name}</h1>
-          <p className="text-base md:text-lg text-hotel-bronze max-w-3xl leading-relaxed">{pkg.description}</p>
+          <h1 className="font-display text-3xl md:text-4xl font-medium text-gray-900 mb-4 leading-tight tracking-tight">{pkg.name}</h1>
+          <p className="text-base text-gray-600 max-w-3xl leading-relaxed">{pkg.description}</p>
           <div className="flex flex-wrap gap-3 md:gap-4 mt-6">
             {pkg.duration && (
               <span className="inline-flex items-center gap-2 text-sm text-hotel-bronze">
@@ -616,113 +646,166 @@ const PackageDetails = () => {
           <div className="lg:col-span-2 space-y-6 md:space-y-8">
 
             {/* Date Selection Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
-                {/* Dates */}
-                <div className="flex gap-2 md:flex-1">
-                  <div className="flex-1">
-                    <label className="block text-xs text-gray-500 mb-1">Check-in</label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="date"
-                        value={tempCheckIn}
-                        onChange={(e) => setTempCheckIn(e.target.value)}
-                        min={new Date().toISOString().split('T')[0]}
-                        className="w-full text-sm border border-gray-300 rounded-lg pl-9 pr-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-hotel-sage focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-xs text-gray-500 mb-1">Check-out</label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="date"
-                        value={tempCheckOut}
-                        onChange={(e) => setTempCheckOut(e.target.value)}
-                        min={tempCheckIn || new Date().toISOString().split('T')[0]}
-                        className="w-full text-sm border border-gray-300 rounded-lg pl-9 pr-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-hotel-sage focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mobile Nights Display */}
-                {tempCheckIn && tempCheckOut && (
-                  <div className="text-xs text-hotel-sage text-center md:hidden">
-                    {Math.max(1, Math.ceil((new Date(tempCheckOut).getTime() - new Date(tempCheckIn).getTime()) / (1000 * 3600 * 24)))} night(s)
-                  </div>
-                )}
-
-                {/* Divider */}
-                <div className="hidden md:block w-px h-10 bg-gray-200"></div>
-
-                {/* Guests */}
-                <div className="relative md:min-w-[180px]">
-                  <label className="block text-xs text-gray-500 mb-1">Guests</label>
-                  <div
-                    className="flex items-center justify-between gap-2 cursor-pointer border border-gray-300 px-3 py-2.5 rounded-lg hover:border-hotel-sage transition-colors"
-                    onClick={() => setShowGuestDropdown(!showGuestDropdown)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm">{tempGuests} Guest{tempGuests !== 1 ? 's' : ''}</span>
-                    </div>
-                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${showGuestDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"></path></svg>
-                  </div>
-
-                  {/* Guest Dropdown */}
-                  {showGuestDropdown && (
-                    <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-20">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Guests</span>
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setTempGuests(Math.max(1, tempGuests - 1)); }}
-                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
-                          >-</button>
-                          <span className="w-8 text-center">{tempGuests}</span>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setTempGuests(Math.min(pkg?.max_guests || 10, tempGuests + 1)); }}
-                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
-                          >+</button>
+            {(() => {
+              const nights = tempCheckIn && tempCheckOut
+                ? Math.max(1, Math.ceil((new Date(tempCheckOut).getTime() - new Date(tempCheckIn).getTime()) / (1000 * 3600 * 24)))
+                : 0;
+              const handleAvailability = () => {
+                if (tempCheckIn && tempCheckOut) {
+                  const params = new URLSearchParams(window.location.search);
+                  params.set('checkin', tempCheckIn);
+                  params.set('checkout', tempCheckOut);
+                  params.set('guests', tempGuests.toString());
+                  navigate(`${window.location.pathname}?${params.toString()}`, { replace: true });
+                  setMobileSearchOpen(false);
+                } else {
+                  alert('Please select check-in and check-out dates');
+                }
+              };
+              return (
+                <>
+                  {/* ── MOBILE: compact pill ── */}
+                  <div className="md:hidden bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
+                    <button onClick={() => setMobileSearchOpen(true)} className="w-full flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Search className="w-4 h-4 text-hotel-sage flex-shrink-0" />
+                        <div className="text-left min-w-0">
+                          <div className="text-sm font-medium text-gray-800 truncate">
+                            {tempCheckIn && tempCheckOut
+                              ? `${new Date(tempCheckIn + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} → ${new Date(tempCheckOut + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
+                              : 'Select dates'}
+                            {nights > 0 && <span className="text-gray-400 font-normal"> · {nights}n</span>}
+                          </div>
+                          <div className="text-xs text-gray-400">{tempGuests} Guest{tempGuests !== 1 ? 's' : ''}</div>
                         </div>
                       </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setShowGuestDropdown(false); }}
-                        className="w-full mt-3 bg-hotel-sage text-white py-2 rounded-lg hover:bg-hotel-sage-dark transition-colors text-sm"
-                      >
-                        Done
-                      </button>
+                      <span className="flex-shrink-0 bg-hotel-sage text-white text-xs font-medium px-3 py-1.5 rounded-lg">Edit</span>
+                    </button>
+                  </div>
+
+                  {/* ── MOBILE bottom sheet ── */}
+                  {mobileSearchOpen && (
+                    <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
+                      <div className="absolute inset-0 bg-black/40" onClick={() => setMobileSearchOpen(false)} />
+                      <div className="relative bg-white rounded-t-2xl p-5 flex flex-col gap-4 shadow-2xl">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="text-base font-semibold text-gray-800">Check Availability</h3>
+                          <button onClick={() => setMobileSearchOpen(false)} className="p-1 rounded-full hover:bg-gray-100">
+                            <X className="w-5 h-5 text-gray-500" />
+                          </button>
+                        </div>
+                        {/* Dates */}
+                        <div className="flex gap-3">
+                          <div className="flex-1 min-w-0">
+                            <label className="block text-xs text-gray-500 mb-1">Check-in</label>
+                            <div className="relative">
+                              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                              <input type="date" value={tempCheckIn} onChange={(e) => setTempCheckIn(e.target.value)} min={new Date().toISOString().split('T')[0]}
+                                className="w-full text-sm border border-gray-300 rounded-lg pl-9 pr-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-hotel-sage focus:border-transparent" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <label className="block text-xs text-gray-500 mb-1">Check-out</label>
+                            <div className="relative">
+                              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                              <input type="date" value={tempCheckOut} onChange={(e) => setTempCheckOut(e.target.value)} min={tempCheckIn || new Date().toISOString().split('T')[0]}
+                                className="w-full text-sm border border-gray-300 rounded-lg pl-9 pr-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-hotel-sage focus:border-transparent" />
+                            </div>
+                          </div>
+                        </div>
+                        {nights > 0 && <div className="text-xs text-hotel-sage text-center">{nights} night{nights !== 1 ? 's' : ''}</div>}
+                        {/* Guests */}
+                        <div className="relative">
+                          <label className="block text-xs text-gray-500 mb-1">Guests</label>
+                          <div className="flex items-center justify-between gap-2 cursor-pointer border border-gray-300 px-3 py-2.5 rounded-lg hover:border-hotel-sage transition-colors"
+                            onClick={() => setShowGuestDropdown(!showGuestDropdown)}>
+                            <div className="flex items-center gap-2">
+                              <Users className="w-4 h-4 text-gray-400" />
+                              <span className="text-sm">{tempGuests} Guest{tempGuests !== 1 ? 's' : ''}</span>
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showGuestDropdown ? 'rotate-180' : ''}`} />
+                          </div>
+                          {showGuestDropdown && (
+                            <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-30">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">Guests</span>
+                                <div className="flex items-center gap-3">
+                                  <button onClick={(e) => { e.stopPropagation(); setTempGuests(Math.max(1, tempGuests - 1)); }} className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100">−</button>
+                                  <span className="w-8 text-center">{tempGuests}</span>
+                                  <button onClick={(e) => { e.stopPropagation(); setTempGuests(Math.min(pkg?.max_guests || 10, tempGuests + 1)); }} className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100">+</button>
+                                </div>
+                              </div>
+                              <button onClick={(e) => { e.stopPropagation(); setShowGuestDropdown(false); }} className="w-full mt-3 bg-hotel-sage text-white py-2 rounded-lg hover:bg-hotel-sage-dark transition-colors text-sm">Done</button>
+                            </div>
+                          )}
+                        </div>
+                        <button onClick={handleAvailability} className="w-full flex items-center justify-center gap-2 bg-hotel-sage text-white px-6 py-3 rounded-lg font-medium hover:bg-hotel-sage-dark transition-colors">
+                          <Search className="w-4 h-4" />
+                          <span>Check Availability</span>
+                        </button>
+                      </div>
                     </div>
                   )}
-                </div>
 
-                {/* Button */}
-                <button
-                  onClick={() => {
-                    if (tempCheckIn && tempCheckOut) {
-                      const params = new URLSearchParams(window.location.search);
-                      params.set('checkin', tempCheckIn);
-                      params.set('checkout', tempCheckOut);
-                      params.set('guests', tempGuests.toString());
-                      navigate(`${window.location.pathname}?${params.toString()}`, { replace: true });
-                    } else {
-                      alert('Please select check-in and check-out dates');
-                    }
-                  }}
-                  className="w-full md:w-auto flex items-center justify-center gap-2 bg-hotel-sage text-white px-6 py-3 rounded-lg font-medium hover:bg-hotel-sage-dark transition-colors whitespace-nowrap"
-                >
-                  <Search className="w-4 h-4" />
-                  <span>Check Availability</span>
-                </button>
-              </div>
-            </div>
+                  {/* ── DESKTOP: full inline bar ── */}
+                  <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="flex gap-2 flex-1 min-w-0">
+                        <div className="flex-1 min-w-0">
+                          <label className="block text-xs text-gray-500 mb-1">Check-in</label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                            <input type="date" value={tempCheckIn} onChange={(e) => setTempCheckIn(e.target.value)} min={new Date().toISOString().split('T')[0]}
+                              className="w-full text-sm border border-gray-300 rounded-lg pl-9 pr-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-hotel-sage focus:border-transparent" />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <label className="block text-xs text-gray-500 mb-1">Check-out</label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                            <input type="date" value={tempCheckOut} onChange={(e) => setTempCheckOut(e.target.value)} min={tempCheckIn || new Date().toISOString().split('T')[0]}
+                              className="w-full text-sm border border-gray-300 rounded-lg pl-9 pr-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-hotel-sage focus:border-transparent" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="w-px h-10 bg-gray-200" />
+                      <div className="relative min-w-[180px]">
+                        <label className="block text-xs text-gray-500 mb-1">Guests</label>
+                        <div className="flex items-center justify-between gap-2 cursor-pointer border border-gray-300 px-3 py-2.5 rounded-lg hover:border-hotel-sage transition-colors"
+                          onClick={() => setShowGuestDropdown(!showGuestDropdown)}>
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm">{tempGuests} Guest{tempGuests !== 1 ? 's' : ''}</span>
+                          </div>
+                          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showGuestDropdown ? 'rotate-180' : ''}`} />
+                        </div>
+                        {showGuestDropdown && (
+                          <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-20">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Guests</span>
+                              <div className="flex items-center gap-3">
+                                <button onClick={(e) => { e.stopPropagation(); setTempGuests(Math.max(1, tempGuests - 1)); }} className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100">−</button>
+                                <span className="w-8 text-center">{tempGuests}</span>
+                                <button onClick={(e) => { e.stopPropagation(); setTempGuests(Math.min(pkg?.max_guests || 10, tempGuests + 1)); }} className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100">+</button>
+                              </div>
+                            </div>
+                            <button onClick={(e) => { e.stopPropagation(); setShowGuestDropdown(false); }} className="w-full mt-3 bg-hotel-sage text-white py-2 rounded-lg hover:bg-hotel-sage-dark transition-colors text-sm">Done</button>
+                          </div>
+                        )}
+                      </div>
+                      <button onClick={handleAvailability} className="flex-shrink-0 flex items-center justify-center gap-2 bg-hotel-sage text-white px-6 py-3 rounded-lg font-medium hover:bg-hotel-sage-dark transition-colors whitespace-nowrap">
+                        <Search className="w-4 h-4" />
+                        <span>Check Availability</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Package Overview */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
-              <h2 className="font-display text-lg md:text-xl font-medium text-hotel-charcoal mb-3">Package Overview</h2>
+              <h2 className="font-display text-2xl font-medium text-gray-900 mb-3">Package Overview</h2>
               <p className="text-xs text-hotel-gold font-semibold mb-3 uppercase tracking-widest">
                 {packageConfig.subtitle}
               </p>
@@ -732,7 +815,7 @@ const PackageDetails = () => {
             {/* What's Included */}
             {packageInclusions.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
-                <h2 className="font-display text-lg md:text-xl font-medium text-hotel-charcoal mb-5 flex items-center gap-2">
+                <h2 className="font-display text-2xl font-medium text-gray-900 mb-5 flex items-center gap-2">
                   <Gift className="w-5 h-5 text-hotel-gold" />
                   What's Included
                 </h2>
@@ -760,7 +843,7 @@ const PackageDetails = () => {
             {/* Choose Your Room */}
             {packageRooms.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
-                <h2 className="font-display text-xl md:text-2xl font-semibold text-hotel-charcoal mb-2">
+                <h2 className="font-display text-2xl font-medium text-gray-900 mb-2">
                   Choose Your Room
                 </h2>
                 <p className="text-sm text-gray-500 mb-6">Select from our available room types for this package</p>
@@ -809,17 +892,17 @@ const PackageDetails = () => {
                         <div className="flex-1 p-4 flex flex-col justify-between min-h-[100px] sm:min-h-[128px]">
                           {/* Title and Price */}
                           <div className="flex justify-between items-start mb-2">
-                            <h3 className="font-semibold text-lg text-hotel-charcoal flex-1 pr-3">
+                            <h3 className="text-lg font-semibold text-gray-900 flex-1 pr-3">
                               {roomName}
                             </h3>
-                            <span className={`text-base font-bold whitespace-nowrap ${room.price_adjustment > 0 ? 'text-hotel-gold' : 'text-green-600'}`}>
-                              {room.price_adjustment === 0
-                                ? 'Rp 0'
-                                : room.adjustment_type === 'percentage'
+                            {room.price_adjustment !== 0 && (
+                              <span className={`text-base font-bold whitespace-nowrap ${room.price_adjustment > 0 ? 'text-hotel-gold' : 'text-green-600'}`}>
+                                {room.adjustment_type === 'percentage'
                                   ? `${room.price_adjustment > 0 ? '+' : ''}${room.price_adjustment}%`
                                   : `${room.price_adjustment > 0 ? '+' : ''}${formatRupiah(Math.abs(room.price_adjustment))}`
-                              }
-                            </span>
+                                }
+                              </span>
+                            )}
                           </div>
 
                           {/* Description */}
@@ -868,9 +951,39 @@ const PackageDetails = () => {
               </div>
             )}
 
+            {/* ── MOBILE ONLY: Total + Book Now button below Choose Your Room ── */}
+            <div className="lg:hidden bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-2.5">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">Base Price</span>
+                <span className="font-medium text-gray-800">{formatRupiah(finalPrice)}</span>
+              </div>
+              {serviceFeePercentage > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Service Fee ({serviceFeePercentage}%)</span>
+                  <span className="font-medium text-gray-800">{formatRupiah(serviceFeeAmount)}</span>
+                </div>
+              )}
+              {taxPercentage > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Tax ({taxPercentage}%)</span>
+                  <span className="font-medium text-gray-800">{formatRupiah(taxAmount)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span className="text-sm font-semibold text-gray-800">Total Amount</span>
+                <span className="text-xl font-bold text-hotel-gold">{formatRupiah(totalWithFeesAndTax)}</span>
+              </div>
+              <Button
+                onClick={handleBookNow}
+                className="w-full bg-hotel-gold hover:bg-hotel-gold/90 text-white font-semibold py-3 text-sm uppercase tracking-wide"
+              >
+                Book Now
+              </Button>
+            </div>
+
             {/* Booking Information */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
-              <h2 className="font-display text-lg md:text-xl font-medium text-hotel-charcoal mb-5 flex items-center gap-2">
+              <h2 className="font-display text-2xl font-medium text-gray-900 mb-5 flex items-center gap-2">
                 <Tag className="w-5 h-5 text-hotel-gold" />
                 Booking Information
               </h2>
@@ -928,7 +1041,7 @@ const PackageDetails = () => {
 
             {/* Terms & Conditions */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
-              <h2 className="font-display text-lg md:text-xl font-medium text-hotel-charcoal mb-3 flex items-center gap-2">
+              <h2 className="font-display text-2xl font-medium text-gray-900 mb-3 flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-hotel-gold" />
                 Terms & Conditions
               </h2>
@@ -943,7 +1056,7 @@ const PackageDetails = () => {
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 sticky top-6 overflow-hidden">
               {/* Header */}
               <div className="bg-hotel-cream border-b border-gray-100 p-5 md:p-6">
-                <h3 className="font-display text-base md:text-lg font-medium text-hotel-charcoal">Booking Summary</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Booking Summary</h3>
               </div>
 
               {/* Summary Details */}
@@ -956,7 +1069,7 @@ const PackageDetails = () => {
                 {selectedRoom && (
                   <div className="flex justify-between text-sm">
                     <span className="text-hotel-bronze">Room Type</span>
-                    <span className="font-medium text-hotel-charcoal">{selectedRoom.name}</span>
+                    <span className="font-medium text-hotel-charcoal">{selectedRoom.name || selectedRoom.room_name}</span>
                   </div>
                 )}
 
@@ -1000,16 +1113,31 @@ const PackageDetails = () => {
 
                 <hr className="border-gray-100 my-4" />
 
+                {serviceFeePercentage > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-hotel-bronze">Service Fee ({serviceFeePercentage}%)</span>
+                    <span className="font-medium text-hotel-charcoal">{formatRupiah(serviceFeeAmount)}</span>
+                  </div>
+                )}
+                {taxPercentage > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-hotel-bronze">Tax ({taxPercentage}%)</span>
+                    <span className="font-medium text-hotel-charcoal">{formatRupiah(taxAmount)}</span>
+                  </div>
+                )}
+
+                <hr className="border-gray-100 my-4" />
+
                 <div className="flex justify-between items-baseline">
                   <span className="font-medium text-hotel-charcoal text-sm">Total Amount</span>
-                  <span className="text-xl md:text-2xl font-bold text-hotel-gold">{formatRupiah(finalPrice)}</span>
+                  <span className="text-xl font-bold text-hotel-gold">{formatRupiah(totalWithFeesAndTax)}</span>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="space-y-2.5 pt-4">
                   <Button
                     onClick={handleBookNow}
-                    className="w-full bg-hotel-gold hover:bg-hotel-gold/90 text-white font-semibold py-3 text-sm uppercase tracking-wide"
+                    className="hidden lg:flex w-full bg-hotel-gold hover:bg-hotel-gold/90 text-white font-semibold py-3 text-sm uppercase tracking-wide"
                   >
                     Book Now
                   </Button>

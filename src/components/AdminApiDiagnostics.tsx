@@ -193,7 +193,7 @@ const AdminApiDiagnostics: React.FC = () => {
         borderRadius: '8px 8px 0 0',
         marginBottom: '20px'
       }}>
-        <h1 style={{ margin: 0, fontSize: '2em' }}>🔍 Admin Panel API Diagnostics</h1>
+        <h1 style={{ margin: 0, fontSize: '2em' }}>Admin Panel API Diagnostics</h1>
         <p style={{ margin: '10px 0 0 0', opacity: 0.9 }}>
           Real-time monitoring of console logs and API calls in the admin panel
         </p>
@@ -213,7 +213,7 @@ const AdminApiDiagnostics: React.FC = () => {
             cursor: 'pointer'
           }}
         >
-          {isMonitoring ? '🛑 Stop Monitoring' : '▶️ Start Monitoring'}
+          {isMonitoring ? 'Stop Monitoring' : 'Start Monitoring'}
         </button>
         <button 
           onClick={clearLogs}
@@ -227,7 +227,7 @@ const AdminApiDiagnostics: React.FC = () => {
             cursor: 'pointer'
           }}
         >
-          🧹 Clear Logs
+          Clear Logs
         </button>
         <button 
           onClick={exportDiagnostics}
@@ -241,7 +241,7 @@ const AdminApiDiagnostics: React.FC = () => {
             cursor: 'pointer'
           }}
         >
-          📊 Export Data
+          Export Data
         </button>
         <button 
           onClick={testApiEndpoints}
@@ -255,7 +255,7 @@ const AdminApiDiagnostics: React.FC = () => {
             cursor: 'pointer'
           }}
         >
-          🧪 Test APIs
+          Test APIs
         </button>
       </div>
 
@@ -274,10 +274,10 @@ const AdminApiDiagnostics: React.FC = () => {
           textAlign: 'center'
         }}>
           <h3 style={{ margin: '0 0 10px 0', color: localhostCalls > 0 ? '#dc3545' : '#28a745' }}>
-            🔴 Localhost Calls
+            Localhost Calls
           </h3>
           <div style={{ fontSize: '2em', fontWeight: 'bold' }}>{localhostCalls}</div>
-          <div>{localhostCalls > 0 ? '❌ Should be 0!' : '✅ Good!'}</div>
+          <div>{localhostCalls > 0 ? 'Should be 0!' : 'Good'}</div>
         </div>
 
         <div style={{ 
@@ -287,9 +287,9 @@ const AdminApiDiagnostics: React.FC = () => {
           borderRadius: '6px',
           textAlign: 'center'
         }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#28a745' }}>🟢 Production Calls</h3>
+          <h3 style={{ margin: '0 0 10px 0', color: '#28a745' }}>Production Calls</h3>
           <div style={{ fontSize: '2em', fontWeight: 'bold' }}>{productionCalls}</div>
-          <div>✅ Good!</div>
+          <div>Good</div>
         </div>
 
         <div style={{ 
@@ -300,10 +300,10 @@ const AdminApiDiagnostics: React.FC = () => {
           textAlign: 'center'
         }}>
           <h3 style={{ margin: '0 0 10px 0', color: errorLogs > 0 ? '#dc3545' : '#6c757d' }}>
-            ❌ Console Errors
+            Console Errors
           </h3>
           <div style={{ fontSize: '2em', fontWeight: 'bold' }}>{errorLogs}</div>
-          <div>{errorLogs > 0 ? '⚠️ Check logs!' : '✅ No errors'}</div>
+          <div>{errorLogs > 0 ? 'Check logs' : 'No errors'}</div>
         </div>
 
         <div style={{ 
@@ -313,16 +313,16 @@ const AdminApiDiagnostics: React.FC = () => {
           borderRadius: '6px',
           textAlign: 'center'
         }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#007bff' }}>📊 Total Requests</h3>
+          <h3 style={{ margin: '0 0 10px 0', color: '#007bff' }}>Total Requests</h3>
           <div style={{ fontSize: '2em', fontWeight: 'bold' }}>{networkRequests.length}</div>
-          <div>Monitoring: {isMonitoring ? '🟢 Active' : '🔴 Stopped'}</div>
+          <div>Monitoring: {isMonitoring ? 'Active' : 'Stopped'}</div>
         </div>
       </div>
 
       {/* Console Logs */}
       <div style={{ marginBottom: '20px' }}>
         <h2 style={{ color: '#333', borderBottom: '2px solid #667eea', paddingBottom: '10px' }}>
-          📝 Console Logs
+          Console Logs
         </h2>
         <div style={{
           background: '#1e1e1e',
@@ -359,7 +359,7 @@ const AdminApiDiagnostics: React.FC = () => {
       {/* Network Requests */}
       <div>
         <h2 style={{ color: '#333', borderBottom: '2px solid #667eea', paddingBottom: '10px' }}>
-          🌐 Network Requests
+          Network Requests
         </h2>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
@@ -447,7 +447,7 @@ const AdminApiDiagnostics: React.FC = () => {
         border: '1px solid #b3d7ff',
         borderRadius: '6px' 
       }}>
-        <h3 style={{ margin: '0 0 10px 0', color: '#0056b3' }}>📋 How to Use</h3>
+        <h3 style={{ margin: '0 0 10px 0', color: '#0056b3' }}>How to Use</h3>
         <ol style={{ margin: 0, paddingLeft: '20px' }}>
           <li><strong>Start Monitoring:</strong> Click "Start Monitoring" to begin tracking</li>
           <li><strong>Use Admin Panel:</strong> Navigate through admin features normally</li>

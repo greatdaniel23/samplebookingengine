@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, Plus, Trash2, Edit, ChevronDown, CheckCircle, AlertCircle } from 'lucide-react';
 import { paths } from '@/config/paths';
+import { apiClient } from '@/utils/apiClient';
 
 interface PackageRoomsManagerProps {
   packageId: number;
@@ -116,10 +117,10 @@ export const PackageRoomsManager: React.FC<PackageRoomsManagerProps> = ({ packag
     try {
       setLoading(true);
       setError(null);
-      const resp = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms`), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      let json: any;
+      let wasConflict = false;
+      try {
+        json = await apiClient.post<any>(`/api/packages/${packageId}/rooms`, {
           package_id: packageId,
           room_id: form.room_id,
           is_default: form.is_default ? 1 : 0,
@@ -128,12 +129,19 @@ export const PackageRoomsManager: React.FC<PackageRoomsManagerProps> = ({ packag
           availability_priority: form.availability_priority,
           max_occupancy_override: form.max_occupancy_override,
           description: form.description
-        })
-      });
-      const json = await resp.json();
-      if (!json.success) {
+        });
+      } catch (err: any) {
+        // apiClient throws on non-ok — check if it's a 409 / "already exists" message
+        if (err?.message && /already exists/i.test(err.message)) {
+          wasConflict = true;
+          json = { success: false, error: err.message };
+        } else {
+          throw err;
+        }
+      }
+      if (!json?.success) {
         // If relationship already exists (409), perform an update instead
-        if (resp.status === 409 || (json.error && /already exists/i.test(json.error))) {
+        if (wasConflict || (json?.error && /already exists/i.test(json.error))) {
           const existing = relationships.find(r => r.room_id === form.room_id);
           if (existing) {
             await updateRelationship(existing.id, {
@@ -169,12 +177,7 @@ export const PackageRoomsManager: React.FC<PackageRoomsManagerProps> = ({ packag
     try {
       setLoading(true);
       setError(null);
-      const resp = await fetch(paths.buildApiUrl(`packages/rooms/${id}`), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(changes)
-      });
-      const json = await resp.json();
+      const json = await apiClient.put<any>(`/api/packages/rooms/${id}`, changes);
       if (!json.success) throw new Error(json.error || 'Failed to update');
       const relResp = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms?include_inactive=${showInactive ? '1' : '0'}`));
       const relJson = await relResp.json();
@@ -191,8 +194,7 @@ export const PackageRoomsManager: React.FC<PackageRoomsManagerProps> = ({ packag
     try {
       setLoading(true);
       setError(null);
-      const resp = await fetch(paths.buildApiUrl(`packages/rooms/${id}`), { method: 'DELETE' });
-      const json = await resp.json();
+      const json = await apiClient.delete<any>(`/api/packages/rooms/${id}`);
       if (!json.success) throw new Error(json.error || 'Failed to remove');
       const relResp = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms`));
       const relJson = await relResp.json();
@@ -225,9 +227,10 @@ export const PackageRoomsManager: React.FC<PackageRoomsManagerProps> = ({ packag
         })
       });
       const json = await resp.json();
-      if (!json.success && resp.status !== 409) throw new Error(json.error || 'Failed to link base room');
-      // On 409, ensure it is active and default
-      if (resp.status === 409) {
+      // On conflict (409) or duplicate error, ensure it is active and default
+      const isConflict = resp.status === 409 || (json?.error && /already exists/i.test(json.error));
+      if (!json.success && !isConflict) throw new Error(json.error || 'Failed to link base room');
+      if (isConflict) {
         const relResp = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms?include_inactive=1`));
         const relJson = await relResp.json();
         const existing = (relJson?.data ?? []).find((r: any) => r.room_id === base.room_id);

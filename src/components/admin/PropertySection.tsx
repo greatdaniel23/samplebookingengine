@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { useVillaInfo } from '@/hooks/useVillaInfo';
 import R2ImagePicker from './R2ImagePicker';
 import { getImageUrl } from '@/config/r2';
@@ -79,12 +80,12 @@ const PropertySection: React.FC = () => {
       const result = await updateVillaInfo(formData);
       if (result.success) {
         setIsEditing(false);
-        alert('Villa information updated successfully!');
+        toast.success('Property saved');
       } else {
-        alert('Error updating villa information: ' + result.error);
+        toast.error('Save failed', { description: result.error || 'Please try again.' });
       }
     } catch (error) {
-      alert('Error updating villa information');
+      toast.error('Could not save property', { description: 'Please try again.' });
     } finally {
       setSaving(false);
     }

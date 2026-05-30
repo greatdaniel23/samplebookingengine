@@ -12,10 +12,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<'property' | 'bookings' | 'rooms' | 'inclusions'>('property');
 
   const tabs = [
-    { id: 'property' as const, label: 'Property', icon: '🏠' },
-    { id: 'bookings' as const, label: 'Bookings', icon: '📅' },
-    { id: 'rooms' as const, label: 'Rooms', icon: '🛏️' },
-    { id: 'inclusions' as const, label: 'What\'s Included', icon: '✅' }
+    { id: 'property' as const, label: 'Property' },
+    { id: 'bookings' as const, label: 'Bookings' },
+    { id: 'rooms' as const, label: 'Rooms' },
+    { id: 'inclusions' as const, label: 'What\'s Included' }
   ];
 
   return (
@@ -48,7 +48,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 }`}
               >
-                <span className="text-lg">{tab.icon}</span>
                 {tab.label}
               </button>
             ))}

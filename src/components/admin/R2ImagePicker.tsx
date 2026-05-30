@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { paths } from '@/config/paths';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +24,7 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
   const [selectedImage, setSelectedImage] = useState<string>(currentImage || '');
   const [dragActive, setDragActive] = useState(false);
 
-  const R2_PUBLIC_URL = 'https://image.alphadigitalagency.id';
+  const R2_PUBLIC_URL = 'https://image.alphadigitalagency.id/samudra';
   const API_BASE_URL = paths.apiBase;
 
   console.log('R2ImagePicker - API_BASE_URL:', API_BASE_URL);
@@ -67,7 +68,7 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
     });
 
     if (invalidFiles.length > 0) {
-      alert(`${invalidFiles.length} file(s) are invalid. Files must be less than 10MB and be JPEG, PNG, WebP, AVIF, or GIF.`);
+      toast.error(`${invalidFiles.length} file(s) invalid`, { description: 'Files must be under 10 MB and JPEG, PNG, WebP, AVIF, or GIF.' });
       return;
     }
 
@@ -80,7 +81,7 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
     try {
       // Limit to 50 files max to avoid overwhelming
       if (fileArray.length > 50) {
-        alert('Maximum 50 files allowed per upload. Please upload in batches.');
+        toast.error('Too many files', { description: 'Maximum 50 files per upload. Please upload in batches.' });
         setUploading(false);
         return;
       }
@@ -126,16 +127,14 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
 
       // Show result message
       if (failCount > 0) {
-        const errorSummary = errors.slice(0, 3).join('\n');
-        const moreErrors = errors.length > 3 ? `\n...and ${errors.length - 3} more errors` : '';
-        alert(`Uploaded ${successCount} image(s) successfully. ${failCount} failed.\n\nFirst errors:\n${errorSummary}${moreErrors}`);
+        toast.error(`${failCount} upload(s) failed`, { description: `${successCount} succeeded. Check console for details.` });
         console.error('All upload errors:', errors);
       } else {
-        alert(`Successfully uploaded ${successCount} image(s)!`);
+        toast.success(`${successCount} image(s) uploaded`);
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Upload failed');
+      toast.error('Upload failed', { description: 'Please try again.' });
     } finally {
       setUploading(false);
       // Reset file input
@@ -301,9 +300,20 @@ const R2ImagePicker: React.FC<R2ImagePickerProps> = ({
           </div>
 
           <div className="p-4 border-t flex justify-between items-center">
-            <p className="text-sm text-gray-600">
-              {selectedImage ? `Selected: ${images.find(img => img.id === selectedImage)?.filename || selectedImage}` : 'No image selected'}
-            </p>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm text-gray-600">
+                {selectedImage ? `Selected: ${images.find(img => img.id === selectedImage)?.filename || selectedImage}` : 'No image selected'}
+              </p>
+              <a
+                href="/admin?tab=images-library"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                onClick={() => setShowModal(false)}
+              >
+                Manage in Library →
+              </a>
+            </div>
             <div className="flex gap-2">
               <Button
                 onClick={() => setShowModal(false)}

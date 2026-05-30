@@ -155,7 +155,12 @@ CREATE TABLE IF NOT EXISTS package_rooms (
   is_default INTEGER DEFAULT 0,
   is_active INTEGER DEFAULT 1,
   price_adjustment REAL DEFAULT 0,
+  adjustment_type TEXT DEFAULT 'fixed',
+  max_occupancy_override INTEGER,
+  availability_priority INTEGER DEFAULT 1,
+  description TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE,
   FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
 );
@@ -407,6 +412,31 @@ CREATE TABLE IF NOT EXISTS payment_transactions (
   request_data TEXT,
   callback_data TEXT,
   paid_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Villa Info table (added live 2026-05-xx — synced 2026-05-18)
+CREATE TABLE IF NOT EXISTS villa_info (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  tagline TEXT,
+  location TEXT,
+  address TEXT,
+  phone TEXT,
+  email TEXT,
+  website TEXT,
+  check_in_time TEXT DEFAULT '14:00',
+  check_out_time TEXT DEFAULT '12:00',
+  min_stay_nights INTEGER DEFAULT 1,
+  max_guests INTEGER DEFAULT 10,
+  total_rooms INTEGER DEFAULT 5,
+  total_bathrooms INTEGER DEFAULT 5,
+  property_size_sqm REAL,
+  year_built INTEGER,
+  amenities_summary TEXT,
+  policies TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );

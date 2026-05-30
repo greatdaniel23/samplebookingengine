@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 export default defineConfig(({ mode }) => ({
+  base: '/admin/',
   server: {
     // No host binding - use Vite defaults
     port: 5173,

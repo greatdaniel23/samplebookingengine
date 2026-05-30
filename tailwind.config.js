@@ -18,9 +18,16 @@ export default {
         },
         extend: {
             fontFamily: {
-                sans: ['Inter', 'system-ui', 'sans-serif'],
-                display: ['Playfair Display', 'Georgia', 'serif'],
-                body: ['Inter', 'system-ui', 'sans-serif'],
+                sans:    ['Jost', 'Inter', 'system-ui', 'sans-serif'],
+                display: ['"Cormorant Garamond"', 'Cormorant', 'Georgia', 'serif'],
+                script:  ['Italianno', '"Cormorant Garamond"', 'serif'],
+                body:    ['Jost', 'Inter', 'system-ui', 'sans-serif'],
+                mono:    ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+            },
+            letterSpacing: {
+                'widest-x':   '0.28em',
+                'widest-xx':  '0.32em',
+                'widest-xxx': '0.42em',
             },
             colors: {
                 border: "hsl(var(--border))",
@@ -84,11 +91,26 @@ export default {
                     secondary: "hsl(var(--hotel-secondary))",
                     "secondary-light": "hsl(var(--hotel-secondary-light))",
                 },
+                samudra: {
+                    paper:        'var(--paper)',
+                    'paper-soft': 'var(--paper-soft)',
+                    'paper-deep': 'var(--paper-deep)',
+                    ink:          'var(--ink)',
+                    'ink-soft':   'var(--ink-soft)',
+                    'ink-mute':   'var(--ink-mute)',
+                    teal:         'var(--teal)',
+                    'teal-deep':  'var(--teal-deep)',
+                    sand:         'var(--sand)',
+                    gold:         'var(--gold)',
+                },
             },
             borderRadius: {
-                lg: "var(--radius)",
-                md: "calc(var(--radius) - 2px)",
-                sm: "calc(var(--radius) - 4px)",
+                none:    '0',
+                sm:      '0',
+                DEFAULT: '0',
+                md:      '0',
+                lg:      '0',
+                full:    '9999px',
             },
             keyframes: {
                 "accordion-down": {

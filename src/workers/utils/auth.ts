@@ -1,4 +1,4 @@
-import { JWTPayload } from '../types';
+import { JWTPayload, Env } from '../types';
 import bcrypt from 'bcryptjs';
 
 /**
@@ -148,4 +148,21 @@ export function getTokenFromHeader(authHeader: string | null): string | null {
     return null;
   }
   return authHeader.slice(7);
+}
+
+/**
+ * DRY auth-check helper — replaces repeated 3-line auth blocks across route handlers.
+ * Returns { valid: true, payload } on success or { valid: false } on failure.
+ *
+ * Usage:
+ *   const auth = await requireAuth(request, env);
+ *   if (!auth.valid) return errorResponse('Unauthorized', 401, request);
+ */
+export async function requireAuth(request: Request, env: Env): Promise<{ valid: boolean; payload?: JWTPayload }> {
+  const authHeader = request.headers.get('Authorization');
+  const token = getTokenFromHeader(authHeader);
+  if (!token) return { valid: false };
+  const payload = await verifyToken(token, env.JWT_SECRET);
+  if (!payload) return { valid: false };
+  return { valid: true, payload };
 }

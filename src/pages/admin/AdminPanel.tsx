@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import {
   Calendar,
@@ -27,9 +28,11 @@ import {
   Image,
   Sparkles,
   Tag,
-  Wrench
+  Wrench,
+  Code2
 } from 'lucide-react';
 import { paths } from '@/config/paths';
+import { getAuthToken } from '@/config/cloudflare';
 import BookingsSection from '@/components/admin/BookingsSection';
 import RoomsSection from '@/components/admin/RoomsSection';
 import PropertySection from '@/components/admin/PropertySection';
@@ -37,7 +40,12 @@ import PackagesSection from '@/components/admin/PackagesSection';
 import AmenitiesSection from '@/components/admin/AmenitiesSection';
 import MarketingCategoriesSection from '@/components/admin/MarketingCategoriesSection';
 import SimplifiedHomepageManager from '@/components/admin/SimplifiedHomepageManager';
+import HomepageContentManager from '@/components/admin/HomepageContentManager';
+import InclusionsSection from '@/components/admin/InclusionsSection';
 import GTMSettingsSection from '@/components/admin/GTMSettingsSection';
+import ICalSyncManager from '@/components/admin/ICalSyncManager';
+import ImagesLibrarySection from '@/components/admin/ImagesLibrarySection';
+import SchemaLibrarySection from '@/components/admin/SchemaLibrarySection';
 import { CalendarDashboard } from '@/components/CalendarDashboard';
 import { calendarService } from '@/services/calendarService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,36 +73,89 @@ import {
 } from '@/components/ui/sidebar';
 
 import { useVillaInfo } from '@/hooks/useVillaInfo';
+import { Toaster } from '@/components/ui/sonner';
+import { BedDouble, CalendarCheck, Bot } from 'lucide-react';
 
-// Navigation menu items
-const navItems = [
-  { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'homepage', label: 'Homepage Content', icon: Image },
-  { id: 'bookings', label: 'Bookings', icon: ClipboardList },
-  { id: 'rooms', label: 'Rooms', icon: Building },
-  { id: 'packages', label: 'Packages', icon: Package },
-  { id: 'amenities', label: 'Amenities', icon: Sparkles },
-  { id: 'marketing', label: 'Marketing', icon: Tag },
-  { id: 'calendar', label: 'Calendar', icon: Calendar },
-  { id: 'property', label: 'Property', icon: Home },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'gtm', label: 'GTM Settings', icon: Tag },
+// Navigation groups — Samudra 5-IA sidebar
+const navGroups = [
+  {
+    label: 'Operations',
+    items: [
+      { id: 'overview',  label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'bookings',  label: 'Bookings',  icon: CalendarCheck },
+      { id: 'calendar',  label: 'Calendar',  icon: Calendar },
+    ],
+  },
+  {
+    label: 'Library',
+    items: [
+      { id: 'images-library',    label: 'Images',     icon: Image },
+      { id: 'amenities-library', label: 'Amenities',  icon: Sparkles },
+      { id: 'inclusions',        label: 'Inclusions', icon: Check },
+      { id: 'schema-library',    label: 'Schema',     icon: Code2 },
+    ],
+  },
+  {
+    label: 'Inventory',
+    items: [
+      { id: 'rooms',    label: 'Rooms',    icon: BedDouble },
+      { id: 'packages', label: 'Packages', icon: Package },
+    ],
+  },
+  {
+    label: 'Content',
+    items: [
+      { id: 'homepage',  label: 'Villa Page',          icon: Home },
+      { id: 'property',  label: 'Property',            icon: Building },
+      { id: 'marketing', label: 'Package Categories',  icon: Tag },
+    ],
+  },
+  {
+    label: 'Insights',
+    items: [
+      { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { id: 'settings', label: 'Settings', icon: Settings },
+      { id: 'gtm',      label: 'GTM',      icon: Tag },
+      { id: 'ai-admin', label: 'AI Concierge', icon: Bot, external: 'https://ai-admin-samudra.pages.dev/pembantu/login' },
+    ],
+  },
 ];
 
 const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  // URL ?tab= deep-link sync (Sprint 1 P2-11)
+  const getInitialTab = () => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get('tab');
+      const validTabs = ['overview','bookings','calendar','rooms','packages','amenities','amenities-library','inclusions','images-library','schema-library','homepage','property','marketing','analytics','settings','gtm'];
+      return t && validTabs.includes(t) ? t : 'overview';
+    } catch { return 'overview'; }
+  };
+  const [activeTab, setActiveTabState] = useState(getInitialTab);
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    try {
+      const url = new URL(window.location.href);
+      if (tab === 'overview') { url.searchParams.delete('tab'); } else { url.searchParams.set('tab', tab); }
+      window.history.replaceState(null, '', url.toString());
+    } catch {}
+  };
   const [activeCalendarTab, setActiveCalendarTab] = useState<'dashboard' | 'integration'>('dashboard');
   const { villaInfo, refetch: refetchVillaInfo } = useVillaInfo();
 
-  // 🔄 Initialize automatic sync on component mount
+  // Initialize automatic sync on component mount
   useEffect(() => {
     const initializeAutoSync = async () => {
       try {
         await calendarService.initializeAutoSync();
-        console.log('✅ AdminPanel: Automatic sync initialized');
+        console.log('AdminPanel: Automatic sync initialized');
       } catch (error) {
-        console.error('❌ AdminPanel: Failed to initialize automatic sync:', error);
+        console.error('AdminPanel: Failed to initialize automatic sync:', error);
       }
     };
 
@@ -108,54 +169,54 @@ const AdminPanel: React.FC = () => {
 
   return (
     <SidebarProvider>
+      {/* Sonner toast mount — outside sidebar layout, position top-right */}
+      <Toaster />
       <Sidebar collapsible="icon">
-        {/* Sidebar Header */}
-        <SidebarHeader className="border-b border-sidebar-border">
-          <a
-            href={villaInfo?.website || "/"}
-            target={villaInfo?.website ? "_blank" : "_self"}
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 px-2 py-2 hover:opacity-80 transition-opacity"
-          >
-            {villaInfo?.logo_url ? (
-              <img
-                src={villaInfo.logo_url}
-                alt={villaInfo?.name || 'Logo'}
-                className="h-8 w-8 object-contain rounded-lg"
-              />
-            ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-                {villaInfo?.name?.charAt(0) || 'H'}
-              </div>
-            )}
-            <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-              <span className="text-sm font-semibold">{villaInfo?.name || 'Hotel Admin'}</span>
-              <span className="text-xs text-muted-foreground">Management Portal</span>
-            </div>
-          </a>
+        {/* Sidebar Header — Samudra brand block */}
+        <SidebarHeader className="border-b border-sidebar-border px-6 py-5">
+          <div className="group-data-[collapsible=icon]:hidden">
+            <p className="font-script text-samudra-gold text-[18px] leading-none">samudra</p>
+            <p className="font-display text-samudra-ink tracking-[0.42em] uppercase text-[11px] mt-1">Admin</p>
+          </div>
+          <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center">
+            <span className="font-script text-samudra-gold text-[18px]">s</span>
+          </div>
         </SidebarHeader>
 
-        {/* Sidebar Content - Navigation */}
+        {/* Sidebar Content - Navigation Groups */}
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {navItems.map((item) => (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      isActive={activeTab === item.id}
-                      onClick={() => setActiveTab(item.id)}
-                      tooltip={item.label}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          {navGroups.map((group) => (
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel className="eyebrow px-6 py-3">{group.label}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {group.items.map((item) => (
+                    <SidebarMenuItem key={item.id}>
+                      {item.external ? (
+                        <SidebarMenuButton asChild tooltip={item.label}>
+                          <a href={item.external} target="_blank" rel="noopener noreferrer">
+                            <item.icon className="h-4 w-4 text-samudra-ink-mute" />
+                            <span>{item.label}</span>
+                            <ExternalLink className="h-3 w-3 ml-auto text-samudra-ink-mute" />
+                          </a>
+                        </SidebarMenuButton>
+                      ) : (
+                        <SidebarMenuButton
+                          isActive={activeTab === item.id}
+                          onClick={() => setActiveTab(item.id)}
+                          tooltip={item.label}
+                          className={activeTab === item.id ? 'border-l-2 border-samudra-teal bg-samudra-paper-soft text-samudra-ink' : ''}
+                        >
+                          <item.icon className={`h-4 w-4 ${activeTab === item.id ? 'text-samudra-teal' : 'text-samudra-ink-mute'}`} />
+                          <span>{item.label}</span>
+                        </SidebarMenuButton>
+                      )}
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
         </SidebarContent>
 
         {/* Sidebar Footer */}
@@ -163,10 +224,10 @@ const AdminPanel: React.FC = () => {
           <SidebarMenu>
             <SidebarMenuItem>
               <div className="flex items-center gap-2 px-2 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:justify-center">
-                <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
-                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span>
-                  <span className="group-data-[collapsible=icon]:hidden">Online</span>
-                </Badge>
+                <span className="flex items-center gap-1.5 eyebrow text-samudra-teal group-data-[collapsible=icon]:justify-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-samudra-teal flex-shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">online</span>
+                </span>
               </div>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -197,21 +258,25 @@ const AdminPanel: React.FC = () => {
             <h1 className="text-lg font-semibold">{getTabTitle(activeTab)}</h1>
             <p className="text-xs text-muted-foreground">{getTabDescription(activeTab)}</p>
           </div>
-          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span>
-            All systems operational
-          </Badge>
+          <span className="flex items-center gap-1.5 eyebrow text-samudra-teal">
+            <span className="w-1.5 h-1.5 rounded-full bg-samudra-teal" />
+            <span>online</span>
+          </span>
         </header>
 
         {/* Content */}
         <main className="flex-1 overflow-auto p-6">
           {activeTab === 'overview' && <OverviewSection setActiveTab={setActiveTab} />}
-          {activeTab === 'homepage' && <SimplifiedHomepageManager />}
+          {activeTab === 'homepage' && <HomepageContentManager />}
           {activeTab === 'bookings' && <BookingsSection />}
           {activeTab === 'rooms' && <RoomsSection />}
           {activeTab === 'packages' && <PackagesSection />}
           {activeTab === 'amenities' && <AmenitiesSection />}
+          {activeTab === 'amenities-library' && <AmenitiesSection />}
+          {activeTab === 'inclusions' && <InclusionsSection />}
           {activeTab === 'marketing' && <MarketingCategoriesSection />}
+          {activeTab === 'images-library' && <ImagesLibrarySection />}
+          {activeTab === 'schema-library' && <SchemaLibrarySection />}
           {activeTab === 'calendar' && <CalendarSection />}
           {activeTab === 'property' && <PropertySection />}
           {activeTab === 'analytics' && <AnalyticsSection />}
@@ -249,11 +314,15 @@ const SidebarButton: React.FC<SidebarButtonProps> = ({ active, onClick, label })
 const getTabTitle = (tab: string) => {
   const titles: Record<string, string> = {
     overview: 'Dashboard Overview',
-    homepage: 'Homepage Content',
+    homepage: 'Villa Page Content',
     bookings: 'Booking Management',
     rooms: 'Room Inventory Management',
     packages: 'Sales Tools Management',
     amenities: 'Amenities Management',
+    'amenities-library': 'Amenities Library',
+    inclusions: 'Inclusions Library',
+    'images-library': 'Images Library',
+    'schema-library': 'Schema Settings',
     calendar: 'Calendar & Availability Management',
     property: 'Property Management',
     analytics: 'Analytics & Reports',
@@ -266,11 +335,15 @@ const getTabTitle = (tab: string) => {
 const getTabDescription = (tab: string) => {
   const descriptions: Record<string, string> = {
     overview: 'System overview and quick actions',
-    homepage: 'Manage website content and display settings',
+    homepage: 'Edit hero copy, villa info, policies, and social links',
     bookings: 'Manage guest reservations and transactions',
     rooms: 'Manage real inventory - rooms control all availability',
     packages: 'Marketing tools that bundle room + services for customer attraction',
     amenities: 'Manage property features that enhance rooms and packages',
+    'amenities-library': 'Manage property features that enhance rooms and packages',
+    inclusions: 'Manage package inclusions and benefits for customers',
+    'images-library': 'Browse, upload and manage all stored images',
+    'schema-library': 'Edit schema.org JSON-LD fields — override per route or site-wide',
     calendar: 'Visual calendar management with external platform integration',
     property: 'Update property information and settings',
     analytics: 'View performance metrics and reports',
@@ -302,13 +375,19 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ setActiveTab }) => {
         setLoading(true);
         setError(null);
 
-        // Fetch bookings data
-        const bookingsResponse = await fetch(paths.buildApiUrl('bookings/list'));
+        const token = getAuthToken();
+        const authHeaders: Record<string, string> = token
+          ? { 'Authorization': `Bearer ${token}` }
+          : {};
+
+        // Fetch bookings data (requires auth)
+        const bookingsResponse = await fetch(paths.buildApiUrl('bookings/list'), {
+          headers: authHeaders,
+        });
         if (!bookingsResponse.ok) {
           throw new Error(`Bookings API error: ${bookingsResponse.status}`);
         }
         const bookingsData = await bookingsResponse.json();
-
 
         // Fetch rooms data
         const roomsResponse = await fetch(paths.buildApiUrl('rooms'));
@@ -316,7 +395,6 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ setActiveTab }) => {
           throw new Error(`Rooms API error: ${roomsResponse.status}`);
         }
         const roomsData = await roomsResponse.json();
-
 
         // Fetch packages data
         const packagesResponse = await fetch(paths.buildApiUrl('packages'));
@@ -374,18 +452,18 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ setActiveTab }) => {
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="bg-hotel-cream border border-hotel-bronze rounded-lg p-4">
+        <div className="bg-samudra-paper-soft border border-samudra-paper-deep p-4 card-accent-teal">
           <div className="flex items-center">
-            <X className="w-5 h-5 text-hotel-bronze mr-3" />
-            <h3 className="text-sm font-medium text-hotel-navy">API Connection Error</h3>
+            <X className="w-5 h-5 text-samudra-ink-mute mr-3" />
+            <h3 className="font-display text-[18px] font-normal text-samudra-ink">API Connection Error</h3>
           </div>
           <div className="mt-2">
-            <p className="text-sm text-hotel-bronze">{error}</p>
+            <p className="text-[13px] text-samudra-ink-mute">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-2 text-sm bg-hotel-gold text-white px-3 py-1 rounded hover:bg-hotel-gold-dark"
+              className="mt-3 eyebrow text-samudra-paper bg-samudra-ink px-3 py-2 hover:bg-samudra-teal transition-colors"
             >
-              Retry Connection
+              Retry
             </button>
           </div>
         </div>
@@ -397,196 +475,141 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ setActiveTab }) => {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'confirmed':
-        return 'bg-hotel-sage/20 text-hotel-sage';
+        return 'bg-samudra-teal/20 text-samudra-teal';
       case 'pending':
-        return 'bg-hotel-gold/20 text-hotel-gold';
+        return 'bg-samudra-gold/20 text-samudra-gold';
       case 'checked_in':
       case 'checked in':
-        return 'bg-hotel-navy/20 text-hotel-navy';
+        return 'bg-samudra-ink/20 text-samudra-ink';
       case 'cancelled':
-        return 'bg-hotel-bronze/20 text-hotel-bronze';
+        return 'bg-samudra-ink-mute/20 text-samudra-ink-mute';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
+  const getStatusBadgeClass = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'confirmed':   return 'border border-samudra-teal text-samudra-teal bg-transparent';
+      case 'pending':     return 'border border-samudra-gold text-samudra-gold bg-transparent';
+      case 'cancelled':   return 'border border-[#7a3d31] text-[#7a3d31] bg-transparent';
+      case 'checked_in':  return 'border border-samudra-sand text-samudra-sand bg-transparent';
+      default:            return 'border border-samudra-paper-deep text-samudra-ink-mute bg-transparent';
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* API Connection Status */}
-      <div className="bg-hotel-cream border border-hotel-gold-light rounded-lg p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Check className="w-5 h-5 text-hotel-gold mr-2" />
-            <span className="text-sm font-medium text-hotel-navy">
-              API Connection Active - All services operational
-            </span>
-          </div>
-          <div className="text-xs text-hotel-bronze">
-            Last updated: {new Date().toLocaleTimeString()}
-          </div>
+    <div className="space-y-8">
+      {/* Samudra page header */}
+      <div className="flex items-end justify-between mb-8">
+        <div>
+          <p className="font-script text-samudra-gold text-[28px] leading-none mb-2">the state of samudra today</p>
+          <h2 className="font-display text-[40px] font-light text-samudra-ink">
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </h2>
+          <div className="h-px w-[60px] bg-samudra-ink mt-3" style={{ opacity: 0.4 }} />
+        </div>
+        {/* API connection status — inline, subtle */}
+        <div className="flex items-center gap-2 eyebrow text-samudra-teal">
+          <span className="w-1.5 h-1.5 rounded-full bg-samudra-teal inline-block" />
+          connected
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* KPI Cards — ink-on-paper, Samudra grammar */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Total Bookings</CardDescription>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <p className="text-2xl font-bold">{stats.totalBookings}</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Available Rooms</CardDescription>
-            <Home className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <p className="text-2xl font-bold text-green-600">{stats.availableRooms}</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Active Packages</CardDescription>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <p className="text-2xl font-bold text-amber-600">{stats.activePackages}</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Total Guests</CardDescription>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <p className="text-2xl font-bold text-blue-600">{stats.totalGuests}</p>
-            )}
-          </CardContent>
-        </Card>
+        {[
+          { icon: Calendar,  label: 'Total Bookings',  value: stats.totalBookings,  sub: 'all time' },
+          { icon: Home,      label: 'Available Rooms',  value: stats.availableRooms, sub: 'right now' },
+          { icon: Package,   label: 'Active Packages',  value: stats.activePackages, sub: 'on sale' },
+          { icon: Users,     label: 'Total Guests',     value: stats.totalGuests,    sub: 'in records' },
+        ].map(({ icon: Icon, label, value, sub }) => (
+          <div key={label} className="bg-samudra-paper border border-samudra-paper-deep p-5 card-accent-teal">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="eyebrow text-samudra-ink-mute mb-3">{label}</p>
+                {loading ? (
+                  <div className="h-9 w-16 bg-samudra-paper-soft animate-pulse" />
+                ) : (
+                  <p className="font-display text-[36px] font-light text-samudra-ink leading-none is-numeric">{value}</p>
+                )}
+                <p className="font-script text-samudra-gold text-[15px] mt-2">{sub}</p>
+              </div>
+              <Icon className="h-5 w-5 text-samudra-ink-mute opacity-50 mt-0.5" />
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Content Cards */}
+      {/* Bottom row: Recent Reservations + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Bookings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Bookings</CardTitle>
-            <CardDescription>Latest guest reservations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {loading ? (
-                <>
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="flex items-center gap-4">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/2" />
-                      </div>
-                      <Skeleton className="h-5 w-16" />
-                    </div>
-                  ))}
-                </>
-              ) : recentBookings.length > 0 ? (
-                recentBookings.map((booking, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">
-                          {booking.first_name} {booking.last_name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {booking.check_in} → {booking.check_out}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant={
-                      booking.status?.toLowerCase() === 'confirmed' ? 'default' :
-                        booking.status?.toLowerCase() === 'pending' ? 'secondary' :
-                          booking.status?.toLowerCase() === 'cancelled' ? 'destructive' : 'outline'
-                    }>
-                      {booking.status || 'Unknown'}
-                    </Badge>
+        {/* Recent Reservations */}
+        <div className="bg-samudra-paper border border-samudra-paper-deep">
+          <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+            <p className="eyebrow text-samudra-ink-mute">Latest</p>
+            <h3 className="font-display text-[22px] font-light text-samudra-ink">Recent Reservations</h3>
+          </div>
+          <div className="divide-y divide-samudra-paper-deep">
+            {loading ? (
+              [1, 2, 3].map(i => (
+                <div key={i} className="flex items-center justify-between px-6 py-4">
+                  <div className="space-y-2 flex-1">
+                    <div className="h-3 w-3/4 bg-samudra-paper-soft animate-pulse" />
+                    <div className="h-3 w-1/2 bg-samudra-paper-soft animate-pulse" />
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Archive className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No recent bookings</p>
+                  <div className="h-5 w-20 bg-samudra-paper-soft animate-pulse" />
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              ))
+            ) : recentBookings.length > 0 ? (
+              recentBookings.map((booking, index) => (
+                <div key={index} className="flex items-center justify-between px-6 py-4 hover:bg-samudra-paper-soft transition-colors">
+                  <div>
+                    <p className="font-display text-[16px] font-light text-samudra-ink">
+                      {booking.first_name} {booking.last_name}
+                    </p>
+                    <p className="eyebrow text-samudra-ink-mute mt-0.5">
+                      {booking.check_in} — {booking.check_out}
+                    </p>
+                  </div>
+                  <span className={`eyebrow text-[10px] px-2 py-1 ${getStatusBadgeClass(booking.status)}`}>
+                    {booking.status || 'Unknown'}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="px-6 py-10 text-center">
+                <p className="font-script text-samudra-gold text-[22px] leading-none mb-2">no reservations yet</p>
+                <p className="text-[13px] text-samudra-ink-mute">Bookings will appear here as they come in.</p>
+              </div>
+            )}
+          </div>
+        </div>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common tasks and shortcuts</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                className="h-auto flex-col gap-2 p-4 hover:bg-primary/10"
-                onClick={() => setActiveTab('bookings')}
+        {/* Quick Actions — Samudra outline shelves */}
+        <div className="bg-samudra-paper border border-samudra-paper-deep">
+          <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+            <p className="eyebrow text-samudra-ink-mute">Shortcuts</p>
+            <h3 className="font-display text-[22px] font-light text-samudra-ink">Quick Actions</h3>
+          </div>
+          <div className="p-6 space-y-3">
+            {[
+              { icon: Plus,     label: 'New Reservation', tab: 'bookings' },
+              { icon: Building, label: 'Add Room',         tab: 'rooms' },
+              { icon: Box,      label: 'New Package',      tab: 'packages' },
+              { icon: BarChart3,label: 'View Analytics',   tab: 'analytics' },
+            ].map(({ icon: Icon, label, tab }) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className="w-full flex items-center gap-3 px-4 py-3 border border-samudra-ink text-samudra-ink hover:bg-samudra-ink hover:text-samudra-paper transition-colors group"
+                style={{ fontFamily: 'var(--font-label)' }}
               >
-                <Plus className="h-6 w-6" />
-                <span className="text-sm font-medium">New Booking</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-auto flex-col gap-2 p-4 hover:bg-green-500/10"
-                onClick={() => setActiveTab('rooms')}
-              >
-                <Building className="h-6 w-6 text-green-600" />
-                <span className="text-sm font-medium">Add Room</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-auto flex-col gap-2 p-4 hover:bg-amber-500/10"
-                onClick={() => setActiveTab('packages')}
-              >
-                <Box className="h-6 w-6 text-amber-600" />
-                <span className="text-sm font-medium">New Package</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-auto flex-col gap-2 p-4 hover:bg-blue-500/10"
-                onClick={() => setActiveTab('analytics')}
-              >
-                <BarChart3 className="h-6 w-6 text-blue-600" />
-                <span className="text-sm font-medium">View Reports</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                <Icon className="h-4 w-4 text-samudra-ink-mute group-hover:text-samudra-paper transition-colors" />
+                <span className="eyebrow">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -621,12 +644,12 @@ const StatCard: React.FC<StatCardProps> = ({ icon, value, label, bgColor, textCo
   const IconComponent = getIconComponent(icon);
 
   return (
-    <div className={`${bgColor} p-4 rounded-lg`}>
+    <div className={`${bgColor} p-4 border border-samudra-paper-deep`}>
       <div className="flex items-center">
         <IconComponent className={`h-6 w-6 ${textColor} mr-2`} />
         <div>
-          <p className={`text-xl font-bold ${valueColor}`}>{value}</p>
-          <p className={`text-sm ${textColor}`}>{label}</p>
+          <p className={`font-display text-xl font-normal ${valueColor}`}>{value}</p>
+          <p className={`eyebrow ${textColor}`}>{label}</p>
         </div>
       </div>
     </div>
@@ -637,42 +660,13 @@ const StatCard: React.FC<StatCardProps> = ({ icon, value, label, bgColor, textCo
 const DashboardWithFallbackData: React.FC = () => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <StatCard
-        icon="bookings"
-        value="--"
-        label="Total Bookings"
-        bgColor="bg-hotel-cream"
-        textColor="text-hotel-navy"
-        valueColor="text-hotel-navy"
-      />
-      <StatCard
-        icon="rooms"
-        value="--"
-        label="Available Rooms"
-        bgColor="bg-hotel-sage/10"
-        textColor="text-hotel-sage"
-        valueColor="text-hotel-sage"
-      />
-      <StatCard
-        icon="packages"
-        value="--"
-        label="Active Packages"
-        bgColor="bg-hotel-gold/10"
-        textColor="text-hotel-gold"
-        valueColor="text-hotel-gold"
-      />
-      <StatCard
-        icon="guests"
-        value="--"
-        label="Total Guests"
-        bgColor="bg-hotel-bronze/10"
-        textColor="text-hotel-bronze"
-        valueColor="text-hotel-bronze"
-      />
+      <StatCard icon="bookings" value="--" label="Total Bookings"  bgColor="bg-samudra-paper-soft" textColor="text-samudra-ink-mute" valueColor="text-samudra-ink" />
+      <StatCard icon="rooms"    value="--" label="Available Rooms" bgColor="bg-samudra-paper-soft" textColor="text-samudra-ink-mute" valueColor="text-samudra-teal" />
+      <StatCard icon="packages" value="--" label="Active Packages" bgColor="bg-samudra-paper-soft" textColor="text-samudra-ink-mute" valueColor="text-samudra-gold" />
+      <StatCard icon="guests"   value="--" label="Total Guests"    bgColor="bg-samudra-paper-soft" textColor="text-samudra-ink-mute" valueColor="text-samudra-ink-soft" />
     </div>
-
-    <div className="bg-white p-6 rounded-lg shadow text-center">
-      <p className="text-gray-500">Unable to connect to API. Please check your connection.</p>
+    <div className="bg-samudra-paper border border-samudra-paper-deep p-6 text-center">
+      <p className="text-[13px] text-samudra-ink-mute">Unable to connect to API. Please check your connection.</p>
     </div>
   </div>
 );
@@ -700,8 +694,14 @@ const AnalyticsSection: React.FC = () => {
       setLoading(true);
 
 
-      // Fetch bookings data for analytics
-      const bookingsResponse = await fetch(paths.buildApiUrl('bookings/list'));
+      // Fetch bookings data for analytics (requires auth)
+      const analyticsToken = getAuthToken();
+      const analyticsAuthHeaders: Record<string, string> = analyticsToken
+        ? { 'Authorization': `Bearer ${analyticsToken}` }
+        : {};
+      const bookingsResponse = await fetch(paths.buildApiUrl('bookings/list'), {
+        headers: analyticsAuthHeaders,
+      });
       const bookingsData = await bookingsResponse.json();
 
       // Fetch rooms data for occupancy
@@ -783,7 +783,7 @@ const AnalyticsSection: React.FC = () => {
       });
 
     } catch (error) {
-      console.error('❌ Error fetching analytics:', error);
+      console.error('Error fetching analytics:', error);
     } finally {
       setLoading(false);
     }
@@ -811,94 +811,80 @@ const AnalyticsSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Analytics & Reports</h2>
+      <div className="mb-8">
+        <p className="font-script text-samudra-gold text-[28px] leading-none mb-2">the numbers will speak</p>
+        <h2 className="font-display text-[40px] font-light text-samudra-ink">Analytics</h2>
+        <div className="h-px w-[60px] bg-samudra-ink mt-3" style={{ opacity: 0.4 }} />
+      </div>
 
-      {/* Key Metrics Cards */}
+      {/* Key Metrics Cards — Samudra ink-on-paper */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Total Bookings</CardDescription>
-            <ClipboardList className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{analytics.totalBookings}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Total Revenue</CardDescription>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-green-600">Rp {analytics.totalRevenue.toLocaleString('id-ID')}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Occupancy Rate</CardDescription>
-            <Building className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-amber-600">{analytics.occupancyRate}%</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Avg Stay</CardDescription>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-blue-600">{analytics.averageStay} days</p>
-          </CardContent>
-        </Card>
+        {[
+          { icon: ClipboardList, label: 'Total Bookings',  value: analytics.totalBookings.toString(),                          sub: 'all time' },
+          { icon: DollarSign,   label: 'Total Revenue',    value: `Rp ${analytics.totalRevenue.toLocaleString('id-ID')}`,      sub: 'cumulative' },
+          { icon: Building,     label: 'Occupancy Rate',   value: `${analytics.occupancyRate}%`,                               sub: 'of capacity' },
+          { icon: Clock,        label: 'Avg Stay',         value: `${analytics.averageStay}d`,                                 sub: 'per booking' },
+        ].map(({ icon: Icon, label, value, sub }) => (
+          <div key={label} className="bg-samudra-paper border border-samudra-paper-deep p-5 card-accent-teal">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="eyebrow text-samudra-ink-mute mb-3">{label}</p>
+                <p className="font-display text-[30px] font-light text-samudra-ink leading-none is-numeric">{value}</p>
+                <p className="font-script text-samudra-gold text-[15px] mt-2">{sub}</p>
+              </div>
+              <Icon className="h-5 w-5 text-samudra-ink-mute opacity-50 mt-0.5" />
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Additional Analytics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Monthly Performance</CardTitle>
-            <CardDescription>Current month statistics</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="bg-samudra-paper border border-samudra-paper-deep">
+          <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+            <p className="eyebrow text-samudra-ink-mute">This month</p>
+            <h3 className="font-display text-[20px] font-light text-samudra-ink">Monthly Performance</h3>
+          </div>
+          <div className="px-6 py-5 space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Bookings This Month</span>
-              <span className="text-xl font-bold">{analytics.monthlyBookings}</span>
+              <span className="eyebrow text-samudra-ink-mute">Bookings This Month</span>
+              <span className="font-display text-[20px] text-samudra-ink is-numeric">{analytics.monthlyBookings}</span>
             </div>
+            <div className="h-px bg-samudra-paper-deep" />
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Weekly Revenue</span>
-              <span className="text-xl font-bold text-green-600">Rp {analytics.weeklyRevenue.toLocaleString('id-ID')}</span>
+              <span className="eyebrow text-samudra-ink-mute">Weekly Revenue</span>
+              <span className="font-display text-[16px] text-samudra-ink is-numeric">Rp {analytics.weeklyRevenue.toLocaleString('id-ID')}</span>
             </div>
+            <div className="h-px bg-samudra-paper-deep" />
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Top Performing Room</span>
-              <Badge variant="outline">{analytics.topRoom}</Badge>
+              <span className="eyebrow text-samudra-ink-mute">Top Room</span>
+              <span className="eyebrow border border-samudra-paper-deep text-samudra-ink px-2 py-1">{analytics.topRoom}</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Activity</CardTitle>
-            <CardDescription>Next 7 days forecast</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="bg-samudra-paper border border-samudra-paper-deep">
+          <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+            <p className="eyebrow text-samudra-ink-mute">Next 7 days</p>
+            <h3 className="font-display text-[20px] font-light text-samudra-ink">Upcoming Activity</h3>
+          </div>
+          <div className="px-6 py-5 space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Check-ins Next 7 Days</span>
-              <Badge className="text-lg">{analytics.upcomingCheckIns}</Badge>
+              <span className="eyebrow text-samudra-ink-mute">Check-ins</span>
+              <span className="font-display text-[20px] text-samudra-ink is-numeric">{analytics.upcomingCheckIns}</span>
             </div>
+            <div className="h-px bg-samudra-paper-deep" />
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Current Occupancy</span>
-              <span className="text-lg font-semibold">{analytics.occupancyRate}%</span>
+              <span className="eyebrow text-samudra-ink-mute">Current Occupancy</span>
+              <span className="font-display text-[20px] text-samudra-ink is-numeric">{analytics.occupancyRate}%</span>
             </div>
+            <div className="h-px bg-samudra-paper-deep" />
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Total Active Bookings</span>
-              <span className="text-lg font-semibold">{analytics.totalBookings}</span>
+              <span className="eyebrow text-samudra-ink-mute">Total Active Bookings</span>
+              <span className="font-display text-[20px] text-samudra-ink is-numeric">{analytics.totalBookings}</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -914,6 +900,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
     siteName: '',
     siteUrl: '',
     adminEmail: '',
+    fromEmail: '',
     phone: '',
     address: '',
     city: '',
@@ -924,7 +911,9 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
     checkInTime: '15:00',
     checkOutTime: '11:00',
     maintenanceMode: false,
-    logo_url: ''
+    logo_url: '',
+    taxPercentage: 11,
+    serviceFeePercentage: 10
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -938,19 +927,26 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const apiUrl = paths.buildApiUrl('villa') + `?t=${Date.now()}`;
-      const response = await fetch(apiUrl, {
-        headers: { 'Cache-Control': 'no-cache' }
-      });
+      const [villaRes, emailSettingsRes] = await Promise.all([
+        fetch(paths.buildApiUrl('villa') + `?t=${Date.now()}`, { headers: { 'Cache-Control': 'no-cache' } }),
+        fetch(paths.buildApiUrl('settings'), { headers: { 'Cache-Control': 'no-cache' } }),
+      ]);
 
-      if (response.ok) {
-        const result = await response.json();
+      let fromEmail = '';
+      if (emailSettingsRes.ok) {
+        const emailResult = await emailSettingsRes.json();
+        fromEmail = emailResult?.data?.from_email || emailResult?.from_email || '';
+      }
+
+      if (villaRes.ok) {
+        const result = await villaRes.json();
         if (result.success && result.data) {
           const data = result.data;
           setSettings({
             siteName: data.name || '',
             siteUrl: data.website || '',
             adminEmail: data.email || '',
+            fromEmail,
             phone: data.phone || '',
             address: data.address || '',
             city: data.city || '',
@@ -961,7 +957,9 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
             checkInTime: data.checkInTime || data.check_in_time || '15:00',
             checkOutTime: data.checkOutTime || data.check_out_time || '11:00',
             maintenanceMode: data.maintenance_mode === 1 || data.maintenance_mode === true,
-            logo_url: data.logo_url || ''
+            logo_url: data.logo_url || '',
+            taxPercentage: data.tax_percentage !== undefined ? parseFloat(data.tax_percentage) : 11,
+            serviceFeePercentage: data.service_fee_percentage !== undefined ? parseFloat(data.service_fee_percentage) : 10
           });
         }
       }
@@ -975,320 +973,375 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onSave }) => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const apiUrl = paths.buildApiUrl('villa');
-      const response = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: settings.siteName,
-          website: settings.siteUrl,
-          email: settings.adminEmail,
-          phone: settings.phone,
-          address: settings.address,
-          city: settings.city,
-          state: settings.state,
-          country: settings.country,
-          currency: settings.currency,
-          timezone: settings.timezone,
-          check_in_time: settings.checkInTime,
-          check_out_time: settings.checkOutTime,
-          maintenance_mode: settings.maintenanceMode ? 1 : 0,
-          logo_url: settings.logo_url
-        })
-      });
+      const token = getAuthToken();
+      const authHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      };
 
-      const result = await response.json();
+      // Save villa info + email settings in parallel
+      const [villaRes] = await Promise.all([
+        fetch(paths.buildApiUrl('villa'), {
+          method: 'PUT',
+          headers: authHeaders,
+          body: JSON.stringify({
+            name: settings.siteName,
+            website: settings.siteUrl,
+            email: settings.adminEmail,
+            phone: settings.phone,
+            address: settings.address,
+            city: settings.city,
+            state: settings.state,
+            country: settings.country,
+            currency: settings.currency,
+            timezone: settings.timezone,
+            check_in_time: settings.checkInTime,
+            check_out_time: settings.checkOutTime,
+            maintenance_mode: settings.maintenanceMode ? 1 : 0,
+            logo_url: settings.logo_url,
+            tax_percentage: settings.taxPercentage,
+            service_fee_percentage: settings.serviceFeePercentage
+          })
+        }),
+        // Save email sender settings to KV so worker picks them up
+        fetch(paths.buildApiUrl('settings'), {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({
+            admin_email: settings.adminEmail,
+            from_email: settings.fromEmail || settings.adminEmail,
+            villa_name: settings.siteName,
+          })
+        }),
+      ]);
+
+      const result = await villaRes.json();
       if (result.success) {
-        // Refetch to confirm changes
         await loadSettings();
-        // Notify parent to refresh villa info (for sidebar logo)
         onSave?.();
-        alert('✅ Settings saved successfully!');
+        toast.success('Settings saved');
       } else {
-        alert('❌ Error saving settings: ' + (result.message || 'Unknown error'));
+        toast.error('Save failed', { description: result.message || 'Unknown error' });
       }
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('❌ Error saving settings');
+      toast.error('Could not save settings', { description: 'Please try again.' });
     } finally {
       setSaving(false);
     }
   };
 
+  const samudraFieldClass = "h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] focus:border-samudra-teal focus:outline-none transition-colors";
+  const samudraSelectClass = "h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] focus:border-samudra-teal focus:outline-none transition-colors";
+  const samudraLabelClass = "eyebrow block mb-2";
+
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">System Settings</h2>
+        <div className="mb-8">
+          <p className="font-script text-samudra-gold text-[28px] leading-none mb-2">configure your property</p>
+          <h2 className="font-display text-[40px] font-light text-samudra-ink">Settings</h2>
+          <div className="h-px w-[60px] bg-samudra-ink mt-3" style={{ opacity: 0.4 }} />
         </div>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-center h-32">
-              <span className="text-gray-500">Loading settings...</span>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-samudra-paper border border-samudra-paper-deep p-12 text-center">
+          <div className="animate-spin h-6 w-6 border-2 border-samudra-ink border-t-transparent mx-auto mb-4" />
+          <p className="eyebrow text-samudra-ink-mute">Loading settings...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">System Settings</h2>
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : 'Save Settings'}
-        </Button>
+    <div className="space-y-0 pb-20">
+      {/* Samudra page header */}
+      <div className="mb-8">
+        <p className="font-script text-samudra-gold text-[28px] leading-none mb-2">configure your property</p>
+        <h2 className="font-display text-[40px] font-light text-samudra-ink">Settings</h2>
+        <div className="h-px w-[60px] bg-samudra-ink mt-3" style={{ opacity: 0.4 }} />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>General Settings</CardTitle>
-          <CardDescription>Configure your site's basic information</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Logo Upload Section */}
-          <div className="space-y-4 pb-6 border-b">
-            <Label>Site Logo</Label>
-            <div className="flex items-center gap-6">
-              <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden">
-                {settings.logo_url ? (
-                  <img
-                    src={settings.logo_url}
-                    alt="Site Logo"
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <div className="text-center text-gray-400">
-                    <Image className="w-8 h-8 mx-auto mb-2" />
-                    <span className="text-xs">No logo</span>
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <input
-                  type="file"
-                  id="logoUpload"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-
-                    if (file.size > 5 * 1024 * 1024) {
-                      alert('Logo must be less than 5MB');
-                      return;
-                    }
-
-                    setUploadingLogo(true);
-                    try {
-                      const formData = new FormData();
-                      formData.append('file', file);
-                      formData.append('prefix', 'logo');
-
-                      const response = await fetch(paths.buildApiUrl('images/upload'), {
-                        method: 'POST',
-                        body: formData
-                      });
-
-                      const result = await response.json();
-                      if (result.success && result.data?.url) {
-                        setSettings({ ...settings, logo_url: result.data.url });
-                        alert('✅ Logo uploaded! Click "Save Settings" to apply.');
-                      } else {
-                        alert('Failed to upload logo: ' + (result.error || 'Unknown error'));
+      <div className="space-y-8">
+        {/* ── Section 1: Identity ── */}
+        <div className="bg-samudra-paper border border-samudra-paper-deep">
+          <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+            <p className="eyebrow text-samudra-ink-mute">Section 1</p>
+            <h3 className="font-display text-[22px] font-light text-samudra-ink">Identity</h3>
+          </div>
+          <div className="p-6 space-y-5">
+            {/* Logo */}
+            <div>
+              <label className={samudraLabelClass}>Logo</label>
+              <div className="flex items-start gap-6">
+                <div className="w-28 h-28 border border-samudra-paper-deep bg-samudra-paper-soft flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {settings.logo_url ? (
+                    <img src={settings.logo_url} alt="Site Logo" className="w-full h-full object-contain" />
+                  ) : (
+                    <div className="text-center">
+                      <Image className="w-7 h-7 text-samudra-ink-mute mx-auto mb-1" />
+                      <span className="eyebrow text-samudra-ink-mute text-[9px]">No logo</span>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    id="logoUpload"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error('Logo too large', { description: 'File must be under 5 MB.' });
+                        return;
                       }
-                    } catch (error) {
-                      console.error('Logo upload error:', error);
-                      alert('Failed to upload logo');
-                    } finally {
-                      setUploadingLogo(false);
-                    }
-                  }}
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => document.getElementById('logoUpload')?.click()}
-                  disabled={uploadingLogo}
-                >
-                  {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
-                </Button>
-                {settings.logo_url && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-500 hover:text-red-700"
-                    onClick={() => setSettings({ ...settings, logo_url: '' })}
+                      setUploadingLogo(true);
+                      try {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('prefix', 'logo');
+                        const response = await fetch(paths.buildApiUrl('images/upload'), { method: 'POST', body: formData });
+                        const result = await response.json();
+                        if (result.success && result.data?.url) {
+                          setSettings({ ...settings, logo_url: result.data.url });
+                          toast.success('Logo uploaded', { description: 'Click Save to apply.' });
+                        } else {
+                          toast.error('Logo upload failed', { description: result.error || 'Unknown error' });
+                        }
+                      } catch (error) {
+                        console.error('Logo upload error:', error);
+                        toast.error('Logo upload failed', { description: 'Please try again.' });
+                      } finally {
+                        setUploadingLogo(false);
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('logoUpload')?.click()}
+                    disabled={uploadingLogo}
+                    className="h-9 px-5 border border-samudra-ink text-samudra-ink hover:bg-samudra-ink hover:text-samudra-paper transition-colors eyebrow text-[10px] tracking-[0.3em] disabled:opacity-50"
+                    style={{ fontFamily: 'var(--font-label)' }}
                   >
-                    Remove Logo
-                  </Button>
-                )}
-                <p className="text-xs text-gray-500">Recommended: PNG or SVG, max 5MB</p>
+                    {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
+                  </button>
+                  {settings.logo_url && (
+                    <button
+                      type="button"
+                      className="block eyebrow text-[10px] text-samudra-ink-mute hover:text-samudra-ink transition-colors"
+                      style={{ fontFamily: 'var(--font-label)' }}
+                      onClick={() => setSettings({ ...settings, logo_url: '' })}
+                    >
+                      Remove
+                    </button>
+                  )}
+                  <p className="eyebrow text-samudra-ink-mute text-[10px]">PNG or SVG · max 5 MB</p>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label htmlFor="siteName" className={samudraLabelClass}>Villa Name</label>
+                <input id="siteName" type="text" value={settings.siteName}
+                  onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
+                  placeholder="Your Villa Name" className={samudraFieldClass} style={{ fontFamily: 'var(--font-label)' }} />
+              </div>
+              <div>
+                <label htmlFor="siteUrl" className={samudraLabelClass}>Website URL</label>
+                <input id="siteUrl" type="url" value={settings.siteUrl}
+                  onChange={(e) => setSettings({ ...settings, siteUrl: e.target.value })}
+                  placeholder="https://yourvilla.com" className={samudraFieldClass} style={{ fontFamily: 'var(--font-label)' }} />
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="siteName">Site Name / Villa Name</Label>
-              <Input
-                id="siteName"
-                type="text"
-                value={settings.siteName}
-                onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                placeholder="Your Villa Name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="siteUrl">Website URL</Label>
-              <Input
-                id="siteUrl"
-                type="url"
-                value={settings.siteUrl}
-                onChange={(e) => setSettings({ ...settings, siteUrl: e.target.value })}
-                placeholder="https://yourhotel.com"
-              />
+        {/* ── Section 2: Contact ── */}
+        <div className="bg-samudra-paper border border-samudra-paper-deep">
+          <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+            <p className="eyebrow text-samudra-ink-mute">Section 2</p>
+            <h3 className="font-display text-[22px] font-light text-samudra-ink">Contact</h3>
+          </div>
+          <div className="p-6 space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label htmlFor="adminEmail" className={samudraLabelClass}>Admin / Contact Email</label>
+                <input id="adminEmail" type="email" value={settings.adminEmail}
+                  onChange={(e) => setSettings({ ...settings, adminEmail: e.target.value })}
+                  placeholder="admin@yourvilla.com" className={samudraFieldClass} style={{ fontFamily: 'var(--font-label)' }} />
+                <p className="eyebrow text-samudra-ink-mute text-[10px] mt-1.5">Receives booking notifications · Reply-To</p>
+              </div>
+              <div>
+                <label htmlFor="fromEmail" className={samudraLabelClass}>Email Sender (From)</label>
+                <input id="fromEmail" type="email" value={settings.fromEmail}
+                  onChange={(e) => setSettings({ ...settings, fromEmail: e.target.value })}
+                  placeholder="booking@yourvilla.com" className={samudraFieldClass} style={{ fontFamily: 'var(--font-label)' }} />
+                <p className="eyebrow text-samudra-ink-mute text-[10px] mt-1.5">Must be a verified domain</p>
+              </div>
+              <div>
+                <label htmlFor="phone" className={samudraLabelClass}>Phone</label>
+                <input id="phone" type="tel" value={settings.phone}
+                  onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
+                  placeholder="+62 xxx xxxx xxxx" className={samudraFieldClass} style={{ fontFamily: 'var(--font-label)' }} />
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="adminEmail">Admin / Contact Email</Label>
-              <Input
-                id="adminEmail"
-                type="email"
-                value={settings.adminEmail}
-                onChange={(e) => setSettings({ ...settings, adminEmail: e.target.value })}
-                placeholder="admin@yourhotel.com"
-              />
+        {/* ── Section 3: Location ── */}
+        <div className="bg-samudra-paper border border-samudra-paper-deep">
+          <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+            <p className="eyebrow text-samudra-ink-mute">Section 3</p>
+            <h3 className="font-display text-[22px] font-light text-samudra-ink">Location</h3>
+          </div>
+          <div className="p-6 space-y-5">
+            <div>
+              <label htmlFor="address" className={samudraLabelClass}>Street Address</label>
+              <input id="address" type="text" value={settings.address}
+                onChange={(e) => setSettings({ ...settings, address: e.target.value })}
+                placeholder="Street address" className={samudraFieldClass} style={{ fontFamily: 'var(--font-label)' }} />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={settings.phone}
-                onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
-                placeholder="+62 xxx xxxx xxxx"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div>
+                <label htmlFor="city" className={samudraLabelClass}>City</label>
+                <input id="city" type="text" value={settings.city}
+                  onChange={(e) => setSettings({ ...settings, city: e.target.value })}
+                  placeholder="City" className={samudraFieldClass} style={{ fontFamily: 'var(--font-label)' }} />
+              </div>
+              <div>
+                <label htmlFor="state" className={samudraLabelClass}>State / Province</label>
+                <input id="state" type="text" value={settings.state}
+                  onChange={(e) => setSettings({ ...settings, state: e.target.value })}
+                  placeholder="State" className={samudraFieldClass} style={{ fontFamily: 'var(--font-label)' }} />
+              </div>
+              <div>
+                <label htmlFor="country" className={samudraLabelClass}>Country</label>
+                <input id="country" type="text" value={settings.country}
+                  onChange={(e) => setSettings({ ...settings, country: e.target.value })}
+                  placeholder="Country" className={samudraFieldClass} style={{ fontFamily: 'var(--font-label)' }} />
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Input
-              id="address"
-              type="text"
-              value={settings.address}
-              onChange={(e) => setSettings({ ...settings, address: e.target.value })}
-              placeholder="Street address"
-            />
+        {/* ── Section 4: Operations ── */}
+        <div className="bg-samudra-paper border border-samudra-paper-deep">
+          <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+            <p className="eyebrow text-samudra-ink-mute">Section 4</p>
+            <h3 className="font-display text-[22px] font-light text-samudra-ink">Operations</h3>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                type="text"
-                value={settings.city}
-                onChange={(e) => setSettings({ ...settings, city: e.target.value })}
-                placeholder="City"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="state">State / Province</Label>
-              <Input
-                id="state"
-                type="text"
-                value={settings.state}
-                onChange={(e) => setSettings({ ...settings, state: e.target.value })}
-                placeholder="State"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
-              <Input
-                id="country"
-                type="text"
-                value={settings.country}
-                onChange={(e) => setSettings({ ...settings, country: e.target.value })}
-                placeholder="Country"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
-              <select
-                id="currency"
-                value={settings.currency}
-                onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <option value="IDR">IDR - Indonesian Rupiah</option>
-                <option value="EUR">EUR - Euro</option>
-                <option value="GBP">GBP - British Pound</option>
-                <option value="IDR">IDR - Indonesian Rupiah</option>
-                <option value="MYR">MYR - Malaysian Ringgit</option>
-                <option value="SGD">SGD - Singapore Dollar</option>
-              </select>
+          <div className="p-6 space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label htmlFor="currency" className={samudraLabelClass}>Currency</label>
+                <select id="currency" value={settings.currency}
+                  onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
+                  className={samudraSelectClass} style={{ fontFamily: 'var(--font-label)' }}>
+                  <option value="IDR">IDR — Indonesian Rupiah</option>
+                  <option value="USD">USD — US Dollar</option>
+                  <option value="EUR">EUR — Euro</option>
+                  <option value="GBP">GBP — British Pound</option>
+                  <option value="MYR">MYR — Malaysian Ringgit</option>
+                  <option value="SGD">SGD — Singapore Dollar</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="timezone" className={samudraLabelClass}>Timezone</label>
+                <select id="timezone" value={settings.timezone}
+                  onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
+                  className={samudraSelectClass} style={{ fontFamily: 'var(--font-label)' }}>
+                  <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
+                  <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
+                  <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
+                  <option value="Asia/Singapore">Asia/Singapore</option>
+                  <option value="Asia/Kuala_Lumpur">Asia/Kuala_Lumpur</option>
+                  <option value="UTC">UTC</option>
+                  <option value="America/New_York">America/New_York</option>
+                  <option value="Europe/London">Europe/London</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="checkInTime" className={samudraLabelClass}>Check-in Time</label>
+                <input id="checkInTime" type="time" value={settings.checkInTime}
+                  onChange={(e) => setSettings({ ...settings, checkInTime: e.target.value })}
+                  className={samudraFieldClass} style={{ fontFamily: 'var(--font-label)' }} />
+              </div>
+              <div>
+                <label htmlFor="checkOutTime" className={samudraLabelClass}>Check-out Time</label>
+                <input id="checkOutTime" type="time" value={settings.checkOutTime}
+                  onChange={(e) => setSettings({ ...settings, checkOutTime: e.target.value })}
+                  className={samudraFieldClass} style={{ fontFamily: 'var(--font-label)' }} />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="timezone">Timezone</Label>
-              <select
-                id="timezone"
-                value={settings.timezone}
-                onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
-                <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
-                <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
-                <option value="Asia/Singapore">Asia/Singapore</option>
-                <option value="Asia/Kuala_Lumpur">Asia/Kuala_Lumpur</option>
-                <option value="UTC">UTC</option>
-                <option value="America/New_York">America/New_York</option>
-                <option value="Europe/London">Europe/London</option>
-              </select>
+            {/* Tax & Service Fee */}
+            <div className="pt-4 border-t border-samudra-paper-deep">
+              <p className="eyebrow text-samudra-ink-mute mb-4">Tax & Service Fee</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label htmlFor="taxPercentage" className={samudraLabelClass}>Tax Rate (%)</label>
+                  <div className="relative">
+                    <input id="taxPercentage" type="number" min="0" max="100" step="0.1"
+                      value={settings.taxPercentage}
+                      onChange={(e) => setSettings({ ...settings, taxPercentage: parseFloat(e.target.value) || 0 })}
+                      className={`${samudraFieldClass} pr-8`} style={{ fontFamily: 'var(--font-label)' }} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 eyebrow text-samudra-ink-mute text-[11px]">%</span>
+                  </div>
+                  <p className="eyebrow text-samudra-ink-mute text-[10px] mt-1.5">VAT / PPN applied to all bookings</p>
+                </div>
+                <div>
+                  <label htmlFor="serviceFeePercentage" className={samudraLabelClass}>Service Fee (%)</label>
+                  <div className="relative">
+                    <input id="serviceFeePercentage" type="number" min="0" max="100" step="0.1"
+                      value={settings.serviceFeePercentage}
+                      onChange={(e) => setSettings({ ...settings, serviceFeePercentage: parseFloat(e.target.value) || 0 })}
+                      className={`${samudraFieldClass} pr-8`} style={{ fontFamily: 'var(--font-label)' }} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 eyebrow text-samudra-ink-mute text-[11px]">%</span>
+                  </div>
+                  <p className="eyebrow text-samudra-ink-mute text-[10px] mt-1.5">Applied on top of subtotal</p>
+                </div>
+              </div>
+              {/* Tax example box — Samudra palette */}
+              <div className="mt-4 p-4 bg-samudra-paper-soft border-l-2 border-samudra-teal">
+                <p className="eyebrow text-samudra-ink-mute mb-1">Example</p>
+                <p className="font-display text-[13px] text-samudra-ink">
+                  Rp 1.000.000 booking → Service Fee: Rp {(10000).toLocaleString('id-ID')} (10%) → Tax: Rp {(11000).toLocaleString('id-ID')} (11%) → Total shown to guest
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="checkInTime">Check-in Time</Label>
-              <Input
-                id="checkInTime"
-                type="time"
-                value={settings.checkInTime}
-                onChange={(e) => setSettings({ ...settings, checkInTime: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="checkOutTime">Check-out Time</Label>
-              <Input
-                id="checkOutTime"
-                type="time"
-                value={settings.checkOutTime}
-                onChange={(e) => setSettings({ ...settings, checkOutTime: e.target.value })}
-              />
+            {/* Maintenance Mode */}
+            <div className="flex items-center gap-3 pt-4 border-t border-samudra-paper-deep">
+              <Switch id="maintenanceMode" checked={settings.maintenanceMode}
+                onCheckedChange={(checked) => setSettings({ ...settings, maintenanceMode: checked })} />
+              <label htmlFor="maintenanceMode" className="eyebrow cursor-pointer">Enable Maintenance Mode</label>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="flex items-center space-x-3 pt-4 border-t">
-            <Switch
-              id="maintenanceMode"
-              checked={settings.maintenanceMode}
-              onCheckedChange={(checked) => setSettings({ ...settings, maintenanceMode: checked })}
-            />
-            <Label htmlFor="maintenanceMode">Enable Maintenance Mode</Label>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Sticky save bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-10 bg-samudra-paper border-t border-samudra-paper-deep px-6 py-3 flex items-center justify-end gap-3"
+        style={{ boxShadow: '0 -4px 16px rgba(10,14,20,0.06)' }}>
+        <button
+          type="button"
+          onClick={loadSettings}
+          disabled={saving || loading}
+          className="h-10 px-6 border border-samudra-ink text-samudra-ink hover:bg-samudra-paper-soft transition-colors eyebrow text-[10px] tracking-[0.3em] disabled:opacity-50"
+          style={{ fontFamily: 'var(--font-label)' }}
+        >
+          Discard
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="h-10 px-6 bg-samudra-ink text-samudra-paper hover:bg-samudra-teal transition-colors eyebrow text-[10px] tracking-[0.3em] disabled:opacity-50"
+          style={{ fontFamily: 'var(--font-label)' }}
+        >
+          {saving ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
     </div>
   );
 };
@@ -1342,11 +1395,11 @@ const PackageAvailabilityVisualization: React.FC = () => {
     const hasValidUntil = pkg.valid_until && pkg.valid_until !== '0000-00-00 00:00:00';
 
     if (!isActive) {
-      return { status: 'inactive', color: 'bg-red-100 text-red-800', text: 'Inactive' };
+      return { status: 'inactive', color: 'border border-samudra-ink-mute text-samudra-ink-mute', text: 'Inactive' };
     }
 
     if (!hasValidFrom && !hasValidUntil) {
-      return { status: 'unlimited', color: 'bg-blue-100 text-blue-800', text: 'Always Available' };
+      return { status: 'unlimited', color: 'border border-samudra-teal text-samudra-teal', text: 'Always Available' };
     }
 
     const now = new Date();
@@ -1354,35 +1407,35 @@ const PackageAvailabilityVisualization: React.FC = () => {
     if (hasValidFrom) {
       const fromDate = new Date(pkg.valid_from);
       if (now < fromDate) {
-        return { status: 'future', color: 'bg-yellow-100 text-yellow-800', text: 'Future Available' };
+        return { status: 'future', color: 'border border-samudra-gold text-samudra-gold', text: 'Future Available' };
       }
     }
 
     if (hasValidUntil) {
       const untilDate = new Date(pkg.valid_until);
       if (now > untilDate) {
-        return { status: 'expired', color: 'bg-gray-100 text-gray-800', text: 'Expired' };
+        return { status: 'expired', color: 'border border-samudra-sand text-samudra-sand', text: 'Expired' };
       }
     }
 
-    return { status: 'active', color: 'bg-green-100 text-green-800', text: 'Currently Available' };
+    return { status: 'active', color: 'border border-samudra-teal text-samudra-teal', text: 'Currently Available' };
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Loading package availability...</span>
+      <div className="flex items-center py-8">
+        <div className="animate-spin h-5 w-5 border-2 border-samudra-ink border-t-transparent mr-3" />
+        <span className="eyebrow text-samudra-ink-mute">Loading packages...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+      <div className="bg-samudra-paper-soft border border-samudra-paper-deep p-4 card-accent-teal">
         <div className="flex items-center">
-          <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-          <span className="text-red-700">Error loading packages: {error}</span>
+          <AlertCircle className="w-5 h-5 text-[#7a3d31] mr-2" />
+          <span className="text-[13px] text-samudra-ink">Error loading packages: {error}</span>
         </div>
       </div>
     );
@@ -1391,9 +1444,9 @@ const PackageAvailabilityVisualization: React.FC = () => {
   return (
     <div className="space-y-4">
       {packages.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <Package className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <p>No packages found. Create packages in the Sales Tools Management section.</p>
+        <div className="py-10 text-center">
+          <p className="font-script text-samudra-gold text-[22px] leading-none mb-2">no packages yet</p>
+          <p className="eyebrow text-samudra-ink-mute">Create packages in the Packages section first.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1403,85 +1456,56 @@ const PackageAvailabilityVisualization: React.FC = () => {
             const untilDate = formatDate(pkg.valid_until);
 
             return (
-              <div key={pkg.id || index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-gray-900 break-words flex-1 min-w-0 mr-3">{pkg.name}</h4>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 ${availability.color}`}>
+              <div key={pkg.id || index} className="bg-samudra-paper border border-samudra-paper-deep p-4">
+                <div className="flex items-start justify-between mb-4">
+                  <h4 className="font-display text-[16px] font-light text-samudra-ink break-words flex-1 min-w-0 mr-3">{pkg.name}</h4>
+                  <span className={`eyebrow text-[10px] px-2 py-0.5 whitespace-nowrap flex-shrink-0 ${availability.color}`}>
                     {availability.text}
                   </span>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Package ID:</span>
-                    <span className="font-medium">#{pkg.id}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Price:</span>
-                    <span className="font-medium text-green-600">${pkg.base_price || pkg.price}</span>
+                  <div className="flex justify-between items-baseline">
+                    <span className="eyebrow text-samudra-ink-mute">Price</span>
+                    <span className="font-display text-[14px] text-samudra-ink is-numeric">Rp {Number(pkg.base_price || pkg.price || 0).toLocaleString('id-ID')}</span>
                   </div>
 
                   {fromDate && (
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">Available From:</span>
-                      <span className="font-medium text-blue-600">{fromDate}</span>
+                    <div className="flex justify-between items-baseline">
+                      <span className="eyebrow text-samudra-ink-mute">From</span>
+                      <span className="text-[13px] text-samudra-ink">{fromDate}</span>
                     </div>
                   )}
 
                   {untilDate && (
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">Available Until:</span>
-                      <span className="font-medium text-orange-600">{untilDate}</span>
+                    <div className="flex justify-between items-baseline">
+                      <span className="eyebrow text-samudra-ink-mute">Until</span>
+                      <span className="text-[13px] text-samudra-ink">{untilDate}</span>
                     </div>
                   )}
 
                   {!fromDate && !untilDate && (
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">Date Range:</span>
-                      <span className="font-medium text-blue-600">No limits set</span>
+                    <div className="flex justify-between items-baseline">
+                      <span className="eyebrow text-samudra-ink-mute">Dates</span>
+                      <span className="text-[13px] text-samudra-ink-mute">No limits set</span>
                     </div>
                   )}
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
-                  <div className="text-xs text-gray-500">
+                <div className="mt-4 pt-3 border-t border-samudra-paper-deep">
+                  <p className="eyebrow text-samudra-ink-mute text-[10px]">
                     {availability.status === 'unlimited' && 'Available indefinitely'}
                     {availability.status === 'active' && 'Currently bookable'}
                     {availability.status === 'future' && 'Scheduled for future'}
                     {availability.status === 'expired' && 'Past availability window'}
                     {availability.status === 'inactive' && 'Disabled by admin'}
-                  </div>
-                  <button
-                    onClick={() => {
-                      // This would trigger opening the package edit modal
-                      // For now, just show an alert pointing to the right place
-                      alert('To edit availability dates:\n1. Go to "Packages" tab\n2. Click "Edit Sales Tool" for this package\n3. Use the "Package Availability Dates" section');
-                    }}
-                    className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                  >
-                    Edit Dates
-                  </button>
+                  </p>
                 </div>
               </div>
             );
           })}
         </div>
       )}
-
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-        <div className="flex items-start">
-          <Info className="w-5 h-5 text-blue-600 mt-0.5 mr-2" />
-          <div className="text-sm text-blue-800">
-            <p className="font-medium mb-1">Package Availability Management:</p>
-            <p>• <strong>Always Available</strong>: No date restrictions (depends on room inventory)</p>
-            <p>• <strong>Currently Available</strong>: Within set date range and active</p>
-            <p>• <strong>Future Available</strong>: Scheduled to become available</p>
-            <p>• <strong>Expired</strong>: Past the availability end date</p>
-            <p>• <strong>Inactive</strong>: Disabled by admin in Sales Tools Management</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
@@ -1504,9 +1528,13 @@ const EnhancedBookingCalendar: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Load bookings, packages, and calendar data in parallel
+      // Load bookings, packages, and calendar data in parallel (bookings requires auth)
+      const calToken = getAuthToken();
+      const calAuthHeaders: Record<string, string> = calToken
+        ? { 'Authorization': `Bearer ${calToken}` }
+        : {};
       const [bookingsResponse, packagesResponse] = await Promise.all([
-        fetch(paths.buildApiUrl('bookings/list')),
+        fetch(paths.buildApiUrl('bookings/list'), { headers: calAuthHeaders }),
         fetch(paths.buildApiUrl('packages'))
       ]);
 
@@ -1571,18 +1599,18 @@ const EnhancedBookingCalendar: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Loading calendar overview...</span>
+        <div className="animate-spin h-6 w-6 border-2 border-samudra-ink border-t-transparent" />
+        <span className="ml-3 eyebrow text-samudra-ink-mute">Loading calendar...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+      <div className="bg-samudra-paper-soft border border-samudra-paper-deep p-4 card-accent-teal">
         <div className="flex items-center">
-          <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-          <span className="text-red-700">Error loading calendar data: {error}</span>
+          <AlertCircle className="w-5 h-5 text-[#7a3d31] mr-2" />
+          <span className="text-[13px] text-samudra-ink">Error loading calendar data: {error}</span>
         </div>
       </div>
     );
@@ -1590,133 +1618,96 @@ const EnhancedBookingCalendar: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Calendar Statistics Cards */}
+      {/* KPI Cards — Samudra ink-on-paper */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-blue-900">Total Bookings</p>
-              <p className="text-lg font-bold text-blue-600">{calendarStats.totalBookings || 0}</p>
+        {[
+          { icon: Calendar,     label: 'Total Bookings',  value: String(calendarStats.totalBookings || 0),   sub: 'next 30 days' },
+          { icon: DollarSign,   label: 'Expected Revenue', value: `Rp ${Number(calendarStats.totalRevenue || 0).toLocaleString('id-ID')}`, sub: 'upcoming' },
+          { icon: CheckCircle,  label: 'Confirmed',       value: String(calendarStats.confirmedBookings || 0), sub: 'ready' },
+          { icon: Clock,        label: 'Pending',         value: String(calendarStats.pendingBookings || 0),  sub: 'awaiting' },
+        ].map(({ icon: Icon, label, value, sub }) => (
+          <div key={label} className="bg-samudra-paper border border-samudra-paper-deep p-5 card-accent-teal">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="eyebrow text-samudra-ink-mute mb-3">{label}</p>
+                <p className="font-display text-[28px] font-light text-samudra-ink leading-none is-numeric">{value}</p>
+                <p className="font-script text-samudra-gold text-[14px] mt-2">{sub}</p>
+              </div>
+              <Icon className="h-5 w-5 text-samudra-ink-mute opacity-50 mt-0.5" />
             </div>
-            <Calendar className="w-6 h-6 text-blue-500" />
           </div>
-          <p className="text-xs text-blue-600 mt-1">Next 30 days</p>
-        </div>
-
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-green-900">Total Revenue</p>
-              <p className="text-lg font-bold text-green-600">Rp {Number(calendarStats.totalRevenue || 0).toLocaleString('id-ID')}</p>
-            </div>
-            <DollarSign className="w-6 h-6 text-green-500" />
-          </div>
-          <p className="text-xs text-green-600 mt-1">Expected income</p>
-        </div>
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-yellow-900">Confirmed</p>
-              <p className="text-lg font-bold text-yellow-600">{calendarStats.confirmedBookings || 0}</p>
-            </div>
-            <CheckCircle className="w-6 h-6 text-yellow-500" />
-          </div>
-          <p className="text-xs text-yellow-600 mt-1">Ready bookings</p>
-        </div>
-
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-orange-900">Pending</p>
-              <p className="text-lg font-bold text-orange-600">{calendarStats.pendingBookings || 0}</p>
-            </div>
-            <Clock className="w-6 h-6 text-orange-500" />
-          </div>
-          <p className="text-xs text-orange-600 mt-1">Awaiting confirmation</p>
-        </div>
+        ))}
       </div>
 
-      {/* Calendar View Toggle */}
+      {/* View toggle — Samudra segmented control */}
       <div className="flex items-center justify-between">
-        <h4 className="text-lg font-semibold text-gray-900">Calendar View Options</h4>
-        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+        <p className="eyebrow text-samudra-ink-mute">Calendar View</p>
+        <div className="flex border border-samudra-ink" style={{ display: 'inline-flex' }}>
           <button
             onClick={() => setSelectedView('summary')}
-            className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${selectedView === 'summary'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+            className={`px-4 py-2 eyebrow text-[10px] tracking-[0.3em] transition-colors ${selectedView === 'summary'
+              ? 'bg-samudra-ink text-samudra-paper'
+              : 'bg-samudra-paper text-samudra-ink hover:bg-samudra-paper-soft'
               }`}
+            style={{ fontFamily: 'var(--font-label)' }}
           >
-            📅 2-Month View
+            2-Month View
           </button>
           <button
             onClick={() => setSelectedView('detailed')}
-            className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${selectedView === 'detailed'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+            className={`px-4 py-2 eyebrow text-[10px] tracking-[0.3em] border-l border-samudra-ink transition-colors ${selectedView === 'detailed'
+              ? 'bg-samudra-ink text-samudra-paper'
+              : 'bg-samudra-paper text-samudra-ink hover:bg-samudra-paper-soft'
               }`}
+            style={{ fontFamily: 'var(--font-label)' }}
           >
-            📅 3-Month + Stats
+            3-Month + Stats
           </button>
         </div>
       </div>
 
-      {/* Calendar Views */}
+      {/* Calendar Views — horizontal scroll on mobile (min-width: 640px) */}
       {selectedView === 'summary' ? (
-        <div className="bg-gray-50 rounded-lg p-4">
-          <CalendarDashboard monthCount={2} />
+        <div className="bg-samudra-paper border border-samudra-paper-deep p-4 overflow-x-auto">
+          <div style={{ minWidth: '640px' }}>
+            <CalendarDashboard monthCount={2} />
+          </div>
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-gray-50 rounded-lg p-4">
-            <CalendarDashboard monthCount={3} />
+          <div className="bg-samudra-paper border border-samudra-paper-deep p-4 overflow-x-auto">
+            <div style={{ minWidth: '640px' }}>
+              <CalendarDashboard monthCount={3} />
+            </div>
           </div>
 
           {/* Package Performance Summary */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <h5 className="font-semibold text-gray-900 mb-3">Package Booking Summary (Next 30 Days)</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-samudra-paper border border-samudra-paper-deep">
+            <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+              <p className="eyebrow text-samudra-ink-mute">Next 30 Days</p>
+              <h5 className="font-display text-[18px] font-light text-samudra-ink">Package Bookings</h5>
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               {calendarStats.packageBreakdown?.map((item: any, index: number) => (
-                <div key={item.package.id || index} className="bg-gray-50 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-1 gap-2">
-                    <h6 className="font-medium text-gray-900 text-sm break-words flex-1 min-w-0">{item.package.name}</h6>
-                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                <div key={item.package.id || index} className="bg-samudra-paper-soft border border-samudra-paper-deep p-4">
+                  <div className="flex items-start justify-between mb-2 gap-2">
+                    <h6 className="font-display text-[14px] font-light text-samudra-ink break-words flex-1 min-w-0">{item.package.name}</h6>
+                    <span className="eyebrow text-[10px] px-2 py-0.5 border border-samudra-teal text-samudra-teal whitespace-nowrap flex-shrink-0">
                       {item.bookingCount}
                     </span>
                   </div>
-                  <p className="text-xs text-green-600 font-medium break-words">Rp {Number(item.totalRevenue || 0).toLocaleString('id-ID')} revenue</p>
+                  <p className="eyebrow text-samudra-ink-mute text-[10px]">Rp {Number(item.totalRevenue || 0).toLocaleString('id-ID')}</p>
                 </div>
               )) || (
-                  <div className="col-span-full text-center py-4 text-gray-500 text-sm">
-                    No package bookings found for the next 30 days.
+                  <div className="col-span-full py-6 text-center">
+                    <p className="font-script text-samudra-gold text-[18px]">no package bookings</p>
+                    <p className="eyebrow text-samudra-ink-mute mt-1">in the next 30 days</p>
                   </div>
                 )}
             </div>
           </div>
         </div>
       )}
-
-      {/* Calendar Integration Status */}
-      <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="font-semibold text-purple-900">Calendar Integration Status</h4>
-            <p className="text-sm text-purple-700 mt-1">
-              External calendar sync and booking coordination
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              // This would switch to the integration tab
-              alert('Click on "Integration & Sync" tab above to manage calendar integrations');
-            }}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
-          >
-            Manage Sync
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
@@ -1727,366 +1718,63 @@ const CalendarSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-900">Calendar & Availability Management</h2>
+      {/* Samudra page header */}
+      <div className="mb-6">
+        <p className="font-script text-samudra-gold text-[28px] leading-none mb-2">availability at a glance</p>
+        <h2 className="font-display text-[40px] font-light text-samudra-ink">Calendar</h2>
+        <div className="h-px w-[60px] bg-samudra-ink mt-3" style={{ opacity: 0.4 }} />
+      </div>
 
-        {/* Calendar Sub-tabs */}
-        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-          <button
-            onClick={() => setActiveCalendarTab('dashboard')}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeCalendarTab === 'dashboard'
-              ? 'bg-white text-hotel-navy shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-              }`}
-          >
-            📅 Calendar View
-          </button>
-          <button
-            onClick={() => setActiveCalendarTab('integration')}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeCalendarTab === 'integration'
-              ? 'bg-white text-hotel-navy shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-              }`}
-          >
-            🔗 Integration & Sync
-          </button>
-        </div>
+      {/* Samudra segmented sub-tabs — no emoji, no rounded-lg */}
+      <div className="flex border border-samudra-ink" style={{ display: 'inline-flex' }}>
+        <button
+          onClick={() => setActiveCalendarTab('dashboard')}
+          className={`px-5 py-2.5 eyebrow text-[11px] tracking-[0.3em] transition-colors ${activeCalendarTab === 'dashboard'
+            ? 'bg-samudra-ink text-samudra-paper'
+            : 'bg-samudra-paper text-samudra-ink hover:bg-samudra-paper-soft'
+            }`}
+          style={{ fontFamily: 'var(--font-label)' }}
+        >
+          Calendar View
+        </button>
+        <button
+          onClick={() => setActiveCalendarTab('integration')}
+          className={`px-5 py-2.5 eyebrow text-[11px] tracking-[0.3em] border-l border-samudra-ink transition-colors ${activeCalendarTab === 'integration'
+            ? 'bg-samudra-ink text-samudra-paper'
+            : 'bg-samudra-paper text-samudra-ink hover:bg-samudra-paper-soft'
+            }`}
+          style={{ fontFamily: 'var(--font-label)' }}
+        >
+          Integration & Sync
+        </button>
       </div>
 
       {/* Calendar Content */}
       {activeCalendarTab === 'dashboard' && (
         <div className="space-y-6">
           {/* Package Availability Overview */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Package className="w-5 h-5 text-blue-600 mr-2" />
-              Package Availability Timeline
-            </h3>
-
+          <div className="bg-samudra-paper border border-samudra-paper-deep p-6">
+            <div className="px-0 pb-4 mb-4 border-b border-samudra-paper-deep">
+              <p className="eyebrow text-samudra-ink-mute mb-1">Package Status</p>
+              <h3 className="font-display text-[20px] font-light text-samudra-ink">Availability Timeline</h3>
+            </div>
             <PackageAvailabilityVisualization />
           </div>
 
           {/* Enhanced Calendar Dashboard */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Calendar className="w-5 h-5 text-green-600 mr-2" />
-              Booking Calendar Overview
-            </h3>
-
+          <div className="bg-samudra-paper border border-samudra-paper-deep p-6">
+            <div className="pb-4 mb-4 border-b border-samudra-paper-deep">
+              <p className="eyebrow text-samudra-ink-mute mb-1">Booking Overview</p>
+              <h3 className="font-display text-[20px] font-light text-samudra-ink">Calendar</h3>
+            </div>
             <EnhancedBookingCalendar />
           </div>
         </div>
       )}
 
       {activeCalendarTab === 'integration' && (
-        <div className="bg-white rounded-lg shadow">
-          {/* Integration & Sync Content - Embedded directly */}
-          <div className="p-6 space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Settings className="w-6 h-6" />
-                Integration & Sync Management
-              </h2>
-            </div>
-
-            {/* Sync Status Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="font-medium text-blue-900">Airbnb Sync</span>
-                </div>
-                <p className="text-sm text-blue-700 mt-1">Active - Every 30 minutes</p>
-                <p className="text-xs text-blue-600 mt-1">Last sync: 5 minutes ago</p>
-              </div>
-
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                  <span className="font-medium text-gray-700">Booking.com</span>
-                </div>
-                <p className="text-sm text-gray-600 mt-1">Not configured</p>
-                <p className="text-xs text-gray-500 mt-1">Add iCal URL to enable</p>
-              </div>
-
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                  <span className="font-medium text-gray-700">VRBO</span>
-                </div>
-                <p className="text-sm text-gray-600 mt-1">Not configured</p>
-                <p className="text-xs text-gray-500 mt-1">Add iCal URL to enable</p>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <RefreshCw className="w-5 h-5 text-blue-600" />
-                Quick Sync Actions
-              </h3>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={async () => {
-                    try {
-                      const response = await fetch(paths.buildApiUrl('ical.php'), {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'sync_all' })
-                      });
-                      const result = await response.json();
-                      alert(result.success ? '🔄 All platforms synced successfully! ' + (result.message || '') : '❌ Sync failed: ' + result.message);
-                    } catch (error) {
-                      alert('❌ Error syncing all platforms');
-                    }
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Sync All Platforms
-                </button>
-                <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
-                  <Download className="w-4 h-4" />
-                  Export Calendar
-                </button>
-                <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
-                  <Settings className="w-4 h-4" />
-                  Settings
-                </button>
-              </div>
-            </div>
-
-            {/* Add Your iCal URLs */}
-            <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="font-semibold text-gray-900 mb-3">🔗 Add Your Calendar URLs</h3>
-
-              {/* Airbnb iCal Input */}
-              <div className="space-y-4">
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-xs">A</div>
-                    <span className="font-medium text-red-900">Airbnb Calendar URL</span>
-                  </div>
-                  <input
-                    id="airbnb-url-input"
-                    type="url"
-                    placeholder="https://www.airbnb.com/calendar/ical/your-listing-id.ics?s=your-secret"
-                    className="w-full px-3 py-2 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-                  />
-                  <div className="flex items-center gap-2 mt-2">
-                    <button
-                      onClick={async () => {
-                        const input = document.getElementById('airbnb-url-input') as HTMLInputElement;
-                        if (input.value) {
-                          try {
-                            const response = await fetch(paths.buildApiUrl('ical.php'), {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ platform: 'airbnb', url: input.value, action: 'save_test' })
-                            });
-                            const result = await response.json();
-                            alert(result.success ? '✅ Airbnb URL saved and tested! Found ' + (result.events || 0) + ' events' : '❌ Error: ' + result.message);
-                          } catch (error) {
-                            alert('❌ Error connecting to server');
-                          }
-                        } else {
-                          alert('Please enter your Airbnb iCal URL');
-                        }
-                      }}
-                      className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
-                    >
-                      Save & Test
-                    </button>
-                    <button
-                      onClick={async () => {
-                        try {
-                          const response = await fetch(paths.buildApiUrl('ical.php'), {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ platform: 'airbnb', action: 'sync' })
-                          });
-                          const result = await response.json();
-                          alert(result.success ? '🔄 Airbnb sync completed! ' + (result.message || '') : '❌ Sync failed: ' + result.message);
-                        } catch (error) {
-                          alert('❌ Error syncing Airbnb calendar');
-                        }
-                      }}
-                      className="px-4 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
-                    >
-                      Sync Now
-                    </button>
-                  </div>
-                  <p className="text-xs text-red-600 mt-2">
-                    📖 Find this URL in your Airbnb hosting dashboard → Calendar → Export Calendar
-                  </p>
-                </div>
-
-                {/* Booking.com iCal Input */}
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs">B</div>
-                    <span className="font-medium text-blue-900">Booking.com Calendar URL</span>
-                  </div>
-                  <input
-                    id="booking-url-input"
-                    type="url"
-                    placeholder="https://admin.booking.com/ical/your-property-id"
-                    className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
-                  <div className="flex items-center gap-2 mt-2">
-                    <button
-                      onClick={async () => {
-                        const input = document.getElementById('booking-url-input') as HTMLInputElement;
-                        if (input.value) {
-                          try {
-                            const response = await fetch(paths.buildApiUrl('ical.php'), {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ platform: 'booking', url: input.value, action: 'save_test' })
-                            });
-                            const result = await response.json();
-                            alert(result.success ? '✅ Booking.com URL saved and tested! Found ' + (result.events || 0) + ' events' : '❌ Error: ' + result.message);
-                          } catch (error) {
-                            alert('❌ Error connecting to server');
-                          }
-                        } else {
-                          alert('Please enter your Booking.com iCal URL');
-                        }
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                    >
-                      Save & Test
-                    </button>
-                    <button
-                      onClick={async () => {
-                        try {
-                          const response = await fetch(paths.buildApiUrl('ical.php'), {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ platform: 'booking', action: 'sync' })
-                          });
-                          const result = await response.json();
-                          alert(result.success ? '🔄 Booking.com sync completed! ' + (result.message || '') : '❌ Sync failed: ' + result.message);
-                        } catch (error) {
-                          alert('❌ Error syncing Booking.com calendar');
-                        }
-                      }}
-                      className="px-4 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
-                    >
-                      Sync Now
-                    </button>
-                  </div>
-                  <p className="text-xs text-blue-600 mt-2">
-                    📖 Find this URL in your Booking.com extranet → Calendar → Synchronization
-                  </p>
-                </div>
-
-                {/* VRBO iCal Input */}
-                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-xs">V</div>
-                    <span className="font-medium text-orange-900">VRBO Calendar URL</span>
-                  </div>
-                  <input
-                    id="vrbo-url-input"
-                    type="url"
-                    placeholder="https://www.vrbo.com/calendar/ical/your-property-id.ics"
-                    className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
-                  />
-                  <div className="flex items-center gap-2 mt-2">
-                    <button
-                      onClick={async () => {
-                        const input = document.getElementById('vrbo-url-input') as HTMLInputElement;
-                        if (input.value) {
-                          try {
-                            const response = await fetch(paths.buildApiUrl('ical.php'), {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ platform: 'vrbo', url: input.value, action: 'save_test' })
-                            });
-                            const result = await response.json();
-                            alert(result.success ? '✅ VRBO URL saved and tested! Found ' + (result.events || 0) + ' events' : '❌ Error: ' + result.message);
-                          } catch (error) {
-                            alert('❌ Error connecting to server');
-                          }
-                        } else {
-                          alert('Please enter your VRBO iCal URL');
-                        }
-                      }}
-                      className="px-4 py-2 bg-orange-600 text-white text-sm rounded hover:bg-orange-700 transition-colors"
-                    >
-                      Save & Test
-                    </button>
-                    <button
-                      onClick={async () => {
-                        try {
-                          const response = await fetch(paths.buildApiUrl('ical.php'), {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ platform: 'vrbo', action: 'sync' })
-                          });
-                          const result = await response.json();
-                          alert(result.success ? '🔄 VRBO sync completed! ' + (result.message || '') : '❌ Sync failed: ' + result.message);
-                        } catch (error) {
-                          alert('❌ Error syncing VRBO calendar');
-                        }
-                      }}
-                      className="px-4 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
-                    >
-                      Sync Now
-                    </button>
-                  </div>
-                  <p className="text-xs text-orange-600 mt-2">
-                    📖 Find this URL in your VRBO dashboard → Calendar → Import/Export
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Export Your Calendar */}
-            <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="font-semibold text-gray-900 mb-3">📤 Share Your Calendar</h3>
-              <p className="text-gray-600 mb-4">Use these URLs to sync your bookings with other platforms:</p>
-
-              <div className="space-y-3">
-                <div className="p-3 bg-gray-50 border rounded-lg">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    📅 Your Calendar URL (to add to Airbnb, Booking.com, etc.):
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={paths.buildApiUrl('ical.php')}
-                      readOnly
-                      className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded text-sm"
-                    />
-                    <button
-                      onClick={() => {
-                        const url = paths.buildApiUrl('ical.php');
-                        navigator.clipboard.writeText(url).then(() => {
-                          alert('✅ Calendar URL copied to clipboard!');
-                        }).catch(() => {
-                          alert('❌ Failed to copy URL');
-                        });
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                    >
-                      Copy URL
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <button className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors">
-                    📥 Download .ics File
-                  </button>
-                  <button className="px-4 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors">
-                    📧 Email Instructions
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="bg-samudra-paper border border-samudra-paper-deep p-6">
+          <ICalSyncManager />
         </div>
       )}
     </div>

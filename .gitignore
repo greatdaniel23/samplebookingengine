@@ -1,5 +1,85 @@
-# Logs
-logs
+# =============================================================
+# Samudra Booking Engine — .gitignore
+# CRITICAL: Secrets MUST never be committed
+# Last updated: 2026-05-30 by FORGE
+# =============================================================
+
+# -----------------------------------------------
+# SECRETS & ENVIRONMENT — HARD EXCLUSIONS
+# -----------------------------------------------
+# Never commit any real env file — only .env.example is allowed
+api/.env
+**/.env
+.env
+.env.*
+!.env.example
+**/.env.*
+!**/.env.example
+
+# Cloudflare dev vars (contains worker secrets)
+.dev.vars
+**/*.dev.vars
+
+# Token / secret / credential files
+*token*.json
+*secret*.json
+*credential*.json
+*Token*.json
+*Secret*.json
+*Credential*.json
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+
+# Service account JSON (Google / GCP)
+*service-account*.json
+*serviceaccount*.json
+*service_account*.json
+gcp-*.json
+sa-*.json
+
+# Vertex / AI usage tracking
+.vertex_usage.json
+vertex_usage.json
+
+# -----------------------------------------------
+# BUILD OUTPUT
+# -----------------------------------------------
+node_modules/
+dist/
+dist-ssr/
+dist-worker/
+.astro/
+build/
+*.tsbuildinfo
+
+# -----------------------------------------------
+# CLOUDFLARE / WRANGLER STATE
+# -----------------------------------------------
+.wrangler/
+.mf/
+
+# -----------------------------------------------
+# DATABASE — local state, seeds with PII, exports
+# -----------------------------------------------
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+database/d1-data.sql
+database/*.csv
+database/u289291769_booking.csv
+
+# -----------------------------------------------
+# LOGS
+# -----------------------------------------------
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,28 +87,26 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# -----------------------------------------------
+# DEBUG / TEST / BACKUP ARTIFACTS
+# -----------------------------------------------
+debug-response.json
+*debug*.json
+test-payment.json
+*.bak
+*.bak.*
+*.backup
 
-# Editor directories and files
+# -----------------------------------------------
+# EDITOR / OS
+# -----------------------------------------------
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
-# Cloudflare Wrangler
-.wrangler
-.dev.vars
-
-# Local database files
-*.sqlite
-*.sqlite-journal
-*.sqlite-shm
-*.sqlite-wal

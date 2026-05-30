@@ -1,0 +1,178 @@
+/* ===========================================================
+   SAMUDRA ADMIN — design tokens (inherited from villa-landing)
+   Source of truth: D:\multiple-agentic\repos\villa-landing\assets\styles.css
+   =========================================================== */
+
+:root {
+  /* ---- Samudra brand palette (paper switched to standard white per Daniel 2026-05-18) ---- */
+  --paper:        #FFFFFF;
+  --paper-soft:   #F5F5F5;
+  --paper-deep:   #E5E5E5;
+  --ink:          #1F1B17;
+  --ink-soft:     #3A332C;
+  --ink-mute:     #6B6258;
+  --teal:         #1E443F;
+  --teal-deep:    #122B27;
+  --sand:         #B89E7E;
+  --gold:         #8E7549;
+
+  /* ---- Type (verbatim) ---- */
+  --font-display: 'Cormorant Garamond', 'Cormorant', 'Times New Roman', serif;
+  --font-script:  'Italianno', 'Cormorant Garamond', serif;
+  --font-label:   'Jost', 'Inter', system-ui, sans-serif;
+
+  /* ---- Motion ---- */
+  --ease: cubic-bezier(.22,.61,.36,1);
+
+  /* ---- shadcn primitive REMAP (HSL channels — shadcn expects raw H S% L%) ---- */
+  /* paper #F1EBDF → 0 0% 100% */
+  --background:        0 0% 100%;
+  --foreground:        28 16% 11%;       /* ink */
+  --card:              0 0% 100%;
+  --card-foreground:   28 16% 11%;
+  --popover:           0 0% 100%;
+  --popover-foreground:28 16% 11%;
+  --primary:           28 16% 11%;        /* ink — primary buttons */
+  --primary-foreground:0 0% 100%;        /* paper text on ink */
+  --secondary:         0 0% 96%;        /* paper-soft */
+  --secondary-foreground: 28 16% 11%;
+  --muted:             0 0% 96%;
+  --muted-foreground:  30 9% 38%;         /* ink-mute */
+  --accent:            172 39% 19%;       /* teal */
+  --accent-foreground: 0 0% 100%;
+  --destructive:       8 52% 42%;         /* warm sepia red, matches sc-bubble--error palette */
+  --destructive-foreground: 0 0% 100%;
+  --border:            36 26% 79%;        /* paper-deep */
+  --input:             36 26% 79%;
+  --ring:              172 39% 19%;       /* teal focus ring */
+  --radius:            0px;               /* HARD EDGE — kills shadcn rounded defaults */
+
+  /* sidebar (shadcn Sidebar component reads these) */
+  --sidebar-background:         0 0% 100%;       /* paper */
+  --sidebar-foreground:         28 16% 11%;       /* ink */
+  --sidebar-primary:            172 39% 19%;      /* teal — active item */
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent:             0 0% 96%;       /* paper-soft hover */
+  --sidebar-accent-foreground:  28 16% 11%;
+  --sidebar-border:             36 26% 79%;       /* paper-deep */
+  --sidebar-ring:               172 39% 19%;
+}
+
+/* ---- Dusk (dark mode) — applied via [data-theme="dusk"] on <html>,
+       MATCHING villa-landing's exact mechanism ---- */
+html[data-theme="dusk"] {
+  --paper:      #1A1F22;
+  --paper-soft: #232A2D;
+  --paper-deep: #2F383B;
+  --ink:        #ECE4D2;
+  --ink-soft:   #D5CCBA;
+  --ink-mute:   #9C9484;
+  --teal:       #C9B79A;
+  --gold:       #C9A971;
+
+  --background:        195 14% 12%;
+  --foreground:        43 47% 87%;
+  --card:              195 14% 12%;
+  --card-foreground:   43 47% 87%;
+  --popover:           195 14% 12%;
+  --popover-foreground:43 47% 87%;
+  --primary:           43 47% 87%;
+  --primary-foreground:195 14% 12%;
+  --secondary:         195 13% 16%;
+  --secondary-foreground:43 47% 87%;
+  --muted:             195 13% 16%;
+  --muted-foreground:  39 15% 56%;
+  --accent:            38 32% 70%;
+  --accent-foreground: 195 14% 12%;
+  --border:            195 11% 21%;
+  --input:             195 11% 21%;
+  --ring:              38 32% 70%;
+
+  --sidebar-background:         195 14% 12%;
+  --sidebar-foreground:         43 47% 87%;
+  --sidebar-primary:            38 32% 70%;
+  --sidebar-primary-foreground: 195 14% 12%;
+  --sidebar-accent:             195 13% 16%;
+  --sidebar-accent-foreground:  43 47% 87%;
+  --sidebar-border:             195 11% 21%;
+  --sidebar-ring:               38 32% 70%;
+}
+
+/* Global base — apply Samudra type + paper bg */
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-label);   /* Jost = UI body */
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Utility: eyebrow (uppercase label) */
+.eyebrow {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+/* Utility: script accent */
+.script {
+  font-family: var(--font-script);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 1.5em;
+  line-height: 0.9;
+  color: var(--gold);
+}
+
+/* Hard-edge override — kill ALL shadcn rounded utilities globally */
+.rounded, .rounded-sm, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl,
+.rounded-full { border-radius: 0 !important; }
+/* Exception: avatars, status dots, and toggle pills explicitly opt back in via custom class */
+.is-pill { border-radius: 9999px !important; }
+
+/* Table Samudra styles */
+table { border-collapse: collapse; width: 100%; }
+thead { border-bottom: 1px solid var(--ink); }
+thead th {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  text-align: left;
+  padding: 14px 16px;
+}
+tbody td {
+  font-family: var(--font-label);
+  font-size: 13px;
+  color: var(--ink);
+  padding: 16px;
+  border-bottom: 1px solid var(--paper-deep);
+}
+tbody tr:hover { background: var(--paper-soft); cursor: pointer; }
+tbody tr:last-child td { border-bottom: none; }
+tbody td.is-numeric { font-variant-numeric: tabular-nums; text-align: right; }
+tbody td.is-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+tbody td.is-display { font-family: var(--font-display); font-size: 15px; }
+
+/* Card accent variants */
+.card-accent-teal {
+  border-left: 3px solid var(--teal) !important;
+}
+.card-accent-gold {
+  border-left: 3px solid var(--gold) !important;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

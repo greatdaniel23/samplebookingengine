@@ -6,6 +6,7 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
+        "postbuild": "node -e \"const fs=require('fs');fs.cpSync('dist/assets','dist/admin/assets',{recursive:true});fs.copyFileSync('dist/index.html','dist/admin/index.html');fs.copyFileSync('public/_redirects','dist/_redirects');console.log('postbuild: dist/admin/ synced + _redirects copied');\"",
         "build:check": "tsc -b && vite build",
         "lint": "eslint .",
         "preview": "vite preview"

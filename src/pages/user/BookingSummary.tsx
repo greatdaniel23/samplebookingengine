@@ -28,7 +28,8 @@ import {
   Gift,
   Star,
   ArrowRight,
-  Loader2
+  Loader2,
+  BedDouble
 } from 'lucide-react';
 import BookingSkeleton from '@/components/BookingSkeleton';
 import Header from '@/components/Header';
@@ -40,6 +41,8 @@ interface BookingSummaryData {
   reference: string;
   packageId?: string;
   roomId?: string;
+  packageName?: string;
+  roomName?: string;
   checkIn: string;
   checkOut: string;
   guests: number;
@@ -54,6 +57,9 @@ interface BookingSummaryData {
   pricing: {
     basePrice: number;
     serviceFee: number;
+    serviceFeePercentage: number;
+    taxAmount: number;
+    taxPercentage: number;
     totalPrice: number;
   };
   status: 'confirmed' | 'pending' | 'cancelled';
@@ -110,10 +116,21 @@ const BookingSummary = () => {
   };
 
   // Get URL parameters
-  // Get booking reference from either route parameter (bookingId) or search parameter (ref)
   const bookingRef = bookingId || searchParams.get('ref');
-  const packageId = searchParams.get('package');
-  const roomId = searchParams.get('room');
+  const packageId = searchParams.get('package_id') || searchParams.get('package');
+  const roomId = searchParams.get('room_id') || searchParams.get('room');
+
+  // URL fallback display data (passed from /book page)
+  const urlPackageName = searchParams.get('package_name') || '';
+  const urlRoomName    = searchParams.get('room_name') || '';
+  const urlCheckIn     = searchParams.get('check_in') || '';
+  const urlCheckOut    = searchParams.get('check_out') || '';
+  const urlGuests      = searchParams.get('guests') || '2';
+  const urlNights      = searchParams.get('nights') || '1';
+  const urlTotalPrice  = searchParams.get('total_price') || '0';
+  const urlTaxPct      = parseFloat(searchParams.get('tax_pct') || '11');
+  const urlSvcPct      = parseFloat(searchParams.get('svc_pct') || '10');
+  const urlPricePerNight = parseFloat(searchParams.get('price_per_night') || '0');
 
 
 
@@ -189,45 +206,60 @@ const BookingSummary = () => {
 
       }
 
-      // Get dates from API or URL parameters
-      const checkInDate = bookingApiData?.check_in || searchParams.get('checkIn');
-      const checkOutDate = bookingApiData?.check_out || searchParams.get('checkOut');
+      // Get dates from API or URL fallback params
+      const checkInDate = bookingApiData?.check_in || urlCheckIn || searchParams.get('checkIn');
+      const checkOutDate = bookingApiData?.check_out || urlCheckOut || searchParams.get('checkOut');
 
       if (!checkInDate || !checkOutDate) {
         throw new Error('Check-in and check-out dates are required');
       }
 
-      // Calculate nights from actual dates
+      // Calculate nights
       const checkIn = new Date(checkInDate);
       const checkOut = new Date(checkOutDate);
-      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)) || parseInt(urlNights);
 
       if (nights <= 0) {
         throw new Error('Invalid date range: check-out must be after check-in');
       }
 
-      // Create booking data from API response or URL parameters
+      // Create booking data — API joined fields take priority, URL params are fallback
       const bookingData: BookingSummaryData = {
-        bookingId: bookingApiData?.id?.toString() || searchParams.get('bookingId') || 'UNKNOWN',
+        bookingId: bookingApiData?.id?.toString() || 'UNKNOWN',
         reference: bookingRef,
-        packageId: packageId || bookingApiData?.package_id || undefined,
-        roomId: roomId || bookingApiData?.room_id || undefined,
+        packageId: bookingApiData?.package_id?.toString() || packageId || undefined,
+        roomId: bookingApiData?.room_id?.toString() || roomId || undefined,
+        // Carry joined name fields for display
+        packageName: bookingApiData?.package_name || urlPackageName || undefined,
+        roomName: bookingApiData?.room_name || urlRoomName || undefined,
         checkIn: checkInDate,
         checkOut: checkOutDate,
-        guests: parseInt(searchParams.get('guests') || bookingApiData?.guests?.toString() || '2'),
+        guests: parseInt(bookingApiData?.guests?.toString() || urlGuests),
         nights: nights,
         guestInfo: {
-          firstName: bookingApiData?.first_name || searchParams.get('firstName') || 'Guest',
-          lastName: bookingApiData?.last_name || searchParams.get('lastName') || 'User',
-          email: bookingApiData?.email || searchParams.get('email') || 'guest@example.com',
-          phone: bookingApiData?.phone || searchParams.get('phone') || '+1234567890',
-          specialRequests: bookingApiData?.special_requests || searchParams.get('requests') || undefined
+          firstName: bookingApiData?.first_name || 'Guest',
+          lastName: bookingApiData?.last_name || '',
+          email: bookingApiData?.email || '',
+          phone: bookingApiData?.phone || '',
+          specialRequests: bookingApiData?.special_requests || undefined
         },
-        pricing: {
-          basePrice: parseFloat(bookingApiData?.total_price || '100') / nights, // Per night rate
-          serviceFee: 0, // No service fee for now  
-          totalPrice: parseFloat(bookingApiData?.total_price || '100') // Actual total paid
-        },
+        pricing: (() => {
+          const taxPct  = urlTaxPct;
+          const svcPct  = urlSvcPct;
+          const totalPaid = parseFloat(bookingApiData?.total_price?.toString() || urlTotalPrice || '0');
+          const pricePerNight = urlPricePerNight || Math.round(totalPaid / ((1 + svcPct / 100) * (1 + taxPct / 100)) / nights);
+          const base    = pricePerNight * nights;
+          const svcAmt  = Math.round(base * (svcPct / 100));
+          const taxAmt  = Math.round((base + svcAmt) * (taxPct / 100));
+          return {
+            basePrice: base,
+            serviceFee: svcAmt,
+            serviceFeePercentage: svcPct,
+            taxAmount: taxAmt,
+            taxPercentage: taxPct,
+            totalPrice: totalPaid || base + svcAmt + taxAmt
+          };
+        })(),
         status: bookingApiData?.status || 'pending',
         createdAt: bookingApiData?.created_at || new Date().toISOString()
       };
@@ -251,11 +283,21 @@ const BookingSummary = () => {
 
             setBookingData(prev => prev ? {
               ...prev,
-              pricing: {
-                basePrice: actualTotalPaid / nights, // What they paid per night
-                serviceFee: 0, // No service fee
-                totalPrice: actualTotalPaid // What was actually paid
-              }
+              pricing: (() => {
+                const taxPct = parseFloat(searchParams.get('taxPercentage') || '11');
+                const svcPct = parseFloat(searchParams.get('serviceFeePercentage') || '10');
+                const base = Math.round(actualTotalPaid / ((1 + svcPct / 100) * (1 + taxPct / 100)));
+                const svcAmt = Math.round(base * (svcPct / 100));
+                const taxAmt = Math.round((base + svcAmt) * (taxPct / 100));
+                return {
+                  basePrice: base,
+                  serviceFee: svcAmt,
+                  serviceFeePercentage: svcPct,
+                  taxAmount: taxAmt,
+                  taxPercentage: taxPct,
+                  totalPrice: actualTotalPaid
+                };
+              })()
             } : prev);
           }
 
@@ -372,8 +414,8 @@ const BookingSummary = () => {
           check_out: bookingData.checkOut,
           guests: bookingData.guests,
           total_amount: bookingData.pricing.totalPrice,
-          room_name: roomData?.name || 'Standard Room',
-          package_name: packageData?.name || '',
+          room_name: roomData?.name || bookingData.roomName || 'Standard Room',
+          package_name: packageData?.name || bookingData.packageName || '',
           special_requests: bookingData.guestInfo.specialRequests || '',
         };
 
@@ -562,7 +604,7 @@ Total: $${bookingData?.pricing.totalPrice}
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <div className="max-w-md mx-auto">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Booking Not Found</h1>
+          <h1 className="font-display text-2xl font-medium text-red-600 mb-4">Booking Not Found</h1>
           <p className="text-muted-foreground mb-6">
             We couldn't find your booking summary. Please check your booking reference or try again.
           </p>
@@ -597,10 +639,10 @@ Total: $${bookingData?.pricing.totalPrice}
           <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${bookingData.status === 'confirmed' ? 'bg-green-100' : bookingData.status === 'pending' ? 'bg-yellow-100' : 'bg-gray-100'}`}>
             <CheckCircle2 className={`h-8 w-8 ${bookingData.status === 'confirmed' ? 'text-green-600' : bookingData.status === 'pending' ? 'text-yellow-600' : 'text-gray-600'}`} />
           </div>
-          <h1 className={`text-4xl font-bold mb-2 ${bookingData.status === 'confirmed' ? 'text-green-600' : bookingData.status === 'pending' ? 'text-yellow-600' : 'text-gray-600'}`}>
+          <h1 className={`font-display text-3xl md:text-4xl font-medium mb-2 ${bookingData.status === 'confirmed' ? 'text-green-600' : bookingData.status === 'pending' ? 'text-yellow-600' : 'text-gray-600'}`}>
             {bookingData.status === 'confirmed' ? 'Booking Confirmed!' : bookingData.status === 'pending' ? 'Booking Received!' : 'Booking Status'}
           </h1>
-          <p className="text-xl text-hotel-bronze mb-4">
+          <p className="text-base text-gray-600 mb-4">
             {bookingData.status === 'confirmed'
               ? 'Thank you for your reservation. Your booking has been successfully confirmed.'
               : bookingData.status === 'pending'
@@ -628,49 +670,67 @@ Total: $${bookingData?.pricing.totalPrice}
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Package/Room Info */}
-                {packageData && (
+                {(packageData || bookingData.packageName) && (
                   <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-                    <img
-                      src={getPackageImageUrl(packageData)}
-                      alt={packageData.name}
-                      className="w-20 h-20 object-cover rounded-lg"
-                    />
+                    {packageData && (
+                      <img
+                        src={getPackageImageUrl(packageData)}
+                        alt={packageData.name}
+                        className="w-20 h-20 object-cover rounded-lg"
+                      />
+                    )}
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <Badge className="bg-purple-100 text-purple-700">
                           <PackageIcon className="h-3 w-3 mr-1" />
                           Package
                         </Badge>
-                        {parseFloat(packageData.discount_percentage) > 0 && (
+                        {packageData && parseFloat(packageData.discount_percentage) > 0 && (
                           <Badge className="bg-green-100 text-green-700">
                             {packageData.discount_percentage}% OFF
                           </Badge>
                         )}
                       </div>
-                      <h3 className="font-semibold text-lg">{packageData.name}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {packageData.description}
-                      </p>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {packageData?.name || bookingData.packageName}
+                      </h3>
+                      {packageData?.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {packageData.description}
+                        </p>
+                      )}
+                      {bookingData.roomName && (
+                        <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
+                          <BedDouble className="h-3.5 w-3.5" />
+                          {bookingData.roomName}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {roomData && !packageData && (
+                {(roomData || bookingData.roomName) && !packageData && !bookingData.packageName && (
                   <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg">
-                    <img
-                      src={getImageUrl(roomData.image_url)}
-                      alt={roomData.name}
-                      className="w-20 h-20 object-cover rounded-lg"
-                    />
+                    {roomData && (
+                      <img
+                        src={getImageUrl(roomData.image_url)}
+                        alt={roomData.name}
+                        className="w-20 h-20 object-cover rounded-lg"
+                      />
+                    )}
                     <div className="flex-1">
                       <Badge className="bg-blue-100 text-blue-700 mb-2">
                         <MapPin className="h-3 w-3 mr-1" />
                         Room
                       </Badge>
-                      <h3 className="font-semibold text-lg">{roomData.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {roomData.description}
-                      </p>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {roomData?.name || bookingData.roomName}
+                      </h3>
+                      {roomData?.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {roomData.description}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -817,14 +877,22 @@ Total: $${bookingData?.pricing.totalPrice}
                     </span>
                     <span className="font-medium">{formatRupiah(bookingData.pricing.basePrice)}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Service Fee</span>
-                    <span className="font-medium">{formatRupiah(bookingData.pricing.serviceFee)}</span>
-                  </div>
+                  {bookingData.pricing.serviceFee > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Service Fee ({bookingData.pricing.serviceFeePercentage}%)</span>
+                      <span className="font-medium">{formatRupiah(bookingData.pricing.serviceFee)}</span>
+                    </div>
+                  )}
+                  {bookingData.pricing.taxAmount > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Tax ({bookingData.pricing.taxPercentage}%)</span>
+                      <span className="font-medium">{formatRupiah(bookingData.pricing.taxAmount)}</span>
+                    </div>
+                  )}
                   <Separator />
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">Total Amount</span>
-                    <span className="font-bold text-lg text-green-600">
+                    <span className="text-xl font-bold text-green-600">
                       {formatRupiah(bookingData.pricing.totalPrice)}
                     </span>
                   </div>

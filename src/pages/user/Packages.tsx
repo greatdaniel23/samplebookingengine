@@ -18,7 +18,9 @@ import {
   Calendar,
   Users,
   Loader2,
-  Package as PackageIcon
+  Package as PackageIcon,
+  X,
+  SlidersHorizontal
 } from 'lucide-react';
 
 export const PackagesPage: React.FC = () => {
@@ -53,6 +55,7 @@ export const PackagesPage: React.FC = () => {
   });
 
   const [packageTypes, setPackageTypes] = useState<Array<{ package_type: string; count: number }>>([]);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   // Load packages and package types
   useEffect(() => {
@@ -277,8 +280,8 @@ export const PackagesPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
             <div className="flex justify-between items-start">
               <div>
-                <h1 className="text-3xl font-semibold mb-3 text-gray-900">Hotel Packages</h1>
-                <p className="text-lg text-gray-600 max-w-2xl">
+                <h1 className="font-display text-3xl md:text-4xl font-medium text-gray-900 mb-3">Hotel Packages</h1>
+                <p className="text-base text-gray-600 max-w-2xl">
                   Discover our special packages designed to make your stay unforgettable
                 </p>
               </div>
@@ -296,7 +299,123 @@ export const PackagesPage: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
+
+        {/* ── MOBILE: compact filter bar + bottom sheet ── */}
+        <div className="md:hidden mb-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <SlidersHorizontal className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <div className="text-sm text-gray-700 truncate">
+                {filters.checkIn && filters.checkOut
+                  ? `${new Date(filters.checkIn + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} → ${new Date(filters.checkOut + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
+                  : 'All dates'}
+                {' · '}{filters.guests} Guest{filters.guests !== 1 ? 's' : ''}
+                {filters.type ? ` · ${packageService.getPackageTypeDisplayName(filters.type)}` : ''}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {(filters.type || filters.search || filters.checkIn || filters.checkOut || filters.guests !== 2) && (
+                <button onClick={clearFilters} className="text-xs text-red-500 font-medium">Clear</button>
+              )}
+              <button
+                onClick={() => setMobileFilterOpen(true)}
+                className="bg-hotel-sage text-white text-xs font-medium px-3 py-1.5 rounded-lg"
+              >
+                Filter
+              </button>
+            </div>
+          </div>
+          <div className="mt-2 text-xs text-gray-500 px-1">
+            Showing {filteredPackages.length} of {packages.length} packages
+          </div>
+        </div>
+
+        {/* ── MOBILE bottom sheet ── */}
+        {mobileFilterOpen && (
+          <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setMobileFilterOpen(false)} />
+            <div className="relative bg-white rounded-t-2xl p-5 flex flex-col gap-4 shadow-2xl max-h-[85vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                  <Filter className="h-4 w-4" style={{ color: packageTheme.colors.primary }} />
+                  Filter Packages
+                </h3>
+                <button onClick={() => setMobileFilterOpen(false)} className="p-1 rounded-full hover:bg-gray-100">
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              {/* Search */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-gray-700">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input placeholder="Search packages..." value={filters.search} onChange={(e) => handleFilterChange('search', e.target.value)} className="pl-10" />
+                </div>
+              </div>
+
+              {/* Package Type */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-gray-700">Package Type</Label>
+                <Select value={filters.type || 'all'} onValueChange={(value) => handleFilterChange('type', value === 'all' ? '' : value)}>
+                  <SelectTrigger><SelectValue placeholder="All types" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All types ({packages.length})</SelectItem>
+                    {packageTypes.map((type) => (
+                      <SelectItem key={type.package_type} value={type.package_type}>
+                        {packageService.getPackageTypeDisplayName(type.package_type)} ({type.count})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Dates */}
+              <div className="flex gap-3">
+                <div className="flex-1 space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700">Check-in</Label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                    <Input type="date" value={filters.checkIn} min={new Date().toISOString().split('T')[0]} onChange={(e) => handleFilterChange('checkIn', e.target.value)} className="pl-10" />
+                  </div>
+                </div>
+                <div className="flex-1 space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700">Check-out</Label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                    <Input type="date" value={filters.checkOut} min={filters.checkIn || new Date().toISOString().split('T')[0]} onChange={(e) => handleFilterChange('checkOut', e.target.value)} className="pl-10" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Guests */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-gray-700">Guests</Label>
+                <div className="relative">
+                  <Users className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input type="number" min="1" max="10" value={filters.guests} onChange={(e) => handleFilterChange('guests', parseInt(e.target.value) || 1)} className="pl-10" />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                {(filters.type || filters.search || filters.checkIn || filters.checkOut || filters.guests !== 2) && (
+                  <Button variant="outline" className="flex-1 border-gray-300 hover:border-red-500 hover:text-red-600" onClick={() => { clearFilters(); setMobileFilterOpen(false); }}>
+                    Clear All
+                  </Button>
+                )}
+                <button
+                  onClick={() => setMobileFilterOpen(false)}
+                  className="flex-1 bg-hotel-sage text-white py-2.5 rounded-lg font-medium hover:bg-hotel-sage-dark transition-colors text-sm"
+                >
+                  Show {filteredPackages.length} Packages
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── DESKTOP: full filter panel ── */}
+        <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Filter className="h-5 w-5" style={{ color: packageTheme.colors.primary }} />
@@ -478,7 +597,7 @@ export const PackagesPage: React.FC = () => {
         ) : (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
             <PackageIcon className="h-16 w-16 mx-auto mb-6 text-gray-300" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">No packages found</h3>
+            <h3 className="font-display text-xl font-medium text-gray-900 mb-3">No packages found</h3>
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
               Try adjusting your filters to see more packages that match your preferences
             </p>

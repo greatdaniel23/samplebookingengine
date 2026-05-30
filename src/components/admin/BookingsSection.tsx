@@ -1,18 +1,27 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { paths } from '@/config/paths';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getAuthToken } from '@/config/cloudflare';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Table,
   TableBody,
@@ -21,83 +30,60 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Pencil, Archive } from 'lucide-react';
+import { Plus, Pencil, Archive, Trash2 } from 'lucide-react';
+
+const emptyForm = {
+  first_name: '',
+  last_name: '',
+  email: '',
+  phone: '',
+  check_in: '',
+  check_out: '',
+  room_id: '',
+  guests: 1,
+  adults: 1,
+  children: 0,
+  total_price: 0,
+  status: 'pending',
+  special_requests: ''
+};
 
 const BookingsSection: React.FC = () => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingBooking, setEditingBooking] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    check_in: '',
-    check_out: '',
-    room_id: '',
-    guests: 1,
-    adults: 1,
-    children: 0,
-    total_price: 0,
-    status: 'pending',
-    special_requests: ''
-  });
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [formData, setFormData] = useState({ ...emptyForm });
 
   useEffect(() => {
     fetchBookings();
   }, []);
 
+  const getAuthHeaders = (): Record<string, string> => {
+    const token = getAuthToken();
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  };
+
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const apiUrl = paths.buildApiUrl('bookings/list');
-
-
-      const response = await fetch(apiUrl);
-
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-
+      const response = await fetch(paths.buildApiUrl('bookings/list'), { headers: getAuthHeaders() });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-
-
-
-
-
-      // Handle wrapped response format: {success: true, data: Array}
-      let bookingsArray = [];
-      if (data && data.success && Array.isArray(data.data)) {
-        bookingsArray = data.data;
-
-      } else if (Array.isArray(data)) {
-        bookingsArray = data;
-
-      }
-
-      if (bookingsArray.length > 0) {
-
-
-      }
-
-      setBookings(bookingsArray);
-
-
+      const arr = (data?.success && Array.isArray(data.data)) ? data.data : Array.isArray(data) ? data : [];
+      setBookings(arr);
     } catch (error) {
-      console.error('❌ Error fetching bookings:', error);
-      console.error('❌ Error details:', error.message);
+      console.error('Error fetching bookings:', error);
       setBookings([]);
     } finally {
       setLoading(false);
     }
   };
 
-
-
   const handleFormChange = (field: string, value: any) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
-      // Keep guests in sync with adults + children
       if (field === 'adults' || field === 'children') {
         updated.guests = (field === 'adults' ? value : updated.adults) + (field === 'children' ? value : updated.children);
       }
@@ -107,107 +93,166 @@ const BookingsSection: React.FC = () => {
 
   const handleAddBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       const response = await fetch(paths.buildApiUrl('bookings'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify(formData)
       });
-
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
       const result = await response.json();
       if (result.success) {
-        alert('Booking created successfully!');
-        setShowAddForm(false);
-        setFormData({
-          first_name: '',
-          last_name: '',
-          email: '',
-          phone: '',
-          check_in: '',
-          check_out: '',
-          room_id: '',
-          guests: 1,
-          adults: 1,
-          children: 0,
-          total_price: 0,
-          status: 'pending',
-          special_requests: ''
+        toast.success('Reservation saved', {
+          description: `${formData.first_name} ${formData.last_name} — ${formData.check_in}`
         });
+        setShowAddForm(false);
+        setFormData({ ...emptyForm });
         fetchBookings();
       } else {
         throw new Error(result.error || 'Failed to create booking');
       }
     } catch (error) {
-      console.error('Error creating booking:', error);
-      alert('Error creating booking: ' + error);
+      toast.error('Could not save reservation', { description: 'Please try again or contact support.' });
     }
   };
 
   const handleEditBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingBooking) return;
-
     try {
-      // Include the booking ID in the request body as expected by the API
-      const requestBody = {
-        ...formData,
-        id: editingBooking.id
-      };
-
       const response = await fetch(paths.buildApiUrl(`bookings/${editingBooking.id}`), {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ ...formData, id: editingBooking.id })
       });
-
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
       const result = await response.json();
       if (result.success) {
-        alert('Booking updated successfully!');
+        toast.success('Reservation updated');
         setEditingBooking(null);
+        setFormData({ ...emptyForm });
         fetchBookings();
       } else {
-        throw new Error(result.error || 'Failed to update booking');
+        throw new Error(result.error || 'Failed to update');
       }
     } catch (error) {
-      console.error('Error updating booking:', error);
-      alert('Error updating booking: ' + error);
+      toast.error('Could not update reservation', { description: 'Please try again.' });
     }
   };
 
-  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (status?.toLowerCase()) {
-      case 'confirmed': return 'default';
-      case 'pending': return 'secondary';
-      case 'cancelled': return 'destructive';
-      case 'checked_in': return 'outline';
-      default: return 'outline';
+  const handleDeleteBooking = async () => {
+    if (!deleteTarget) return;
+    try {
+      const response = await fetch(paths.buildApiUrl(`bookings/${deleteTarget.id}`), {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      toast.success('Reservation removed');
+      setDeleteTarget(null);
+      fetchBookings();
+    } catch (error) {
+      toast.error('Could not remove reservation', { description: 'Please try again.' });
+      setDeleteTarget(null);
     }
   };
+
+  const getStatusBadgeClass = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'confirmed':    return 'border border-samudra-teal text-samudra-teal bg-transparent';
+      case 'pending':      return 'border border-samudra-gold text-samudra-gold bg-transparent';
+      case 'cancelled':    return 'border border-[#7a3d31] text-[#7a3d31] bg-transparent';
+      case 'checked_in':  return 'border border-samudra-sand text-samudra-sand bg-transparent';
+      default:             return 'border border-samudra-paper-deep text-samudra-ink-mute bg-transparent';
+    }
+  };
+
+  const getGuestName = (booking: any) =>
+    booking.guest_name || booking.name ||
+    (booking.first_name ? `${booking.first_name} ${booking.last_name || ''}`.trim() : '') || 'N/A';
+
+  const BookingFormFields = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[
+          { label: 'First Name', field: 'first_name', type: 'text', required: true },
+          { label: 'Last Name',  field: 'last_name',  type: 'text', required: false },
+          { label: 'Email',      field: 'email',      type: 'email', required: true },
+          { label: 'Phone',      field: 'phone',      type: 'tel',  required: false },
+          { label: 'Check-in',   field: 'check_in',   type: 'date', required: true },
+          { label: 'Check-out',  field: 'check_out',  type: 'date', required: true },
+        ].map(({ label, field, type, required }) => (
+          <div key={field}>
+            <label className="eyebrow block mb-2">{label}{required ? ' *' : ''}</label>
+            <input
+              type={type}
+              required={required}
+              value={(formData as any)[field]}
+              onChange={e => handleFormChange(field, e.target.value)}
+              className="h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors"
+              style={{ fontFamily: 'var(--font-label)' }}
+            />
+          </div>
+        ))}
+        <div>
+          <label className="eyebrow block mb-2">Adults *</label>
+          <input type="number" min="1" required value={formData.adults}
+            onChange={e => handleFormChange('adults', parseInt(e.target.value))}
+            className="h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors"
+            style={{ fontFamily: 'var(--font-label)' }} />
+        </div>
+        <div>
+          <label className="eyebrow block mb-2">Children</label>
+          <input type="number" min="0" value={formData.children}
+            onChange={e => handleFormChange('children', parseInt(e.target.value))}
+            className="h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors"
+            style={{ fontFamily: 'var(--font-label)' }} />
+        </div>
+        <div>
+          <label className="eyebrow block mb-2">Total Price *</label>
+          <input type="number" step="0.01" min="0" required value={formData.total_price}
+            onChange={e => handleFormChange('total_price', parseFloat(e.target.value))}
+            className="h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors"
+            style={{ fontFamily: 'var(--font-label)' }} />
+        </div>
+        <div>
+          <label className="eyebrow block mb-2">Status</label>
+          <select value={formData.status} onChange={e => handleFormChange('status', e.target.value)}
+            className="h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors"
+            style={{ fontFamily: 'var(--font-label)' }}>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="checked_in">Checked In</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label className="eyebrow block mb-2">Special Requests</label>
+        <textarea value={formData.special_requests}
+          onChange={e => handleFormChange('special_requests', e.target.value)}
+          rows={3}
+          className="w-full bg-samudra-paper border border-samudra-paper-deep px-3 py-2 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors resize-none"
+          style={{ fontFamily: 'var(--font-label)' }}
+        />
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
-      <Card>
+      <Card className="bg-samudra-paper border border-samudra-paper-deep">
         <CardHeader>
-          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-6 w-48 bg-samudra-paper-soft" />
         </CardHeader>
         <CardContent className="space-y-4">
           {[1, 2, 3].map(i => (
             <div key={i} className="flex items-center gap-4">
-              <Skeleton className="h-12 w-12 rounded-full" />
               <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
+                <div className="h-3 w-3/4 bg-samudra-paper-soft animate-pulse" />
+                <div className="h-3 w-1/2 bg-samudra-paper-soft animate-pulse" />
               </div>
-              <Skeleton className="h-6 w-20" />
+              <div className="h-5 w-16 bg-samudra-paper-soft animate-pulse" />
             </div>
           ))}
         </CardContent>
@@ -217,94 +262,159 @@ const BookingsSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Bookings Management</h2>
-        <Button onClick={() => setShowAddForm(true)}>
+      {/* Page header */}
+      <div className="flex items-end justify-between mb-8">
+        <div>
+          <p className="font-script text-samudra-gold text-[28px] leading-none mb-2">guests of samudra</p>
+          <h2 className="font-display text-[40px] font-light text-samudra-ink">Reservations</h2>
+          <div className="h-px w-[60px] bg-samudra-ink mt-3" style={{ opacity: 0.4 }} />
+        </div>
+        <Button
+          onClick={() => { setShowAddForm(true); setFormData({ ...emptyForm }); }}
+          className="h-11 bg-samudra-ink text-samudra-paper hover:bg-samudra-teal text-[11px] tracking-[0.3em] uppercase px-7 font-medium transition-colors"
+          style={{ fontFamily: 'var(--font-label)' }}
+        >
           <Plus className="w-4 h-4 mr-2" />
-          Add Booking
+          New Reservation
         </Button>
       </div>
 
-      {/* Bookings List */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">All Bookings ({bookings.length})</h3>
-        </div>
-
+      {/* Bookings Table */}
+      <div className="bg-samudra-paper border border-samudra-paper-deep">
         {bookings.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">
-            <svg className="h-12 w-12 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V9a2 2 0 012-2z" />
-            </svg>
-            <p>No bookings found</p>
+          <div className="py-16 text-center">
+            <p className="font-script text-samudra-gold text-[36px] leading-none mb-4">no reservations yet</p>
+            <p className="font-display text-[18px] text-samudra-ink-soft mb-8">
+              Bookings will appear here as guests reserve through Samudra.
+            </p>
+            <Button
+              onClick={() => { setShowAddForm(true); setFormData({ ...emptyForm }); }}
+              variant="outline"
+              className="h-11 border-samudra-ink text-samudra-ink hover:bg-samudra-paper-soft text-[11px] tracking-[0.3em] uppercase px-7"
+              style={{ fontFamily: 'var(--font-label)' }}
+            >
+              + New Reservation
+            </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dates</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+          /* P1-B-4: card-stack view on mobile <640px + table for desktop (MASON 2026-05-19) */
+          <>
+          <div className="sm:hidden divide-y divide-samudra-paper-deep">
+            {bookings.map((booking, index) => (
+              <div key={booking.id || index} className="p-4 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="font-medium text-samudra-ink" style={{ fontFamily: 'var(--font-display)' }}>
+                      {getGuestName(booking)}
+                    </div>
+                    <div className="text-[12px] text-samudra-ink-mute" style={{ fontFamily: 'var(--font-label)' }}>
+                      {booking.email || booking.guest_email || ''}
+                    </div>
+                  </div>
+                  <span className={`inline-flex items-center px-2 py-0.5 text-[10px] tracking-[0.2em] uppercase font-medium ${getStatusBadgeClass(booking.status)}`}
+                    style={{ fontFamily: 'var(--font-label)', whiteSpace: 'nowrap' }}>
+                    {booking.status || 'pending'}
+                  </span>
+                </div>
+                <div className="text-[13px] text-samudra-ink-mute" style={{ fontFamily: 'var(--font-label)' }}>
+                  <span className="font-medium text-samudra-ink">{booking.room_name || `Room ${booking.room_id}` || 'N/A'}</span>
+                  {' · '}{booking.check_in || 'N/A'} → {booking.check_out || 'N/A'}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] font-medium text-samudra-ink">
+                    Rp {Number(booking.total_price || 0).toLocaleString('id-ID')}
+                  </span>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" className="h-10 w-10 p-0 text-samudra-ink-mute hover:text-samudra-ink" aria-label="Edit reservation"
+                      onClick={() => {
+                        const name = getGuestName(booking);
+                        const [firstName, ...lastParts] = name.split(' ');
+                        setEditingBooking(booking);
+                        setFormData({
+                          first_name: booking.first_name || firstName || '',
+                          last_name: booking.last_name || lastParts.join(' ') || '',
+                          email: booking.email || booking.guest_email || '',
+                          phone: booking.phone || booking.guest_phone || '',
+                          check_in: booking.check_in || '',
+                          check_out: booking.check_out || '',
+                          room_id: booking.room_id || '',
+                          guests: booking.guests || 1,
+                          adults: booking.adults || 1,
+                          children: booking.children || 0,
+                          total_price: parseFloat(booking.total_price || 0),
+                          status: booking.status || 'pending',
+                          special_requests: booking.special_requests || '',
+                        });
+                      }}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" className="h-10 w-10 p-0 text-samudra-ink-mute hover:text-red-600" aria-label="Delete reservation"
+                      onClick={() => setDeleteTarget(booking)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden sm:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Guest</TableHead>
+                  <TableHead>Suite</TableHead>
+                  <TableHead>Check-in</TableHead>
+                  <TableHead>Check-out</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="is-numeric">Total</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {bookings.map((booking, index) => (
-                  <tr key={booking.id || index}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <TableRow key={booking.id || index}>
+                    <TableCell className="is-display">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {booking.guest_name || booking.name ||
-                            (booking.first_name ? `${booking.first_name} ${booking.last_name || ''}`.trim() : '') ||
-                            'N/A'}
+                        <div>{getGuestName(booking)}</div>
+                        <div className="text-[12px] text-samudra-ink-mute" style={{ fontFamily: 'var(--font-label)' }}>
+                          {booking.email || booking.guest_email || ''}
                         </div>
-                        <div className="text-sm text-gray-500">{booking.email || booking.guest_email}</div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {booking.room_name || `Room ${booking.room_id}` || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div>
-                        <div>Check-in: {booking.check_in || 'N/A'}</div>
-                        <div>Check-out: {booking.check_out || 'N/A'}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant={getStatusVariant(booking.status)}>
+                    </TableCell>
+                    <TableCell>{booking.room_name || `Room ${booking.room_id}` || 'N/A'}</TableCell>
+                    <TableCell>{booking.check_in || 'N/A'}</TableCell>
+                    <TableCell>{booking.check_out || 'N/A'}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-3 py-1 text-[10px] tracking-[0.2em] uppercase font-medium ${getStatusBadgeClass(booking.status)}`}
+                        style={{ fontFamily: 'var(--font-label)' }}>
                         {booking.status || 'pending'}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${booking.total_price || '0'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-2">
+                      </span>
+                    </TableCell>
+                    <TableCell className="is-numeric">
+                      Rp {Number(booking.total_price || 0).toLocaleString('id-ID')}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
-                          size="sm"
+                          className="h-9 w-9 p-0 text-samudra-ink-mute hover:text-samudra-ink"
+                          aria-label="Edit reservation"
                           onClick={() => {
-                            const guestName = booking.guest_name || booking.name ||
-                              (booking.first_name ? `${booking.first_name} ${booking.last_name || ''}`.trim() : '');
-                            const [firstName, ...lastNameParts] = guestName.split(' ');
-
+                            const name = getGuestName(booking);
+                            const [firstName, ...lastParts] = name.split(' ');
                             setEditingBooking(booking);
                             setFormData({
                               first_name: booking.first_name || firstName || '',
-                              last_name: booking.last_name || lastNameParts.join(' ') || '',
+                              last_name: booking.last_name || lastParts.join(' ') || '',
                               email: booking.email || booking.guest_email || '',
                               phone: booking.phone || booking.guest_phone || '',
                               check_in: booking.check_in || '',
                               check_out: booking.check_out || '',
                               room_id: booking.room_id || '',
-                              guests: booking.guests || booking.adults + booking.children || 1,
-                              adults: booking.adults || booking.guests || 1,
+                              guests: booking.guests || 1,
+                              adults: booking.adults || 1,
                               children: booking.children || 0,
-                              total_price: parseFloat(booking.total_price || booking.total_amount || 0),
+                              total_price: parseFloat(booking.total_price || 0),
                               status: booking.status || 'pending',
                               special_requests: booking.special_requests || ''
                             });
@@ -312,404 +422,109 @@ const BookingsSection: React.FC = () => {
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
-
+                        <Button
+                          variant="ghost"
+                          className="h-9 w-9 p-0 text-[#7a3d31] hover:text-[#5a2d21]"
+                          aria-label="Delete reservation"
+                          onClick={() => setDeleteTarget(booking)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </div>{/* end hidden sm:block */}
+          </>
         )}
       </div>
 
-      {/* Add Booking Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Add New Booking</h3>
-                <button
-                  onClick={() => setShowAddForm(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <form onSubmit={handleAddBooking} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">First Name*</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.first_name}
-                      onChange={(e) => handleFormChange('first_name', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      placeholder="Enter first name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                    <input
-                      type="text"
-                      value={formData.last_name}
-                      onChange={(e) => handleFormChange('last_name', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      placeholder="Enter last name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Email*</label>
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => handleFormChange('email', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      placeholder="Enter email"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Phone</label>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleFormChange('phone', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      placeholder="Enter phone number"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Check-in Date*</label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.check_in}
-                      onChange={(e) => handleFormChange('check_in', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Check-out Date*</label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.check_out}
-                      onChange={(e) => handleFormChange('check_out', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Room*</label>
-                    <select
-                      required
-                      value={formData.room_id}
-                      onChange={(e) => handleFormChange('room_id', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    >
-                      <option value="">Select a room</option>
-                      <option value="deluxe-suite">Deluxe Suite</option>
-                      <option value="economy-room">Economy Room</option>
-                      <option value="family-room">Family Room</option>
-                      <option value="master-suite">Master Suite</option>
-                      <option value="standard-room">Standard Room</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Adults*</label>
-                    <input
-                      type="number"
-                      min="1"
-                      required
-                      value={formData.adults}
-                      onChange={(e) => handleFormChange('adults', parseInt(e.target.value))}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Children</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.children}
-                      onChange={(e) => handleFormChange('children', parseInt(e.target.value))}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Total Price*</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      required
-                      value={formData.total_price}
-                      onChange={(e) => handleFormChange('total_price', parseFloat(e.target.value))}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Status</label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => handleFormChange('status', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="checked_in">Checked In</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Special Requests</label>
-                  <textarea
-                    value={formData.special_requests}
-                    onChange={(e) => handleFormChange('special_requests', e.target.value)}
-                    rows={3}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="Any special requests..."
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddForm(false);
-                      setFormData({
-                        first_name: '',
-                        last_name: '',
-                        email: '',
-                        phone: '',
-                        check_in: '',
-                        check_out: '',
-                        room_id: '',
-                        guests: 1,
-                        adults: 1,
-                        children: 0,
-                        total_price: 0,
-                        status: 'pending',
-                        special_requests: ''
-                      });
-                    }}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-hotel-gold rounded-md hover:bg-hotel-gold-dark"
-                  >
-                    Create Booking
-                  </button>
-                </div>
-              </form>
+      {/* Add Booking Dialog */}
+      <Dialog open={showAddForm} onOpenChange={(open) => { if (!open) { setShowAddForm(false); setFormData({ ...emptyForm }); } }}>
+        <DialogContent className="max-w-2xl bg-samudra-paper border border-samudra-paper-deep p-8"
+          style={{ boxShadow: '0 32px 96px rgba(10,14,20,0.22), 0 4px 16px rgba(10,14,20,0.10)' }}>
+          <DialogHeader className="mb-6">
+            <DialogTitle className="font-display text-[28px] font-light text-samudra-ink">New Reservation</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddBooking} className="space-y-6">
+            <BookingFormFields />
+            <div className="flex gap-3 justify-end mt-6">
+              <Button type="button" variant="secondary"
+                className="h-11 border border-samudra-ink text-samudra-ink bg-samudra-paper hover:bg-samudra-ink hover:text-samudra-paper text-[11px] tracking-[0.3em] uppercase px-7"
+                style={{ fontFamily: 'var(--font-label)' }}
+                onClick={() => { setShowAddForm(false); setFormData({ ...emptyForm }); }}>
+                Keep
+              </Button>
+              <Button type="submit"
+                className="h-11 bg-samudra-ink text-samudra-paper hover:bg-samudra-teal text-[11px] tracking-[0.3em] uppercase px-7"
+                style={{ fontFamily: 'var(--font-label)' }}>
+                Confirm Reservation
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </form>
+        </DialogContent>
+      </Dialog>
 
-      {/* Edit Booking Modal */}
-      {editingBooking && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Edit Booking #{editingBooking.id}</h3>
-                <button
-                  onClick={() => setEditingBooking(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <form onSubmit={handleEditBooking} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">First Name*</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.first_name}
-                      onChange={(e) => handleFormChange('first_name', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                    <input
-                      type="text"
-                      value={formData.last_name}
-                      onChange={(e) => handleFormChange('last_name', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Email*</label>
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => handleFormChange('email', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Phone</label>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleFormChange('phone', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Check-in Date*</label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.check_in}
-                      onChange={(e) => handleFormChange('check_in', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Check-out Date*</label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.check_out}
-                      onChange={(e) => handleFormChange('check_out', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Room*</label>
-                    <select
-                      required
-                      value={formData.room_id}
-                      onChange={(e) => handleFormChange('room_id', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    >
-                      <option value="">Select a room</option>
-                      <option value="deluxe-suite">Deluxe Suite</option>
-                      <option value="economy-room">Economy Room</option>
-                      <option value="family-room">Family Room</option>
-                      <option value="master-suite">Master Suite</option>
-                      <option value="standard-room">Standard Room</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Adults*</label>
-                    <input
-                      type="number"
-                      min="1"
-                      required
-                      value={formData.adults}
-                      onChange={(e) => handleFormChange('adults', parseInt(e.target.value))}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Children</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.children}
-                      onChange={(e) => handleFormChange('children', parseInt(e.target.value))}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Total Price*</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      required
-                      value={formData.total_price}
-                      onChange={(e) => handleFormChange('total_price', parseFloat(e.target.value))}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Status</label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => handleFormChange('status', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="checked_in">Checked In</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Special Requests</label>
-                  <textarea
-                    value={formData.special_requests}
-                    onChange={(e) => handleFormChange('special_requests', e.target.value)}
-                    rows={3}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="Any special requests..."
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingBooking(null);
-                      setFormData({
-                        first_name: '',
-                        last_name: '',
-                        email: '',
-                        phone: '',
-                        check_in: '',
-                        check_out: '',
-                        room_id: '',
-                        guests: 1,
-                        adults: 1,
-                        children: 0,
-                        total_price: 0,
-                        status: 'pending',
-                        special_requests: ''
-                      });
-                    }}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-hotel-gold rounded-md hover:bg-hotel-gold-dark"
-                  >
-                    Update Booking
-                  </button>
-                </div>
-              </form>
+      {/* Edit Booking Dialog */}
+      <Dialog open={!!editingBooking} onOpenChange={(open) => { if (!open) { setEditingBooking(null); setFormData({ ...emptyForm }); } }}>
+        <DialogContent className="max-w-2xl bg-samudra-paper border border-samudra-paper-deep p-8"
+          style={{ boxShadow: '0 32px 96px rgba(10,14,20,0.22), 0 4px 16px rgba(10,14,20,0.10)' }}>
+          <DialogHeader className="mb-6">
+            <DialogTitle className="font-display text-[28px] font-light text-samudra-ink">
+              Edit Reservation
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditBooking} className="space-y-6">
+            <BookingFormFields />
+            <div className="flex gap-3 justify-end mt-6">
+              <Button type="button" variant="secondary"
+                className="h-11 border border-samudra-ink text-samudra-ink bg-samudra-paper hover:bg-samudra-ink hover:text-samudra-paper text-[11px] tracking-[0.3em] uppercase px-7"
+                style={{ fontFamily: 'var(--font-label)' }}
+                onClick={() => { setEditingBooking(null); setFormData({ ...emptyForm }); }}>
+                Keep
+              </Button>
+              <Button type="submit"
+                className="h-11 bg-samudra-ink text-samudra-paper hover:bg-samudra-teal text-[11px] tracking-[0.3em] uppercase px-7"
+                style={{ fontFamily: 'var(--font-label)' }}>
+                Update Reservation
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation AlertDialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent className="bg-samudra-paper border border-samudra-paper-deep"
+          style={{ boxShadow: '0 32px 96px rgba(10,14,20,0.22), 0 4px 16px rgba(10,14,20,0.10)' }}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-[22px] font-normal text-samudra-ink">
+              Remove reservation?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[13px] text-samudra-ink-mute" style={{ fontFamily: 'var(--font-label)' }}>
+              This will permanently remove {deleteTarget ? getGuestName(deleteTarget) : 'this'}'s reservation.
+              Guest notification will not be sent automatically.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-3 justify-end mt-6">
+            <AlertDialogCancel
+              className="h-11 border border-samudra-ink text-samudra-ink bg-samudra-paper hover:bg-samudra-ink hover:text-samudra-paper text-[11px] tracking-[0.3em] uppercase px-7"
+              style={{ fontFamily: 'var(--font-label)' }}>
+              Keep
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteBooking}
+              className="h-11 bg-[#7a3d31] text-samudra-paper hover:brightness-90 text-[11px] tracking-[0.3em] uppercase px-7"
+              style={{ fontFamily: 'var(--font-label)' }}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
 
 export default BookingsSection;
-

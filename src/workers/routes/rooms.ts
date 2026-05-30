@@ -1,16 +1,13 @@
 import { Env } from '../types';
-import { getTokenFromHeader, verifyToken } from '../utils/auth';
+import { requireAuth } from '../utils/auth';
 
 export async function handleRooms(url: URL, method: string, body: any, env: Env, request: Request): Promise<Response> {
   const pathParts = url.pathname.split('/').filter(Boolean);
 
   // Auth check for non-GET methods
   if (method !== 'GET') {
-    const authHeader = request.headers.get('Authorization');
-    const token = getTokenFromHeader(authHeader);
-    const valid = token ? await verifyToken(token, env.JWT_SECRET) : false;
-
-    if (!valid) {
+    const auth = await requireAuth(request, env);
+    if (!auth.valid) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Unauthorized'
@@ -26,15 +23,16 @@ export async function handleRooms(url: URL, method: string, body: any, env: Env,
 
   const parseRoom = (room: any) => {
     try {
-      if (room.amenities && typeof room.amenities === 'string') room.amenities = JSON.parse(room.amenities);
+      // images is a JSON array stored as text in DB
       if (room.images && typeof room.images === 'string') room.images = JSON.parse(room.images);
-      if (room.features && typeof room.features === 'string') room.features = JSON.parse(room.features);
     } catch (e) {
       console.error('Error parsing room data:', e);
-      if (typeof room.amenities === 'string') room.amenities = [];
       if (typeof room.images === 'string') room.images = [];
-      if (typeof room.features === 'string') room.features = [];
     }
+    // K3 fix: alias DB column names to FE expected names so edit form populates correctly
+    // DB: base_price, max_occupancy — FE edit form reads: price, capacity
+    if (room.base_price !== undefined && room.price === undefined) room.price = room.base_price;
+    if (room.max_occupancy !== undefined && room.capacity === undefined) room.capacity = room.max_occupancy;
     return room;
   };
 
@@ -122,7 +120,14 @@ export async function handleRooms(url: URL, method: string, body: any, env: Env,
   // POST /api/rooms - create new room
   if (pathParts.length === 2 && method === 'POST') {
     try {
-      const { name, type, description, price_per_night, max_guests, amenities, images } = body;
+      // Accept multiple field name aliases (FE sends 'price'/'capacity', DB has 'base_price'/'max_occupancy')
+      const {
+        name, type, description,
+        base_price, price, price_per_night,
+        max_occupancy, capacity, max_guests,
+        amenities, images, slug,
+        size_sqm, bed_type, view_type, display_order, is_active
+      } = body;
 
       if (!name) {
         return new Response(JSON.stringify({
@@ -137,17 +142,22 @@ export async function handleRooms(url: URL, method: string, body: any, env: Env,
         });
       }
 
+      // Resolve canonical DB field names (DB has base_price, max_occupancy)
+      const resolvedPrice = base_price ?? price ?? price_per_night ?? 0;
+      const resolvedMaxOccupancy = max_occupancy ?? capacity ?? max_guests ?? 2;
+
       const result = await env.DB.prepare(
-        `INSERT INTO rooms (name, type, description, price_per_night, max_guests, amenities, images, is_active, created_at, updated_at) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'), datetime('now'))`
+        `INSERT INTO rooms (name, type, description, base_price, max_occupancy, images, is_active, display_order, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
       ).bind(
         name,
         type || 'Standard',
         description || '',
-        price_per_night || 0,
-        max_guests || 2,
-        JSON.stringify(amenities || []),
-        JSON.stringify(images || [])
+        resolvedPrice,
+        resolvedMaxOccupancy,
+        Array.isArray(images) ? JSON.stringify(images) : (images || '[]'),
+        is_active !== false ? 1 : 0,
+        display_order ?? 0
       ).run();
 
       return new Response(JSON.stringify({
@@ -179,7 +189,14 @@ export async function handleRooms(url: URL, method: string, body: any, env: Env,
   if (pathParts.length === 3 && method === 'PUT') {
     try {
       const id = parseInt(pathParts[2]);
-      const { name, type, description, price_per_night, max_guests, amenities, images, is_active } = body;
+      // Accept multiple field name aliases for price and capacity
+      const {
+        name, type, description,
+        base_price, price, price_per_night,
+        max_occupancy, capacity, max_guests,
+        amenities, images, is_active,
+        slug, size_sqm, bed_type, view_type, display_order
+      } = body;
 
       const updates: string[] = [];
       const values: any[] = [];
@@ -187,11 +204,19 @@ export async function handleRooms(url: URL, method: string, body: any, env: Env,
       if (name !== undefined) { updates.push('name = ?'); values.push(name); }
       if (type !== undefined) { updates.push('type = ?'); values.push(type); }
       if (description !== undefined) { updates.push('description = ?'); values.push(description); }
-      if (price_per_night !== undefined) { updates.push('price_per_night = ?'); values.push(price_per_night); }
-      if (max_guests !== undefined) { updates.push('max_guests = ?'); values.push(max_guests); }
-      if (amenities !== undefined) { updates.push('amenities = ?'); values.push(JSON.stringify(amenities)); }
-      if (images !== undefined) { updates.push('images = ?'); values.push(JSON.stringify(images)); }
+      // base_price aliases (FE may send 'price' or 'price_per_night')
+      const priceUpdate = base_price ?? price ?? price_per_night;
+      if (priceUpdate !== undefined) { updates.push('base_price = ?'); values.push(priceUpdate); }
+      // max_occupancy aliases (FE may send 'capacity' or 'max_guests')
+      const occupancyUpdate = max_occupancy ?? capacity ?? max_guests;
+      if (occupancyUpdate !== undefined) { updates.push('max_occupancy = ?'); values.push(occupancyUpdate); }
+      // images column exists in DB; amenities column does NOT exist (room_amenities is separate junction table)
+      if (images !== undefined) { updates.push('images = ?'); values.push(Array.isArray(images) ? JSON.stringify(images) : images); }
       if (is_active !== undefined) { updates.push('is_active = ?'); values.push(is_active ? 1 : 0); }
+      if (size_sqm !== undefined) { updates.push('size_sqm = ?'); values.push(size_sqm); }
+      if (bed_type !== undefined) { updates.push('bed_type = ?'); values.push(bed_type); }
+      if (view_type !== undefined) { updates.push('view_type = ?'); values.push(view_type); }
+      if (display_order !== undefined) { updates.push('display_order = ?'); values.push(display_order); }
 
       updates.push("updated_at = datetime('now')");
       values.push(id);

@@ -377,21 +377,36 @@ export async function handlePayment(url: URL, method: string, body: any, env: En
       const transactionStatus = body.transaction?.status;
 
       if (invoiceNumber && transactionStatus) {
-        // Update payment status
+        // Update payment_transactions ledger (all statuses)
         await env.DB.prepare(`
-          UPDATE payment_transactions 
+          UPDATE payment_transactions
           SET status = ?, updated_at = datetime('now'), callback_data = ?
           WHERE invoice_number = ?
         `).bind(transactionStatus.toLowerCase(), rawBody, invoiceNumber).run();
 
-        // If payment successful, update booking status
-        if (transactionStatus === 'SUCCESS') {
-          const bookingRef = invoiceNumber.split('-')[0] + '-' + invoiceNumber.split('-')[1];
+        // Derive booking_reference prefix from invoice_number
+        const bookingRef = invoiceNumber.split('-')[0] + '-' + invoiceNumber.split('-')[1];
+        const upperStatus = String(transactionStatus).toUpperCase();
+
+        if (upperStatus === 'SUCCESS') {
+          // Payment successful → confirm booking
           await env.DB.prepare(`
-            UPDATE bookings SET status = 'confirmed', payment_status = 'paid' 
+            UPDATE bookings SET status = 'confirmed', payment_status = 'paid', updated_at = datetime('now')
             WHERE booking_reference LIKE ?
           `).bind(`${bookingRef}%`).run();
+        } else if (['FAILED', 'EXPIRED', 'DECLINED', 'CANCELLED', 'CANCELED', 'REFUSED', 'REJECTED'].includes(upperStatus)) {
+          // Non-success terminal status → mark booking as failed + record error context for GA4 purchase_failed event
+          const errorCode = body.transaction?.code || body.transaction?.error_code || upperStatus;
+          const errorMessage = body.transaction?.message || body.transaction?.error_message || `DOKU ${upperStatus}`;
+          // Truncate to keep DB rows compact
+          const safeCode = String(errorCode).slice(0, 64);
+          const safeMessage = String(errorMessage).slice(0, 512);
+          await env.DB.prepare(`
+            UPDATE bookings SET payment_status = 'failed', payment_error_code = ?, payment_error_message = ?, updated_at = datetime('now')
+            WHERE booking_reference LIKE ?
+          `).bind(safeCode, safeMessage, `${bookingRef}%`).run();
         }
+        // Other intermediate statuses (PENDING, PROCESSING, AUTHORIZED, etc.) → leave booking untouched; ledger row already reflects current state.
       }
 
       return new Response(JSON.stringify({ success: true }), {

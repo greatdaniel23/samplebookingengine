@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Calendar, Download, Link, Copy, Check, AlertCircle, RefreshCw, Settings, ExternalLink, Trash2 } from 'lucide-react';
 import { calendarService, PackageCalendarInfo } from '@/services/calendarService';
 import { paths } from '@/config/paths';
+import { apiClient } from '@/utils/apiClient';
 
 interface PackageCalendarManagerProps {
   packageId: number;
@@ -93,12 +95,39 @@ export const PackageCalendarManager: React.FC<PackageCalendarManagerProps> = ({
 
   const loadIntegrations = async () => {
     try {
-      const response = await fetch(paths.buildApiUrl(`package_calendar_sync.php?action=get_package_integrations&package_id=${packageId}`));
-      const result = await response.json();
-      
-      if (result.success) {
-        setIntegrations(result.integrations || []);
-        setExternalBlocks(result.external_blocks || []);
+      // Load the saved Airbnb iCal URL from calendar config
+      const cfgRes = await fetch(paths.buildApiUrl('calendar/config'));
+      const cfgJson = await cfgRes.json();
+      const cfg = cfgJson.data || {};
+      const savedUrl = cfg.airbnb_ical_url || null;
+
+      if (savedUrl) {
+        setIntegrations([{
+          platform_name: 'airbnb',
+          api_endpoint: savedUrl,
+          sync_status: 'active',
+          last_sync_at: null,
+          config_data: '',
+        }]);
+      } else {
+        setIntegrations([]);
+      }
+
+      // Load external blocks summary
+      const blkRes = await fetch(paths.buildApiUrl('calendar/external-blocks?source=airbnb'));
+      const blkJson = await blkRes.json();
+      const blocks: any[] = (blkJson.data?.data ?? blkJson.data ?? []);
+
+      if (blocks.length > 0) {
+        const dates = blocks.map((b: any) => b.start_date).sort();
+        setExternalBlocks([{
+          source: 'airbnb',
+          block_count: blocks.length,
+          earliest_block: dates[0] || '',
+          latest_block: dates[dates.length - 1] || '',
+        }]);
+      } else {
+        setExternalBlocks([]);
       }
     } catch (err) {
       console.error('Failed to load integrations:', err);
@@ -115,25 +144,19 @@ export const PackageCalendarManager: React.FC<PackageCalendarManagerProps> = ({
     setError(null);
 
     try {
-      const response = await fetch(paths.buildApiUrl('package_calendar_sync.php?action=setup_airbnb'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          package_id: packageId,
-          airbnb_url: airbnbUrl
-        })
-      });
+      // Save the URL to calendar config — must use apiClient (direct Worker + auth)
+      const cfgJson = await apiClient.put<any>('/api/calendar/config', { airbnb_ical_url: airbnbUrl.trim() });
+      if (!cfgJson.success) throw new Error(cfgJson.error || 'Failed to save URL');
 
-      const result = await response.json();
-      
-      if (result.success) {
+      // Immediately trigger a sync
+      const syncJson = await apiClient.post<any>('/api/calendar/sync', { url: airbnbUrl.trim(), source: 'airbnb' });
+
+      if (!syncJson.success && syncJson.error) {
+        setError(syncJson.error);
+      } else {
         setAirbnbUrl('');
         await loadIntegrations();
-        alert('Airbnb calendar integration setup successfully!');
-      } else {
-        setError(result.error || 'Failed to setup Airbnb integration');
+        toast.success(`Airbnb synced — ${syncJson.data?.inserted ?? 0} blocked dates imported`);
       }
     } catch (err) {
       console.error('Setup failed:', err);
@@ -146,14 +169,12 @@ export const PackageCalendarManager: React.FC<PackageCalendarManagerProps> = ({
   const syncPackageCalendar = async () => {
     setLoading(true);
     try {
-      const response = await fetch(paths.buildApiUrl(`package_calendar_sync.php?action=sync_package&package_id=${packageId}`));
-      const result = await response.json();
-      
-      if (result.success) {
+      const json = await apiClient.post<any>('/api/calendar/sync', { source: 'airbnb' });
+      if (json.success) {
         await loadIntegrations();
-        alert('Calendar synchronized successfully!');
+        toast.success(`Calendar synced — ${json.data?.inserted ?? 0} dates imported`);
       } else {
-        setError(result.error || 'Sync failed');
+        setError(json.error || 'Sync failed');
       }
     } catch (err) {
       console.error('Sync failed:', err);
@@ -164,21 +185,20 @@ export const PackageCalendarManager: React.FC<PackageCalendarManagerProps> = ({
   };
 
   const removeIntegration = async (platform: string) => {
-    if (!confirm(`Remove ${platform} integration for this package?`)) return;
-
     try {
-      const response = await fetch(paths.buildApiUrl(`package_calendar_sync.php?action=remove_integration&package_id=${packageId}&platform=${platform}`), {
-        method: 'DELETE'
-      });
+      // Clear the stored URL — must use apiClient (direct Worker + auth)
+      await apiClient.put('/api/calendar/config', { [`${platform}_ical_url`]: null });
 
-      const result = await response.json();
-      
-      if (result.success) {
-        await loadIntegrations();
-        alert('Integration removed successfully!');
-      } else {
-        setError(result.error || 'Failed to remove integration');
+      // Delete all external blocks for this source (GET is fine via paths proxy)
+      const blkRes = await fetch(paths.buildApiUrl(`calendar/external-blocks?source=${platform}`));
+      const blkJson = await blkRes.json();
+      const blocks: any[] = blkJson.data?.data ?? blkJson.data ?? [];
+      for (const block of blocks) {
+        await apiClient.delete(`/api/calendar/external-blocks/${block.id}`);
       }
+
+      await loadIntegrations();
+      toast.success('Integration removed');
     } catch (err) {
       console.error('Remove failed:', err);
       setError(err instanceof Error ? err.message : 'Remove failed');
@@ -285,7 +305,7 @@ export const PackageCalendarManager: React.FC<PackageCalendarManagerProps> = ({
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-red-100 text-red-800'
                 }`}>
-                  {packageDetails.available && packageDetails.is_active ? '✅ Package Active' : '❌ Package Inactive'}
+                  {packageDetails.available && packageDetails.is_active ? 'Package Active' : 'Package Inactive'}
                 </span>
               </div>
               <div className="mt-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">

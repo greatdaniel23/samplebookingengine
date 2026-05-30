@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { paths } from '@/config/paths';
+import { apiClient } from '@/utils/apiClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +10,10 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
@@ -68,6 +74,7 @@ const InclusionsSection: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingInclusion, setEditingInclusion] = useState<Inclusion | null>(null);
+  const [deleteInclusionTarget, setDeleteInclusionTarget] = useState<Inclusion | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -97,14 +104,14 @@ const InclusionsSection: React.FC = () => {
 
   const categories = [
     { value: 'all', label: 'All Categories' },
-    { value: 'meals', label: '🍽️ Meals' },
-    { value: 'dining', label: '🍷 Dining' },
-    { value: 'spa', label: '💆 Spa' },
-    { value: 'wellness', label: '🧘 Wellness' },
-    { value: 'activity', label: '🎯 Activities' },
-    { value: 'transport', label: '🚗 Transport' },
-    { value: 'amenity', label: '🏠 Amenity' },
-    { value: 'special', label: '🎁 Special' }
+    { value: 'meals', label: 'Meals' },
+    { value: 'dining', label: 'Dining' },
+    { value: 'spa', label: 'Spa' },
+    { value: 'wellness', label: 'Wellness' },
+    { value: 'activity', label: 'Activities' },
+    { value: 'transport', label: 'Transport' },
+    { value: 'amenity', label: 'Amenity' },
+    { value: 'special', label: 'Special' }
   ];
 
   const iconOptions = [
@@ -160,12 +167,6 @@ const InclusionsSection: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingInclusion 
-        ? paths.buildApiUrl(`inclusions/${editingInclusion.id}`)
-        : paths.buildApiUrl('inclusions');
-      
-      const method = editingInclusion ? 'PUT' : 'POST';
-      
       // Map category to package_type for API
       const payload = {
         name: formData.name,
@@ -173,26 +174,24 @@ const InclusionsSection: React.FC = () => {
         package_type: formData.category,
         is_active: formData.is_active
       };
-      
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          alert(editingInclusion ? 'Inclusion updated successfully!' : 'Inclusion created successfully!');
-          resetForm();
-          fetchInclusions();
-        } else {
-          alert('Error: ' + data.error);
-        }
+      let data: any;
+      if (editingInclusion) {
+        data = await apiClient.put<any>(`/api/inclusions/${editingInclusion.id}`, payload);
+      } else {
+        data = await apiClient.post<any>('/api/inclusions', payload);
+      }
+
+      if (data.success) {
+        toast.success(editingInclusion ? 'Inclusion updated' : 'Inclusion created');
+        resetForm();
+        fetchInclusions();
+      } else {
+        toast.error('Save failed', { description: data.error || 'Please try again.' });
       }
     } catch (error) {
       console.error('Error saving inclusion:', error);
-      alert('Error saving inclusion');
+      toast.error(error instanceof Error ? error.message : 'Could not save inclusion');
     }
   };
 
@@ -210,23 +209,19 @@ const InclusionsSection: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this inclusion?')) return;
-    
     try {
-      const response = await fetch(paths.buildApiUrl(`inclusions/${id}`), {
-        method: 'DELETE'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          alert('Inclusion deleted successfully!');
-          fetchInclusions();
-        }
+      const data = await apiClient.delete<any>(`/api/inclusions/${id}`);
+      if (data.success) {
+        toast.success('Inclusion removed');
+        fetchInclusions();
+      } else {
+        toast.error('Could not remove inclusion', { description: 'Please try again.' });
       }
     } catch (error) {
       console.error('Error deleting inclusion:', error);
-      alert('Error deleting inclusion');
+      toast.error(error instanceof Error ? error.message : 'Could not remove inclusion');
+    } finally {
+      setDeleteInclusionTarget(null);
     }
   };
 
@@ -349,10 +344,11 @@ const InclusionsSection: React.FC = () => {
                       <Edit3 className="h-3 w-3" />
                     </Button>
                     <Button
-                      onClick={() => handleDelete(inclusion.id)}
+                      onClick={() => setDeleteInclusionTarget(inclusion)}
                       variant="destructive"
                       size="icon"
                       className="h-8 w-8"
+                      aria-label={`Delete ${inclusion.name}`}
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>
@@ -363,6 +359,26 @@ const InclusionsSection: React.FC = () => {
           })
         )}
       </div>
+
+      {/* Delete Inclusion Confirmation */}
+      <AlertDialog open={!!deleteInclusionTarget} onOpenChange={(open) => { if (!open) setDeleteInclusionTarget(null); }}>
+        <AlertDialogContent className="bg-samudra-paper border border-samudra-paper-deep">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-[22px] font-normal text-samudra-ink">Remove inclusion?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[13px] text-samudra-ink-mute" style={{ fontFamily: 'var(--font-label)' }}>
+              "{deleteInclusionTarget?.name}" will be permanently removed from all packages.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-3 justify-end mt-4">
+            <AlertDialogCancel className="h-11 border border-samudra-ink text-samudra-ink bg-samudra-paper text-[11px] tracking-[0.3em] uppercase px-6" style={{ fontFamily: 'var(--font-label)' }}>Keep</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteInclusionTarget && handleDelete(deleteInclusionTarget.id)}
+              className="h-11 bg-[#7a3d31] text-samudra-paper text-[11px] tracking-[0.3em] uppercase px-6"
+              style={{ fontFamily: 'var(--font-label)' }}
+            >Remove</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Create/Edit Modal */}
       <Dialog open={showCreateModal} onOpenChange={(open) => !open && resetForm()}>

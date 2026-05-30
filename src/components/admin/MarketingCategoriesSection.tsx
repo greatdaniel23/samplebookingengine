@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, X, Save, Tag } from 'lucide-react';
 import { paths } from '@/config/paths';
+import { apiClient } from '@/utils/apiClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +12,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface MarketingCategory {
   id: number;
@@ -25,6 +31,7 @@ const MarketingCategoriesSection: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<MarketingCategory | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MarketingCategory | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -73,24 +80,19 @@ const MarketingCategoriesSection: React.FC = () => {
     e.preventDefault();
 
     try {
-      // Use Cloudflare Worker API
-      const url = paths.buildApiUrl('marketing-categories');
-      const method = editingCategory ? 'PUT' : 'POST';
       const payload = editingCategory
         ? { ...formData, id: editingCategory.id }
         : formData;
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      let result: any;
+      if (editingCategory) {
+        result = await apiClient.put<any>('/api/marketing-categories', payload);
+      } else {
+        result = await apiClient.post<any>('/api/marketing-categories', payload);
+      }
 
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const result = await response.json();
       if (result.success) {
-        alert(`Marketing category ${editingCategory ? 'updated' : 'created'} successfully!`);
+        toast.success(editingCategory ? 'Category updated' : 'Category created');
         setShowCreateModal(false);
         setEditingCategory(null);
         resetForm();
@@ -100,34 +102,24 @@ const MarketingCategoriesSection: React.FC = () => {
       }
     } catch (error) {
       console.error('Error saving category:', error);
-      alert(`Error ${editingCategory ? 'updating' : 'creating'} category: ${error}`);
+      toast.error(error instanceof Error ? error.message : 'Could not save category');
     }
   };
 
-  const handleDelete = async (categoryId: number, categoryName: string) => {
-    if (!confirm(`Are you sure you want to delete "${categoryName}"? This cannot be undone.`)) {
-      return;
-    }
-
+  const handleDelete = async (categoryId: number) => {
     try {
-      const response = await fetch(paths.buildApiUrl('marketing-categories'), {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: categoryId })
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const result = await response.json();
+      const result = await apiClient.deleteWithBody<any>('/api/marketing-categories', { id: categoryId });
       if (result.success) {
-        alert('Marketing category deleted successfully!');
+        toast.success('Category removed');
         fetchCategories();
       } else {
         throw new Error(result.error || 'Delete failed');
       }
     } catch (error) {
       console.error('Error deleting category:', error);
-      alert(`Error deleting category: ${error}`);
+      toast.error(error instanceof Error ? error.message : 'Could not remove category');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -258,7 +250,7 @@ const MarketingCategoriesSection: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       className="text-red-600 hover:text-red-900"
-                      onClick={() => handleDelete(category.id, category.name)}
+                      onClick={() => setDeleteTarget(category)}
                     >
                       Delete
                     </Button>
@@ -344,6 +336,23 @@ const MarketingCategoriesSection: React.FC = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent className="bg-samudra-paper border border-samudra-paper-deep">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-[22px] font-normal text-samudra-ink">Remove category?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[13px] text-samudra-ink-mute" style={{ fontFamily: 'var(--font-label)' }}>
+              Packages assigned to "{deleteTarget?.name}" will become uncategorized.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-3 justify-end mt-4">
+            <AlertDialogCancel className="h-11 border border-samudra-ink text-samudra-ink bg-samudra-paper text-[11px] tracking-[0.3em] uppercase px-6" style={{ fontFamily: 'var(--font-label)' }}>Keep</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteTarget && handleDelete(deleteTarget.id)}
+              className="h-11 bg-[#7a3d31] text-samudra-paper text-[11px] tracking-[0.3em] uppercase px-6" style={{ fontFamily: 'var(--font-label)' }}>Remove</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Camera } from 'lucide-react';
+import { toast } from 'sonner';
+import { Camera, Check } from 'lucide-react';
 import { paths } from '@/config/paths';
 import { getImageUrl } from '@/config/r2';
+import { apiClient } from '@/utils/apiClient';
 
 interface RoomImageButtonProps {
   roomId: string | number;
@@ -55,18 +57,9 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
     setLoading(true);
 
     try {
-      // Update room with selected image using Cloudflare Worker API
-      const response = await fetch(paths.buildApiUrl(`rooms/${roomId}`), {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          images: [imagePath] // Set the selected image as the room's image array
-        })
+      const data = await apiClient.put<any>(`/api/rooms/${roomId}`, {
+        images: [imagePath]
       });
-
-      const data = await response.json();
 
       if (data.success) {
         // Build the correct image URL (use R2 or relative path)
@@ -90,30 +83,19 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
       }
     } catch (error) {
       console.error('Error assigning image:', error);
-      alert('Error assigning image. Please try again.');
+      toast.error('Could not assign image', { description: 'Please try again.' });
     } finally {
       setLoading(false);
     }
   };
 
   const handleRemoveImage = async () => {
-    if (!currentImage || !confirm('Are you sure you want to remove this image?')) {
-      return;
-    }
+    if (!currentImage) return;
 
     setLoading(true);
 
     try {
-      // Update room to remove images using Cloudflare Worker API
-      const response = await fetch(paths.buildApiUrl(`rooms/${roomId}`), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          images: [] // Clear images array
-        })
-      });
-
-      const data = await response.json();
+      const data = await apiClient.put<any>(`/api/rooms/${roomId}`, { images: [] });
 
       if (data.success) {
         setCurrentImage(null);
@@ -127,7 +109,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
       }
     } catch (error) {
       console.error('Error removing image:', error);
-      alert('Error removing image. Please try again.');
+      toast.error('Could not remove image', { description: 'Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -143,7 +125,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
               <img
                 src={getImageUrl(currentImage.image_url)}
                 alt="Room image"
-                className="w-20 h-20 object-cover rounded-lg border-2 border-[var(--hotel-gold)]"
+                className="w-20 h-20 object-cover rounded-lg border-2 border-[var(--gold)]"
                 onError={(e) => {
                   // Fallback to placeholder if image fails to load
                   const target = e.target as HTMLImageElement;
@@ -161,7 +143,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
                 <button
                   onClick={() => setShowModal(true)}
                   disabled={loading}
-                  className="w-6 h-6 rounded-full border-0 flex items-center justify-center text-xs cursor-pointer transition-all duration-200 bg-[var(--hotel-gold)] text-white hover:bg-[var(--hotel-bronze)]"
+                  className="w-6 h-6 rounded-full border-0 flex items-center justify-center text-xs cursor-pointer transition-all duration-200 bg-[var(--gold)] text-white hover:bg-[var(--ink-mute)]"
                   title="Change image"
                 >
                   <Camera size={16} />
@@ -177,7 +159,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
               </div>
             </div>
             <div>
-              <small className="text-[var(--hotel-sage)] text-xs">
+              <small className="text-[var(--teal)] text-xs">
                 {currentImage.image_folder}/{currentImage.image_path.split('/').pop()}
               </small>
             </div>
@@ -187,7 +169,7 @@ const RoomImageButton: React.FC<RoomImageButtonProps> = ({
           <button
             onClick={() => setShowModal(true)}
             disabled={loading}
-            className={`flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[var(--hotel-gold)] rounded-lg text-[var(--hotel-gold)] hover:bg-[var(--hotel-gold)] hover:text-white transition-colors duration-200 ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+            className={`flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[var(--gold)] rounded-lg text-[var(--gold)] hover:bg-[var(--gold)] hover:text-white transition-colors duration-200 ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
             <Camera size={20} />
             <span>{loading ? 'Loading...' : 'Add Image'}</span>
@@ -305,7 +287,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
       <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] w-full m-4 flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-semibold text-[var(--hotel-navy)]">
+          <h2 className="text-xl font-semibold text-[var(--ink)]">
             Select Room Image
           </h2>
           <button
@@ -319,16 +301,16 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
         {/* Folder Selector */}
         <div className="p-4 border-b">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-[var(--hotel-navy)]">
+            <label className="text-sm font-medium text-[var(--ink)]">
               Select Folder:
             </label>
             {loadingFolders ? (
-              <div className="text-sm text-[var(--hotel-sage)]">Loading folders...</div>
+              <div className="text-sm text-[var(--teal)]">Loading folders...</div>
             ) : (
               <select
                 value={selectedFolder}
                 onChange={(e) => setSelectedFolder(e.target.value)}
-                className="px-3 py-2 border border-[var(--hotel-gold)] rounded-lg text-[var(--hotel-navy)] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--hotel-gold)] focus:border-transparent min-w-[150px]"
+                className="px-3 py-2 border border-[var(--gold)] rounded-lg text-[var(--ink)] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--gold)] focus:border-transparent min-w-[150px]"
               >
                 {folders.length === 0 ? (
                   <option value="">No folders found</option>
@@ -342,7 +324,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
               </select>
             )}
             {folders.length > 0 && (
-              <span className="text-xs text-[var(--hotel-sage)]">
+              <span className="text-xs text-[var(--teal)]">
                 {folders.length} folder{folders.length !== 1 ? 's' : ''} available
               </span>
             )}
@@ -353,7 +335,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
         <div className="flex-1 p-4 overflow-auto">
           {loading ? (
             <div className="flex justify-center items-center h-32">
-              <div className="text-[var(--hotel-sage)]">Loading images...</div>
+              <div className="text-[var(--teal)]">Loading images...</div>
             </div>
           ) : images.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -361,7 +343,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
                 <div
                   key={index}
                   className={`bg-white rounded-xl overflow-hidden shadow-md transition-all duration-300 cursor-pointer ${selectedImage === image
-                    ? 'ring-4 ring-[var(--hotel-gold)] ring-opacity-50 transform scale-[1.02]'
+                    ? 'ring-4 ring-[var(--gold)] ring-opacity-50 transform scale-[1.02]'
                     : 'hover:shadow-lg hover:transform hover:scale-[1.02]'
                     }`}
                   onClick={() => handleImageClick(image)}
@@ -372,11 +354,11 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
                       alt={image}
                       className="w-full h-40 object-cover"
                       onLoad={(e) => {
-                        console.log(`✅ Image loaded: ${selectedFolder}/${image}`);
+                        console.log(`Image loaded: ${selectedFolder}/${image}`);
                       }}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        console.log(`❌ Image failed from main domain: ${target.src}`);
+                        console.log(`Image failed from main domain: ${target.src}`);
 
                         // Show elegant placeholder
                         target.style.display = 'none';
@@ -385,7 +367,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
                           const placeholder = document.createElement('div');
                           placeholder.className = 'image-placeholder w-full h-40 bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center text-gray-400 text-center p-2';
                           placeholder.innerHTML = `
-                            <div class="text-3xl mb-2">📷</div>
+                            <div class="text-3xl mb-2 text-gray-400 font-light">—</div>
                             <div class="text-sm font-medium text-gray-600 truncate px-2">${image}</div>
                             <div class="text-xs mt-1 text-gray-500">${selectedFolder} folder</div>
                             <div class="text-xs mt-1 opacity-70">Preview not available</div>
@@ -398,8 +380,8 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
                     {/* Selection Indicator */}
                     {selectedImage === image && (
                       <div className="absolute top-3 right-3">
-                        <div className="bg-[var(--hotel-gold)] text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg">
-                          <span className="text-sm font-bold">✓</span>
+                        <div className="bg-[var(--gold)] text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg">
+                          <Check className="w-4 h-4" />
                         </div>
                       </div>
                     )}
@@ -407,18 +389,18 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
 
                   {/* Image Info Card */}
                   <div className="p-4">
-                    <div className="font-semibold text-[var(--hotel-navy)] text-sm mb-1 truncate" title={image}>
+                    <div className="font-semibold text-[var(--ink)] text-sm mb-1 truncate" title={image}>
                       {image}
                     </div>
-                    <div className="text-xs text-[var(--hotel-sage)] mb-2">
-                      📁 {selectedFolder} folder
+                    <div className="text-xs text-[var(--teal)] mb-2">
+                      {selectedFolder} folder
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs bg-[var(--hotel-cream)] text-[var(--hotel-bronze)] px-2 py-1 rounded-full">
+                      <span className="text-xs bg-[var(--paper-soft)] text-[var(--ink-mute)] px-2 py-1 rounded-full">
                         .{image.split('.').pop()?.toUpperCase()}
                       </span>
                       {selectedImage === image && (
-                        <span className="text-xs text-[var(--hotel-gold)] font-semibold">
+                        <span className="text-xs text-[var(--gold)] font-semibold">
                           Selected
                         </span>
                       )}
@@ -441,7 +423,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
 
         {/* Footer */}
         <div className="p-4 border-t flex justify-between items-center">
-          <div className="text-sm text-[var(--hotel-sage)]">
+          <div className="text-sm text-[var(--teal)]">
             {selectedImage ? `Selected: ${selectedImage}` : 'Click an image to select'}
           </div>
           <div className="flex gap-2">
@@ -454,7 +436,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
             <button
               onClick={handleUseImage}
               disabled={!selectedImage}
-              className="px-6 py-2 bg-[var(--hotel-gold)] text-white rounded-lg hover:bg-[var(--hotel-bronze)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-[var(--gold)] text-white rounded-lg hover:bg-[var(--ink-mute)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Use This Image
             </button>

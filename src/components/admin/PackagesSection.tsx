@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Calendar, Plus, Building, Info, X, AlertTriangle, Check, ImagePlus, Sparkles, Pencil, Trash2, Gift } from 'lucide-react';
 import { paths } from '@/config/paths';
+import { apiClient } from '@/utils/apiClient';
 import { ImageManager } from '@/components/ImageManager';
 import { PackageCalendarManager } from './PackageCalendarManager';
 import { PackageRoomsManager } from './PackageRoomsManager';
@@ -12,6 +14,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
 
 const PackagesSection: React.FC = () => {
   const [packages, setPackages] = useState<any[]>([]);
@@ -34,6 +43,7 @@ const PackagesSection: React.FC = () => {
   const [showInclusionsModal, setShowInclusionsModal] = useState(false);
   const [packageInclusions, setPackageInclusions] = useState<any[]>([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [deletePackageTarget, setDeletePackageTarget] = useState<{ id: number, name: string } | null>(null);
 
   // Marketing categories
   const [marketingCategories, setMarketingCategories] = useState<any[]>([]);
@@ -200,20 +210,10 @@ const PackagesSection: React.FC = () => {
 
   const addAmenityToPackage = async (packageId: number, amenityId: number, isHighlighted: boolean = false) => {
     try {
-      // Use Cloudflare Worker API
-      const apiUrl = paths.buildApiUrl(`packages/${packageId}/amenities`);
-      console.log('Adding amenity to package:', apiUrl);
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amenity_id: amenityId, is_highlighted: isHighlighted })
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const data = await response.json();
-
+      const data = await apiClient.post<any>(
+        `/api/packages/${packageId}/amenities`,
+        { amenity_id: amenityId, is_highlighted: isHighlighted }
+      );
       if (data.success) {
         fetchPackageAmenities(packageId);
         return true;
@@ -227,14 +227,7 @@ const PackagesSection: React.FC = () => {
 
   const removeAmenityFromPackage = async (packageId: number, amenityId: number) => {
     try {
-      // Use Cloudflare Worker API
-      const apiUrl = paths.buildApiUrl(`packages/${packageId}/amenities/${amenityId}`);
-      console.log('Removing amenity from package:', apiUrl);
-      const response = await fetch(apiUrl, { method: 'DELETE' });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const data = await response.json();
+      const data = await apiClient.delete<any>(`/api/packages/${packageId}/amenities/${amenityId}`);
       if (data.success) {
         fetchPackageAmenities(packageId);
         return true;
@@ -271,19 +264,10 @@ const PackagesSection: React.FC = () => {
 
   const addInclusionToPackage = async (packageId: number, inclusionId: number) => {
     try {
-      const apiUrl = paths.buildApiUrl(`packages/${packageId}/inclusions`);
-      console.log('Adding inclusion to package:', apiUrl);
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inclusion_id: inclusionId })
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const data = await response.json();
-
+      const data = await apiClient.post<any>(
+        `/api/packages/${packageId}/inclusions`,
+        { inclusion_id: inclusionId }
+      );
       if (data.success) {
         fetchPackageInclusions(packageId);
         return true;
@@ -297,13 +281,7 @@ const PackagesSection: React.FC = () => {
 
   const removeInclusionFromPackage = async (packageId: number, inclusionId: number) => {
     try {
-      const apiUrl = paths.buildApiUrl(`packages/${packageId}/inclusions/${inclusionId}`);
-      console.log('Removing inclusion from package:', apiUrl);
-      const response = await fetch(apiUrl, { method: 'DELETE' });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const data = await response.json();
+      const data = await apiClient.delete<any>(`/api/packages/${packageId}/inclusions/${inclusionId}`);
       if (data.success) {
         fetchPackageInclusions(packageId);
         return true;
@@ -346,19 +324,9 @@ const PackagesSection: React.FC = () => {
   const handleCreatePackage = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch(paths.buildApiUrl('packages'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(createFormData)
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const result = await response.json();
+      const result = await apiClient.post<any>('/api/packages', createFormData);
       if (result.success) {
-        alert('Sales tool created successfully!');
+        toast.success('Package created');
         setShowCreateModal(false);
         setCreateFormData({
           name: '',
@@ -381,7 +349,7 @@ const PackagesSection: React.FC = () => {
       }
     } catch (error) {
       console.error('Error creating package:', error);
-      alert('Error creating sales tool: ' + error);
+      toast.error(error instanceof Error ? error.message : 'Could not create package');
     }
   };
 
@@ -422,25 +390,10 @@ const PackagesSection: React.FC = () => {
 
 
 
-      const response = await fetch(paths.buildApiUrl('packages'), {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateData)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error Response:', errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      const result = await response.json();
-
+      const result = await apiClient.put<any>('/api/packages', updateData);
 
       if (result.success) {
-        alert('Sales tool updated successfully!');
+        toast.success('Package updated');
         setEditingPackage(null);
         setPackageFormData({
           name: '',
@@ -465,34 +418,24 @@ const PackagesSection: React.FC = () => {
       }
     } catch (error) {
       console.error('Error updating package:', error);
-      alert('Error updating sales tool: ' + error);
+      toast.error(error instanceof Error ? error.message : 'Could not update package');
     }
   };
 
   const deletePackage = async (packageId: number) => {
-    if (!confirm('Are you sure you want to delete this sales tool?')) return;
-
     try {
-      const response = await fetch(paths.buildApiUrl('packages'), {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: packageId })
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const result = await response.json();
+      const result = await apiClient.deleteWithBody<any>('/api/packages', { id: packageId });
       if (result.success) {
-        alert('Sales tool deleted successfully!');
+        toast.success('Package removed');
         fetchPackages();
       } else {
         throw new Error(result.error || 'Failed to delete package');
       }
     } catch (error) {
       console.error('Error deleting package:', error);
-      alert('Error deleting sales tool: ' + error);
+      toast.error(error instanceof Error ? error.message : 'Could not remove package');
+    } finally {
+      setDeletePackageTarget(null);
     }
   };
 
@@ -523,58 +466,39 @@ const PackagesSection: React.FC = () => {
     );
   }
 
+  // Samudra input styles — mirrors BookingsSection
+  const samudraInput = "h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors";
+  const samudraSelect = "h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors";
+  const samudraTextarea = "w-full bg-samudra-paper border border-samudra-paper-deep px-3 py-2 text-[14px] text-samudra-ink focus:outline-none focus:border-samudra-teal transition-colors resize-none";
+
   return (
     <div className="space-y-6">
-      {/* Sales Tools Concept Header */}
-      <Card className="border-purple-200 bg-purple-50/50">
-        <CardContent className="pt-4">
-          <div className="flex items-start gap-3">
-            <Gift className="w-6 h-6 text-purple-600 mt-0.5" />
-            <div>
-              <h3 className="text-lg font-semibold mb-2">🎁 Marketing Sales Tools</h3>
-              <p className="text-sm text-muted-foreground">
-                <strong>Packages are marketing tools</strong> that combine room accommodation with services to create attractive bundled offers.
-                Each package is based on an actual room (the real inventory). Package availability depends on room availability.
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                💡 <strong>Business Logic:</strong> Room + Services = Sales Tool → Customer chooses bundle → Books room with services
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-between items-center">
+      {/* Samudra section header */}
+      <div className="flex items-end justify-between mb-8">
         <div>
-          <h2 className="text-xl font-semibold">Sales Tools Management</h2>
-          <p className="text-sm text-muted-foreground mt-1">Marketing tools that bundle room + services for customer attraction</p>
+          <p className="font-script text-samudra-gold text-[28px] leading-none mb-2">experiences</p>
+          <h2 className="font-display text-[40px] font-light text-samudra-ink">Packages</h2>
+          <div className="h-px w-[60px] bg-samudra-ink mt-3" style={{ opacity: 0.4 }} />
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
+        <Button
+          onClick={() => setShowCreateModal(true)}
+          className="h-11 bg-samudra-ink text-samudra-paper hover:bg-samudra-teal text-[11px] tracking-[0.3em] uppercase px-7 font-medium transition-colors"
+          style={{ fontFamily: 'var(--font-label)' }}
+        >
           <Plus className="w-4 h-4 mr-2" />
-          Add Sales Tool
+          Add Package
         </Button>
       </div>
 
       {packages.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-lg shadow">
-          <Building className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Sales Tools Created Yet</h3>
-          <p className="text-gray-500 mb-6 max-w-md mx-auto">
-            Create your first sales tool to bundle rooms with services and start managing amenities.
-          </p>
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 max-w-lg mx-auto">
-            <h4 className="font-semibold text-gray-800 mb-3">🎯 Quick Start Guide:</h4>
-            <ol className="text-sm text-gray-600 text-left space-y-2">
-              <li><strong>1.</strong> Click "Add Sales Tool" above</li>
-              <li><strong>2.</strong> Choose a base room and set pricing</li>
-              <li><strong>3.</strong> Save your package</li>
-              <li><strong>4.</strong> Use "Amenities" button to add features</li>
-              <li><strong>5.</strong> Test the "Add" buttons for amenities!</li>
-            </ol>
-          </div>
-          <Button onClick={() => setShowCreateModal(true)} size="lg">
-            <Plus className="w-5 h-5 mr-2" />
-            Create Your First Sales Tool
+        <div className="bg-samudra-paper border border-samudra-paper-deep p-12 text-center">
+          <p className="font-script text-samudra-gold text-[28px] leading-none mb-3">no packages yet</p>
+          <p className="text-[13px] text-samudra-ink-mute mb-6 max-w-sm mx-auto">Create your first package to bundle rooms with experiences and start managing offerings.</p>
+          <Button onClick={() => setShowCreateModal(true)}
+            variant="outline"
+            className="h-11 border-samudra-ink text-samudra-ink hover:bg-samudra-paper-soft text-[11px] tracking-[0.3em] uppercase px-7"
+            style={{ fontFamily: 'var(--font-label)' }}>
+            + Add Package
           </Button>
         </div>
       ) : (
@@ -584,364 +508,197 @@ const PackagesSection: React.FC = () => {
             const isActive = pkg.available === 1 || pkg.available === '1' || pkg.is_active === 1 || pkg.is_active === '1' || pkg.active;
 
             return (
-              <Card key={pkg.id || index}>
-                <CardContent className="pt-6">
-                  {/* Sales Tool Header */}
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="secondary">🎁 Sales Tool</Badge>
-                        <Badge variant={isActive ? 'default' : 'destructive'}>
-                          {isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                      <h3 className="text-lg font-semibold">{pkg.name || 'Unnamed Sales Tool'}</h3>
+              <div key={pkg.id || index} className="bg-samudra-paper border border-samudra-paper-deep card-accent-teal flex flex-col">
+                <div className="p-5 flex-1">
+                  {/* Package header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="eyebrow text-samudra-ink-mute mb-1">Package</p>
+                      <h3 className="font-display text-[20px] font-light text-samudra-ink leading-tight">{pkg.name || 'Unnamed Package'}</h3>
                     </div>
+                    <span className={`ml-3 flex-shrink-0 eyebrow text-[10px] px-2 py-1 border ${isActive
+                      ? 'border-samudra-teal text-samudra-teal'
+                      : 'border-samudra-ink-mute text-samudra-ink-mute'
+                    }`}>
+                      {isActive ? 'Active' : 'Inactive'}
+                    </span>
                   </div>
 
-                  {/* Base Room Information */}
-                  <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Building className="w-4 h-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">Base Room (Real Inventory)</span>
-                    </div>
+                  {/* Base Room */}
+                  <div className="mt-3 p-3 border border-samudra-paper-deep bg-samudra-paper-soft">
+                    <p className="eyebrow text-samudra-ink-mute mb-1">Base Suite</p>
                     {baseRoom ? (
-                      <div className="text-sm text-gray-600">
-                        <p><strong>{baseRoom.name}</strong> - Rp {Number(baseRoom.price || 0).toLocaleString('id-ID')}/night</p>
-                        <p className="text-xs text-gray-500">Capacity: {baseRoom.capacity} guests | Type: {baseRoom.type}</p>
-                      </div>
+                      <p className="text-[13px] text-samudra-ink">{baseRoom.name} — Rp {Number(baseRoom.price || 0).toLocaleString('id-ID')}/night</p>
                     ) : (
-                      <div className="text-sm text-red-600">
-                        ⚠️ No base room assigned - Package availability cannot be determined
-                      </div>
+                      <p className="text-[13px] text-[#7a3d31]">No base room assigned</p>
                     )}
                   </div>
 
-                  {/* Sales Tool Details */}
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <div className="flex justify-between">
-                      <span><strong>Bundle Price:</strong></span>
-                      <span className="text-gray-800 font-semibold">Rp {Number(pkg.price || pkg.base_price || 0).toLocaleString('id-ID')}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span><strong>Marketing Category:</strong></span>
-                      <span>{pkg.type || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span><strong>Max Guests:</strong></span>
-                      <span>{pkg.max_guests || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span><strong>Package Duration:</strong></span>
-                      <span>{pkg.duration_days || pkg.min_nights || 'N/A'} {pkg.duration_days ? 'days' : 'nights'}</span>
-                    </div>
-                  </div>
-
-                  {/* Business Logic Explanation */}
-                  <div className="mt-4 p-3 bg-gray-100 border border-gray-200 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <svg className="w-4 h-4 text-gray-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div className="text-xs text-gray-700">
-                        <p className="font-medium">Marketing Tool:</p>
-                        <p>This package is available only when the base room has inventory. Room availability controls package availability.</p>
+                  {/* Package details */}
+                  <div className="space-y-2 mt-4">
+                    {[
+                      { label: 'Price',    value: `Rp ${Number(pkg.price || pkg.base_price || 0).toLocaleString('id-ID')}` },
+                      { label: 'Category', value: pkg.type || 'N/A' },
+                      { label: 'Guests',   value: pkg.max_guests ? `${pkg.max_guests} max` : 'N/A' },
+                      { label: 'Duration', value: pkg.duration_days ? `${pkg.duration_days} days` : pkg.min_nights ? `${pkg.min_nights} nights` : 'N/A' },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="flex justify-between items-baseline">
+                        <span className="eyebrow text-samudra-ink-mute">{label}</span>
+                        <span className="text-[13px] text-samudra-ink is-numeric">{value}</span>
                       </div>
-                    </div>
+                    ))}
                   </div>
 
                   {pkg.description && (
-                    <p className="mt-4 text-sm text-gray-600 line-clamp-3">{pkg.description}</p>
+                    <p className="mt-4 text-[13px] text-samudra-ink-mute line-clamp-2">{pkg.description}</p>
                   )}
+                </div>
 
-                  <div className="mt-4 grid grid-cols-3 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setEditingPackage(pkg);
-                        setPackageFormData({
-                          name: pkg.name || '',
-                          description: pkg.description || '',
-                          type: pkg.type || 'Romance',
-                          price: parseFloat(pkg.price || pkg.base_price || 0),
-                          duration_days: parseInt(pkg.duration_days || pkg.min_nights || 1),
-                          max_guests: parseInt(pkg.max_guests || 2),
-                          available: pkg.available === 1 || pkg.available === '1' || pkg.is_active === 1 || pkg.is_active === '1' || pkg.active || false,
-                          base_room_id: pkg.base_room_id || '',
-                          inclusions: Array.isArray(pkg.inclusions) ? pkg.inclusions :
-                            (pkg.inclusions ? JSON.parse(pkg.inclusions) : []),
-                          exclusions: Array.isArray(pkg.exclusions) ? pkg.exclusions :
-                            (pkg.exclusions ? JSON.parse(pkg.exclusions) : []),
-                          images: Array.isArray(pkg.images) ? pkg.images :
-                            (pkg.images ? JSON.parse(pkg.images) : []),
-                          valid_from: pkg.valid_from || '',
-                          valid_until: pkg.valid_until || '',
-                          terms_conditions: pkg.terms_conditions || ''
-                        });
-                      }}
-                    >
-                      <Pencil className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedPackageForCalendar({ id: pkg.id, name: pkg.name });
-                        setCalendarManagerOpen(true);
-                      }}
-                      title="Manage Calendar Integration"
-                    >
-                      <Calendar className="h-4 w-4 mr-1" />
-                      Calendar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedPackageForAmenities({ id: pkg.id, name: pkg.name });
-                        fetchPackageAmenities(pkg.id);
-                        setShowAmenitiesModal(true);
-                      }}
-                      title="Manage Package Amenities"
-                    >
-                      <Sparkles className="h-4 w-4 mr-1" />
-                      Amenities
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedPackageForInclusions({ id: pkg.id, name: pkg.name });
-                        fetchPackageInclusions(pkg.id);
-                        setShowInclusionsModal(true);
-                      }}
-                      title="Manage Package Inclusions"
-                    >
-                      <Check className="h-4 w-4 mr-1" />
-                      Inclusions
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedPackageForRooms({ id: pkg.id, name: pkg.name });
-                        setRoomsManagerOpen(true);
-                      }}
-                      title="Manage Package Rooms"
-                    >
-                      <Building className="h-4 w-4 mr-1" />
-                      Rooms
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deletePackage(pkg.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                {/* Card footer — primary Edit + link-style secondary actions */}
+                <div className="border-t border-samudra-paper-deep p-4">
+                  <Button
+                    className="w-full h-10 bg-samudra-ink text-samudra-paper hover:bg-samudra-teal text-[11px] tracking-[0.3em] uppercase mb-3 transition-colors"
+                    style={{ fontFamily: 'var(--font-label)' }}
+                    onClick={() => {
+                      setEditingPackage(pkg);
+                      setPackageFormData({
+                        name: pkg.name || '',
+                        description: pkg.description || '',
+                        type: pkg.type || 'Romance',
+                        price: parseFloat(pkg.price || pkg.base_price || 0),
+                        duration_days: parseInt(pkg.duration_days || pkg.min_nights || 1),
+                        max_guests: parseInt(pkg.max_guests || 2),
+                        available: pkg.available === 1 || pkg.available === '1' || pkg.is_active === 1 || pkg.is_active === '1' || pkg.active || false,
+                        base_room_id: pkg.base_room_id || '',
+                        inclusions: Array.isArray(pkg.inclusions) ? pkg.inclusions : (pkg.inclusions ? JSON.parse(pkg.inclusions) : []),
+                        exclusions: Array.isArray(pkg.exclusions) ? pkg.exclusions : (pkg.exclusions ? JSON.parse(pkg.exclusions) : []),
+                        images: Array.isArray(pkg.images) ? pkg.images : (pkg.images ? JSON.parse(pkg.images) : []),
+                        valid_from: pkg.valid_from || '',
+                        valid_until: pkg.valid_until || '',
+                        terms_conditions: pkg.terms_conditions || ''
+                      });
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5 mr-2" />
+                    Edit Package
+                  </Button>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-0">
+                      {[
+                        { icon: Calendar, label: 'Calendar', action: () => { setSelectedPackageForCalendar({ id: pkg.id, name: pkg.name }); setCalendarManagerOpen(true); } },
+                        { icon: Sparkles, label: 'Amenities', action: () => { setSelectedPackageForAmenities({ id: pkg.id, name: pkg.name }); fetchPackageAmenities(pkg.id); setShowAmenitiesModal(true); } },
+                        { icon: Check,    label: 'Inclusions', action: () => { setSelectedPackageForInclusions({ id: pkg.id, name: pkg.name }); fetchPackageInclusions(pkg.id); setShowInclusionsModal(true); } },
+                        { icon: Building, label: 'Rooms', action: () => { setSelectedPackageForRooms({ id: pkg.id, name: pkg.name }); setRoomsManagerOpen(true); } },
+                      ].map(({ icon: Icon, label, action }, i, arr) => (
+                        <React.Fragment key={label}>
+                          <button onClick={action} className="eyebrow text-[10px] text-samudra-ink-mute hover:text-samudra-ink transition-colors py-1 px-1.5"
+                            style={{ fontFamily: 'var(--font-label)' }} title={label}>
+                            {label}
+                          </button>
+                          {i < arr.length - 1 && <span className="text-samudra-ink-mute/40 text-[10px]">·</span>}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    <Button variant="ghost" size="sm" aria-label={`Delete ${pkg.name}`}
+                      className="h-8 w-8 p-0 text-[#7a3d31] hover:bg-[#7a3d31]/10"
+                      onClick={() => setDeletePackageTarget({ id: pkg.id, name: pkg.name })}>
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             );
           })}
         </div>
       )}
 
-      {/* Create Package Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h3 className="text-lg font-semibold">Create New Sales Tool</h3>
-                <p className="text-sm text-gray-600 mt-1">Bundle a room with services to create an attractive marketing package</p>
-              </div>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
+      {/* Create Package Dialog — Radix Dialog pattern */}
+      <Dialog open={showCreateModal} onOpenChange={(open) => { if (!open) setShowCreateModal(false); }}>
+        <DialogContent className="max-w-2xl bg-samudra-paper border border-samudra-paper-deep p-8"
+          style={{ boxShadow: '0 32px 96px rgba(10,14,20,0.22), 0 4px 16px rgba(10,14,20,0.10)' }}>
+          <DialogHeader className="mb-6">
+            <DialogTitle className="font-display text-[28px] font-light text-samudra-ink">New Package</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[70vh] overflow-y-auto pr-1">
             <form onSubmit={handleCreatePackage} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sales Tool Name</label>
-                <input
-                  type="text"
+                <label className="eyebrow block mb-2">Package Name *</label>
+                <input type="text" required placeholder="e.g., Romantic Getaway, Family Adventure"
                   value={createFormData.name}
                   onChange={(e) => setCreateFormData({ ...createFormData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Romantic Getaway, Family Adventure"
-                  required
-                />
+                  className={samudraInput} style={{ fontFamily: 'var(--font-label)' }} />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Base Room (Real Inventory) <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={createFormData.base_room_id}
+                <label className="eyebrow block mb-2">Base Suite *</label>
+                <select required value={createFormData.base_room_id}
                   onChange={(e) => setCreateFormData({ ...createFormData, base_room_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select the room this sales tool is based on</option>
+                  className={samudraSelect} style={{ fontFamily: 'var(--font-label)' }}>
+                  <option value="">Select base suite</option>
                   {rooms.map(room => (
                     <option key={room.id} value={room.id}>
-                      {room.name} - Rp {Number(room.price || 0).toLocaleString('id-ID')}/night (Capacity: {room.capacity})
+                      {room.name} — Rp {Number(room.price || 0).toLocaleString('id-ID')}/night (cap. {room.capacity})
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  💡 Package availability will depend on this room's availability
-                </p>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Marketing Category</label>
-                  <select
-                    value={createFormData.type}
+                  <label className="eyebrow block mb-2">Category</label>
+                  <select value={createFormData.type}
                     onChange={(e) => setCreateFormData({ ...createFormData, type: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {marketingCategories.map((category) => (
-                      <option key={category.id} value={category.name}>
-                        {category.name}
-                      </option>
-                    ))}
-                    {marketingCategories.length === 0 && (
-                      <option value="Romance">Romance (default)</option>
-                    )}
+                    className={samudraSelect} style={{ fontFamily: 'var(--font-label)' }}>
+                    {marketingCategories.map((cat) => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+                    {marketingCategories.length === 0 && <option value="Romance">Romance</option>}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bundle Price</label>
-                  <input
-                    type="number"
+                  <label className="eyebrow block mb-2">Bundle Price *</label>
+                  <input type="number" min="0" step="0.01" required placeholder="Total price"
                     value={createFormData.base_price}
                     onChange={(e) => setCreateFormData({ ...createFormData, base_price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min="0"
-                    step="0.01"
-                    placeholder="Total package price"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Room + services combined price</p>
+                    className={samudraInput} style={{ fontFamily: 'var(--font-label)' }} />
                 </div>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sales Pitch & Description</label>
-                <textarea
+                <label className="eyebrow block mb-2">Description</label>
+                <textarea rows={3} placeholder="Describe the experience and value"
                   value={createFormData.description}
                   onChange={(e) => setCreateFormData({ ...createFormData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  placeholder="Describe the experience and value proposition. What makes this package attractive?"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  💡 Focus on the combined value: room comfort + included services
-                </p>
+                  className={samudraTextarea} style={{ fontFamily: 'var(--font-label)' }} />
               </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                >
-                  Create Sales Tool
-                </button>
+              <div className="flex justify-end gap-3 pt-4 border-t border-samudra-paper-deep">
+                <Button type="button" variant="outline"
+                  className="h-11 border-samudra-ink text-samudra-ink bg-samudra-paper hover:bg-samudra-paper-soft text-[11px] tracking-[0.3em] uppercase px-6"
+                  style={{ fontFamily: 'var(--font-label)' }}
+                  onClick={() => setShowCreateModal(false)}>Cancel</Button>
+                <Button type="submit"
+                  className="h-11 bg-samudra-ink text-samudra-paper hover:bg-samudra-teal text-[11px] tracking-[0.3em] uppercase px-6"
+                  style={{ fontFamily: 'var(--font-label)' }}>Create Package</Button>
               </div>
             </form>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
-      {/* Edit Package Modal - Enhanced with Business Logic */}
-      {editingPackage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">Edit Sales Tool</h3>
-                <p className="text-sm text-gray-600 mt-1">Update this marketing package that combines room + services</p>
-              </div>
-              <button
-                onClick={() => {
-                  setEditingPackage(null);
-                  setPackageFormData({
-                    name: '',
-                    description: '',
-                    type: 'Romance',
-                    price: 0,
-                    duration_days: 1,
-                    max_guests: 2,
-                    available: true,
-                    base_room_id: '',
-                    inclusions: [] as string[],
-                    exclusions: [] as string[],
-                    images: [] as string[],
-                    valid_from: '',
-                    valid_until: '',
-                    terms_conditions: ''
-                  });
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Business Logic Reminder */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex items-start">
-                <Info className="w-5 h-5 text-blue-600 mt-0.5 mr-3" />
-                <div>
-                  <h4 className="text-sm font-semibold text-blue-900 mb-1">Sales Tool Business Logic</h4>
-                  <p className="text-xs text-blue-800">
-                    This package is a <strong>marketing tool</strong> that bundles room accommodation with services.
-                    Package availability depends on the base room's inventory. Update the sales presentation to attract customers.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <form onSubmit={handleUpdatePackage} className="space-y-6">
-              {/* Current Base Room Info */}
-              {(() => {
+      {/* Edit Package Dialog — Radix Dialog pattern */}
+      <Dialog open={!!editingPackage} onOpenChange={(open) => { if (!open) { setEditingPackage(null); } }}>
+        <DialogContent className="max-w-4xl bg-samudra-paper border border-samudra-paper-deep p-8"
+          style={{ boxShadow: '0 32px 96px rgba(10,14,20,0.22), 0 4px 16px rgba(10,14,20,0.10)' }}>
+          <DialogHeader className="mb-6">
+            <DialogTitle className="font-display text-[28px] font-light text-samudra-ink">Edit Package</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[70vh] overflow-y-auto pr-1">
+            <form onSubmit={handleUpdatePackage} className="space-y-5">
+              {/* Current Base Suite info */}
+              {editingPackage && (() => {
                 const baseRoom = rooms.find(room => room.id === editingPackage.base_room_id) || null;
                 return (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Building className="w-5 h-5 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">Current Base Room (Real Inventory)</span>
-                    </div>
+                  <div className="p-3 border border-samudra-paper-deep bg-samudra-paper-soft">
+                    <p className="eyebrow text-samudra-ink-mute mb-1">Current Base Suite</p>
                     {baseRoom ? (
-                      <div className="text-sm text-gray-600">
-                        <p><strong>{baseRoom.name}</strong> - Rp {Number(baseRoom.price || 0).toLocaleString('id-ID')}/night</p>
-                        <p className="text-xs text-gray-500">
-                          Capacity: {baseRoom.capacity} guests | Type: {baseRoom.type} |
-                          <span className={baseRoom.available ? 'text-green-600' : 'text-red-600'}>
-                            {baseRoom.available ? ' Available' : ' Disabled'}
-                          </span>
-                        </p>
-                      </div>
+                      <p className="text-[13px] text-samudra-ink">{baseRoom.name} — Rp {Number(baseRoom.price || 0).toLocaleString('id-ID')}/night · cap. {baseRoom.capacity}</p>
                     ) : (
-                      <div className="text-sm text-red-600">
-                        ⚠️ No base room assigned - Package availability cannot be determined
-                      </div>
+                      <p className="text-[13px] text-[#7a3d31]">No base room assigned</p>
                     )}
                   </div>
                 );
@@ -949,307 +706,219 @@ const PackagesSection: React.FC = () => {
 
               {/* Base Room Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Change Base Room (Real Inventory) <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={packageFormData.base_room_id}
+                <label className="eyebrow block mb-2">Base Suite *</label>
+                <select required value={packageFormData.base_room_id}
                   onChange={(e) => setPackageFormData({ ...packageFormData, base_room_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select the room this sales tool is based on</option>
+                  className={samudraSelect} style={{ fontFamily: 'var(--font-label)' }}>
+                  <option value="">Select base suite</option>
                   {rooms.map(room => (
                     <option key={room.id} value={room.id}>
-                      {room.name} - ${room.price}/night (Capacity: {room.capacity}) {!room.available ? ' - DISABLED' : ''}
+                      {room.name} — Rp {Number(room.price || 0).toLocaleString('id-ID')}/night (cap. {room.capacity}) {!room.available ? ' [inactive]' : ''}
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  💡 <strong>Critical:</strong> Package availability will depend on this room's inventory. Choose the room that represents the actual accommodation being sold.
-                </p>
               </div>
 
-              {/* Package Details */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column - Basic Info */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Sales Tool Name</label>
-                    <input
-                      type="text"
-                      value={packageFormData.name}
-                      onChange={(e) => setPackageFormData({ ...packageFormData, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., Romantic Getaway, Family Adventure"
-                      required
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Customer-facing package name</p>
-                  </div>
+              {/* Package Details — 2-col grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="eyebrow block mb-2">Package Name *</label>
+                  <input
+                    type="text"
+                    value={packageFormData.name}
+                    onChange={(e) => setPackageFormData({ ...packageFormData, name: e.target.value })}
+                    className={samudraInput}
+                    style={{ fontFamily: 'var(--font-label)' }}
+                    placeholder="e.g., Romantic Getaway"
+                    required
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Marketing Category</label>
-                    <select
-                      value={packageFormData.type}
-                      onChange={(e) => setPackageFormData({ ...packageFormData, type: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {marketingCategories.map((category) => (
-                        <option key={category.id} value={category.name}>
-                          {category.name}
-                        </option>
-                      ))}
+                <div>
+                  <label className="eyebrow block mb-2">Category</label>
+                  <select
+                    value={packageFormData.type}
+                    onChange={(e) => setPackageFormData({ ...packageFormData, type: e.target.value })}
+                    className={samudraSelect}
+                    style={{ fontFamily: 'var(--font-label)' }}
+                  >
+                    {marketingCategories.map((category) => (
+                      <option key={category.id} value={category.name}>
+                        {category.name}
+                      </option>
+                    ))}
                       {marketingCategories.length === 0 && (
-                        <option value="Romance">Romance (default)</option>
+                        <option value="Romance">Romance</option>
                       )}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">Marketing category for filtering and presentation</p>
-                  </div>
+                  </select>
+                </div>
 
+                <div>
+                  <label className="eyebrow block mb-2">Bundle Price (IDR) *</label>
+                  <input
+                    type="number"
+                    value={packageFormData.price}
+                    onChange={(e) => setPackageFormData({ ...packageFormData, price: parseFloat(e.target.value) || 0 })}
+                    className={samudraInput}
+                    style={{ fontFamily: 'var(--font-label)' }}
+                    min="0"
+                    step="0.01"
+                    placeholder="Total package price"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bundle Price</label>
+                    <label className="eyebrow block mb-2">Duration (days) *</label>
                     <input
                       type="number"
-                      value={packageFormData.price}
-                      onChange={(e) => setPackageFormData({ ...packageFormData, price: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      min="0"
-                      step="0.01"
-                      placeholder="Total package price"
+                      value={packageFormData.duration_days}
+                      onChange={(e) => setPackageFormData({ ...packageFormData, duration_days: parseInt(e.target.value) || 1 })}
+                      className={samudraInput}
+                      style={{ fontFamily: 'var(--font-label)' }}
+                      min="1"
+                      placeholder="Days"
                       required
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      💰 <strong>Total value:</strong> Room base price + service add-ons + savings/discount
-                    </p>
                   </div>
-                </div>
-
-                {/* Right Column - Package Configuration */}
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                      <input
-                        type="number"
-                        value={packageFormData.duration_days}
-                        onChange={(e) => setPackageFormData({ ...packageFormData, duration_days: parseInt(e.target.value) || 1 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        min="1"
-                        placeholder="Days"
-                        required
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Package length (days/nights)</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Max Guests</label>
-                      <input
-                        type="number"
-                        value={packageFormData.max_guests}
-                        onChange={(e) => setPackageFormData({ ...packageFormData, max_guests: parseInt(e.target.value) || 2 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        min="1"
-                        placeholder="Guests"
-                        required
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Maximum occupancy</p>
-                    </div>
-                  </div>
-
                   <div>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={packageFormData.available}
-                        onChange={(e) => setPackageFormData({ ...packageFormData, available: e.target.checked })}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm font-medium text-gray-700">Sales Tool Active</span>
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1 ml-6">
-                      ⚡ When enabled, customers can see and book this package (if base room has inventory)
-                    </p>
-                  </div>
-
-                  {/* Business Logic Reminder */}
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
-                      <div className="text-xs text-yellow-800">
-                        <p className="font-medium">Package Availability Logic:</p>
-                        <p>Even if this sales tool is "Active", it will only be bookable when the base room has available inventory.</p>
-                      </div>
-                    </div>
+                    <label className="eyebrow block mb-2">Max Guests *</label>
+                    <input
+                      type="number"
+                      value={packageFormData.max_guests}
+                      onChange={(e) => setPackageFormData({ ...packageFormData, max_guests: parseInt(e.target.value) || 2 })}
+                      className={samudraInput}
+                      style={{ fontFamily: 'var(--font-label)' }}
+                      min="1"
+                      placeholder="Guests"
+                      required
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Availability Date Range */}
+              {/* Active toggle */}
+              <div className="flex items-center gap-3 py-2">
+                <input
+                  type="checkbox"
+                  id="edit-pkg-available"
+                  checked={packageFormData.available}
+                  onChange={(e) => setPackageFormData({ ...packageFormData, available: e.target.checked })}
+                  className="w-4 h-4 accent-samudra-teal"
+                />
+                <label htmlFor="edit-pkg-available" className="eyebrow cursor-pointer">
+                  Package Active
+                </label>
+              </div>
+
+              {/* Availability Window */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                  <Calendar className="w-4 h-4 text-blue-600 mr-2" />
-                  Package Availability Dates
-                </h4>
+                <p className="eyebrow mb-3">Availability Window</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Available From</label>
+                    <label className="eyebrow block mb-2">Available From</label>
                     <input
                       type="date"
                       value={packageFormData.valid_from}
                       onChange={(e) => setPackageFormData({ ...packageFormData, valid_from: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={samudraInput}
+                      style={{ fontFamily: 'var(--font-label)' }}
                     />
-                    <p className="text-xs text-gray-500 mt-1">When this package becomes available for booking</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Until</label>
+                    <label className="eyebrow block mb-2">Available Until</label>
                     <input
                       type="date"
                       value={packageFormData.valid_until}
                       onChange={(e) => setPackageFormData({ ...packageFormData, valid_until: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={samudraInput}
+                      style={{ fontFamily: 'var(--font-label)' }}
                     />
-                    <p className="text-xs text-gray-500 mt-1">When this package is no longer available for booking</p>
                   </div>
-                </div>
-                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
-                  <p className="text-xs text-blue-800">
-                    <strong>💡 Tip:</strong> Leave dates empty for unlimited availability.
-                    Set specific dates for seasonal packages, promotions, or limited-time offers.
-                  </p>
                 </div>
               </div>
 
-              {/* Sales Pitch Section */}
+              {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sales Pitch & Description</label>
+                <label className="eyebrow block mb-2">Description</label>
                 <textarea
                   value={packageFormData.description}
                   onChange={(e) => setPackageFormData({ ...packageFormData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={samudraTextarea}
+                  style={{ fontFamily: 'var(--font-label)' }}
                   rows={4}
-                  placeholder="Describe the complete experience this package offers. Focus on the combined value of room comfort + included services + unique perks."
+                  placeholder="Describe the complete experience this package offers."
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  🎯 <strong>Sales Strategy:</strong> Highlight the complete experience - what room features they get + what additional services are included + why this bundle is valuable
-                </p>
               </div>
 
               {/* Package Images */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Package Images</label>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <div className="mb-3">
-                    <p className="text-xs text-gray-600 mb-2">
-                      📸 Upload images to showcase this package. Images help customers visualize the experience.
-                    </p>
-                  </div>
-
-                  {/* Current Images */}
-                  {packageFormData.images.length > 0 && (
-                    <div className="mb-4">
-                      <h5 className="text-sm font-medium text-gray-700 mb-2">Current Images:</h5>
-                      <div className="grid grid-cols-3 gap-2">
-                        {packageFormData.images.map((image, index) => (
-                          <div key={index} className="relative group">
-                            <img
-                              src={image}
-                              alt={`Package image ${index + 1}`}
-                              className="w-full h-20 object-cover rounded border"
-                              onError={(e) => {
-                                // Handle broken images
-                                const target = e.target as HTMLImageElement;
-                                target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiAxNkM5Ljc5ID16IDggMTQuMjEgOCAxMlMxLjc5IDggMTIgOFMxNiA5Ljc5IDE2IDEyUzE0LjIxIDE2IDEyIDE2Wk0xMiA2QzguNjkgNiA2IDguNjkgNiAxMkM2IDE1LjMxIDguNjkgMTggMTIgMThDMTUuMzEgMTggMTggMTUuMzEgMTggMTJDMTggOC42OSAxNS4zMSA2IDEyIDZaTTEwIDEyQzEwIDEwLjkgMTAuOSAxMCAxMiAxMEMxMy4xIDEwIDE0IDEwLjkgMTQgMTJDMTQgMTMuMSAxMy4xIDE0IDEyIDE0QzEwLjkgMTQgMTAgMTMuMSAxMCAxMloiIGZpbGw9IiM2QjcyODAiLz4KPHN2Zz4K';
-                                target.title = 'Failed to load image';
-                              }}
-                              onLoad={() => {
-                                // Revoke any blob URLs after successful load to prevent memory leaks
-                                if (image.startsWith('blob:')) {
-                                  // Note: We don't revoke here as the image is still being used
-                                  // Cleanup will happen when the image is removed or component unmounts
-                                }
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                // Clean up blob URL if it exists
-                                const imageToRemove = packageFormData.images[index];
-                                if (imageToRemove && imageToRemove.startsWith('blob:')) {
-                                  URL.revokeObjectURL(imageToRemove);
-                                }
-
-                                const newImages = packageFormData.images.filter((_, i) => i !== index);
-                                setPackageFormData({ ...packageFormData, images: newImages });
-                              }}
-                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
+                <label className="eyebrow block mb-3">Package Images</label>
+                {packageFormData.images.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {packageFormData.images.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={image}
+                          alt={`Package image ${index + 1}`}
+                          className="w-full h-20 object-cover border border-samudra-paper-deep"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiAxNkM5Ljc5IDE2IDggMTQuMjEgOCAxMlMxLjc5IDggMTIgOFMxNiA5Ljc5IDE2IDEyUzE0LjIxIDE2IDEyIDE2Wk0xMiA2QzguNjkgNiA2IDguNjkgNiAxMkM2IDE1LjMxIDguNjkgMTggMTIgMThDMTUuMzEgMTggMTggMTUuMzEgMTggMTJDMTggOC42OSAxNS4zMSA2IDEyIDZaTTEwIDEyQzEwIDEwLjkgMTAuOSAxMCAxMiAxMEMxMy4xIDEwIDE0IDEwLjkgMTQgMTJDMTQgMTMuMSAxMy4xIDE0IDEyIDE0QzEwLjkgMTQgMTAgMTMuMSAxMCAxMloiIGZpbGw9IiM2QjcyODAiLz4KPHN2Zz4K';
+                            target.title = 'Failed to load image';
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const imageToRemove = packageFormData.images[index];
+                            if (imageToRemove && imageToRemove.startsWith('blob:')) {
+                              URL.revokeObjectURL(imageToRemove);
+                            }
+                            const newImages = packageFormData.images.filter((_, i) => i !== index);
+                            setPackageFormData({ ...packageFormData, images: newImages });
+                          }}
+                          className="absolute top-1 right-1 bg-samudra-ink text-samudra-paper w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ×
+                        </button>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Image Upload */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <div className="flex flex-col items-center">
-                      <ImagePlus className="w-12 h-12 text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600 mb-4">Select images from R2 Storage</p>
-                      <Button
-                        type="button"
-                        onClick={() => setShowImagePicker(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Select Images
-                      </Button>
-                    </div>
+                    ))}
                   </div>
-                </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowImagePicker(true)}
+                  className="h-11 border border-samudra-ink text-samudra-ink eyebrow px-6 hover:bg-samudra-paper-deep transition-colors flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Select from Storage
+                </button>
               </div>
 
-              {/* R2 Image Picker Modal */}
-              {showImagePicker && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                  <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto relative">
-                    <button
-                      onClick={() => setShowImagePicker(false)}
-                      className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10"
-                    >
-                      <X size={24} />
-                    </button>
-                    <div className="p-6">
-                      <h3 className="text-lg font-semibold mb-4">Select Package Image</h3>
-                      <R2ImagePicker
-                        onSelect={(imageId) => {
-                          const imageUrl = getImageUrl(imageId);
-                          setPackageFormData({
-                            ...packageFormData,
-                            images: [...packageFormData.images, imageUrl]
-                          });
-                          setShowImagePicker(false);
-                        }}
-                        prefix=""
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* R2 Image Picker Dialog */}
+              <Dialog open={showImagePicker} onOpenChange={setShowImagePicker}>
+                <DialogContent className="max-w-4xl bg-samudra-paper border border-samudra-paper-deep p-8" style={{ boxShadow: '0 32px 96px rgba(10,14,20,0.22), 0 4px 16px rgba(10,14,20,0.10)' }}>
+                  <DialogHeader className="mb-6">
+                    <DialogTitle className="font-display text-[28px] font-light text-samudra-ink">Select Package Image</DialogTitle>
+                  </DialogHeader>
+                  <R2ImagePicker
+                    onSelect={(imageId) => {
+                      const imageUrl = getImageUrl(imageId);
+                      setPackageFormData({
+                        ...packageFormData,
+                        images: [...packageFormData.images, imageUrl]
+                      });
+                      setShowImagePicker(false);
+                    }}
+                    prefix=""
+                  />
+                </DialogContent>
+              </Dialog>
 
-
-              {/* Value Proposition Preview */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-green-900 mb-2">📊 Sales Tool Preview</h4>
-                <div className="text-xs text-green-800 space-y-1">
-                  <p><strong>Package:</strong> {packageFormData.name || 'Untitled Package'}</p>
-                  <p><strong>Category:</strong> {packageFormData.type}</p>
-                  <p><strong>Bundle Price:</strong> ${packageFormData.price}/package ({packageFormData.duration_days} {packageFormData.duration_days === 1 ? 'day' : 'days'})</p>
-                  <p><strong>Status:</strong> {packageFormData.available ? 'Active (subject to room inventory)' : 'Inactive'}</p>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-6 border-t border-samudra-paper-deep">
                 <button
                   type="button"
                   onClick={() => {
@@ -1271,22 +940,22 @@ const PackagesSection: React.FC = () => {
                       terms_conditions: ''
                     });
                   }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                  className="h-11 border border-samudra-paper-deep text-samudra-ink-mute eyebrow px-6 hover:border-samudra-ink hover:text-samudra-ink transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 flex items-center gap-2"
+                  className="h-11 bg-samudra-ink text-samudra-paper eyebrow px-7 hover:bg-samudra-teal transition-colors flex items-center gap-2"
                 >
                   <Check className="w-4 h-4" />
-                  Update Sales Tool
+                  Update Package
                 </button>
               </div>
             </form>
-          </div >
-        </div >
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Package Calendar Manager */}
       {
@@ -1318,313 +987,286 @@ const PackagesSection: React.FC = () => {
         )
       }
 
-      {/* Package Amenities Manager */}
-      {
-        showAmenitiesModal && selectedPackageForAmenities && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
-              <div className="flex items-center justify-between p-4 border-b border-hotel-gold-light bg-hotel-cream">
+      {/* Package Amenities Manager — Radix Dialog */}
+      <Dialog open={showAmenitiesModal && !!selectedPackageForAmenities} onOpenChange={(open) => {
+        if (!open) { setShowAmenitiesModal(false); setSelectedPackageForAmenities(null); setPackageAmenities([]); }
+      }}>
+        <DialogContent className="max-w-4xl bg-samudra-paper border border-samudra-paper-deep p-8"
+          style={{ boxShadow: '0 32px 96px rgba(10,14,20,0.22), 0 4px 16px rgba(10,14,20,0.10)' }}>
+          <DialogHeader className="mb-6">
+            <DialogTitle className="font-display text-[28px] font-light text-samudra-ink">
+              Package Amenities
+            </DialogTitle>
+            {selectedPackageForAmenities && (
+              <p className="eyebrow text-samudra-ink-mute mt-1">
+                {selectedPackageForAmenities.name}
+              </p>
+            )}
+          </DialogHeader>
+
+          <div className="max-h-[65vh] overflow-y-auto pr-1">
+            {selectedPackageForAmenities && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Available Amenities */}
                 <div>
-                  <h3 className="text-lg font-semibold text-hotel-navy">Manage Package Amenities</h3>
-                  <p className="text-sm text-hotel-bronze mt-1">
-                    Configure amenities for "{selectedPackageForAmenities.name}"
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setShowAmenitiesModal(false);
-                    setSelectedPackageForAmenities(null);
-                    setPackageAmenities([]);
-                  }}
-                  className="text-hotel-bronze hover:text-hotel-navy"
-                >
-                  ✕
-                </button>
-              </div>
+                  <p className="eyebrow text-samudra-ink-mute mb-4">Available Amenities</p>
 
-              <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Available Amenities */}
-                  <div>
-                    <h4 className="text-md font-semibold text-hotel-navy mb-4 flex items-center">
-                      <Plus className="h-5 w-5 mr-2 text-hotel-gold" />
-                      Available Amenities
-                    </h4>
-
-                    {amenities.length === 0 ? (
-                      <div className="text-center py-8 text-hotel-bronze">
-                        <Building className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p className="font-medium">No amenities available</p>
-                        <p className="text-sm text-gray-400 mt-1">Create amenities in the Amenities Management section first</p>
-                        <div className="mt-4 p-4 bg-hotel-cream rounded-lg text-left">
-                          <p className="text-xs text-hotel-bronze font-medium mb-2">Quick Setup:</p>
-                          <p className="text-xs text-hotel-bronze">1. Go to \"Amenities\" tab in admin panel</p>
-                          <p className="text-xs text-hotel-bronze">2. Create amenities like \"Swimming Pool\", \"Free WiFi\", etc.</p>
-                          <p className="text-xs text-hotel-bronze">3. Or run the sample amenities SQL in: /sample-data/sample-amenities.sql</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            console.log('Retrying amenities fetch...');
-                            fetchAmenities();
-                          }}
-                          className="mt-3 bg-hotel-gold text-white px-4 py-2 rounded text-sm hover:bg-hotel-gold-dark"
-                        >
-                          Retry Loading
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        <div className="text-xs text-hotel-bronze mb-2">Found {amenities.length} amenities</div>
-                        {amenities.map((amenity) => {
-                          const isAssigned = packageAmenities.some(pa => pa.id === amenity.id);
-                          return (
-                            <div key={amenity.id} className={`p-3 border rounded-lg transition-colors ${isAssigned
-                              ? 'bg-hotel-cream border-hotel-gold text-hotel-bronze'
-                              : 'bg-white border-gray-200 hover:border-hotel-gold-light'
-                              }`}>
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium">{amenity.name}</span>
-                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                                      {amenity.category}
-                                    </span>
-                                    {!!amenity.is_featured && (
-                                      <span className="text-xs bg-hotel-gold text-white px-2 py-1 rounded">
-                                        Featured
-                                      </span>
-                                    )}
-                                  </div>
-                                  {amenity.description && (
-                                    <p className="text-xs text-gray-500 mt-1">{amenity.description}</p>
-                                  )}
-                                </div>
-
-                                {!isAssigned ? (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      console.log('Add button clicked for amenity:', amenity.id, 'to package:', selectedPackageForAmenities.id);
-                                      addAmenityToPackage(selectedPackageForAmenities.id, amenity.id);
-                                    }}
-                                    className="bg-hotel-gold text-white px-3 py-1 rounded text-sm hover:bg-hotel-gold-dark cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-hotel-gold focus:ring-opacity-50"
-                                  >
-                                    Add
-                                  </button>
-                                ) : (
-                                  <span className="text-xs text-hotel-sage font-medium">Added</span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Assigned Amenities */}
-                  <div>
-                    <h4 className="text-md font-semibold text-hotel-navy mb-4 flex items-center">
-                      <Check className="h-5 w-5 mr-2 text-hotel-sage" />
-                      Package Amenities ({packageAmenities.length})
-                    </h4>
-
-                    {packageAmenities.length === 0 ? (
-                      <div className="text-center py-12 text-hotel-bronze">
-                        <Building className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p>No amenities assigned to this package</p>
-                        <p className="text-sm text-gray-400 mt-1">Add amenities from the left panel</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {packageAmenities.map((amenity) => (
-                          <div key={amenity.id} className="p-3 bg-hotel-cream border border-hotel-gold-light rounded-lg">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-hotel-navy">{amenity.name}</span>
-                                  <span className="text-xs bg-hotel-gold/20 text-hotel-gold px-2 py-1 rounded">
+                  {amenities.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="font-script text-samudra-gold text-[18px] leading-none mb-2">no amenities yet</p>
+                      <p className="eyebrow text-samudra-ink-mute mb-4">Create amenities in the Amenities section first.</p>
+                      <button
+                        onClick={() => fetchAmenities()}
+                        className="h-9 px-4 border border-samudra-ink text-samudra-ink hover:bg-samudra-paper-soft eyebrow text-[10px] tracking-[0.3em] transition-colors"
+                        style={{ fontFamily: 'var(--font-label)' }}
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      <p className="eyebrow text-samudra-ink-mute text-[10px] mb-2">{amenities.length} amenities found</p>
+                      {amenities.map((amenity) => {
+                        const isAssigned = packageAmenities.some(pa => pa.id === amenity.id);
+                        return (
+                          <div key={amenity.id} className={`p-3 border transition-colors ${isAssigned
+                            ? 'bg-samudra-paper-soft border-samudra-paper-deep'
+                            : 'bg-samudra-paper border-samudra-paper-deep hover:border-samudra-teal'
+                          }`}>
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-display text-[14px] text-samudra-ink">{amenity.name}</span>
+                                  <span className="eyebrow text-[9px] px-1.5 py-0.5 border border-samudra-paper-deep text-samudra-ink-mute">
                                     {amenity.category}
                                   </span>
-                                  {!!amenity.is_highlighted && (
-                                    <span className="text-xs bg-hotel-sage text-white px-2 py-1 rounded">
-                                      Highlighted
-                                    </span>
+                                  {!!amenity.is_featured && (
+                                    <span className="eyebrow text-[9px] px-1.5 py-0.5 border border-samudra-gold text-samudra-gold">Featured</span>
                                   )}
                                 </div>
                                 {amenity.description && (
-                                  <p className="text-xs text-hotel-bronze mt-1">{amenity.description}</p>
-                                )}
-                                {amenity.custom_note && (
-                                  <p className="text-xs text-hotel-gold mt-1 italic">
-                                    Note: {amenity.custom_note}
-                                  </p>
+                                  <p className="eyebrow text-samudra-ink-mute text-[10px] mt-1">{amenity.description}</p>
                                 )}
                               </div>
-
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    console.log('Toggle highlight for amenity:', amenity.id);
-                                    addAmenityToPackage(selectedPackageForAmenities.id, amenity.id, !amenity.is_highlighted);
-                                  }}
-                                  className={`px-2 py-1 rounded text-xs transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 ${!!amenity.is_highlighted
-                                    ? 'bg-hotel-sage text-white focus:ring-hotel-sage'
-                                    : 'bg-gray-200 text-gray-600 hover:bg-hotel-sage hover:text-white focus:ring-hotel-sage'
-                                    }`}
-                                  title="Toggle highlight"
+                              {!isAssigned ? (
+                                <button type="button"
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); addAmenityToPackage(selectedPackageForAmenities.id, amenity.id); }}
+                                  className="h-8 px-3 border border-samudra-teal text-samudra-teal hover:bg-samudra-teal hover:text-samudra-paper eyebrow text-[10px] tracking-[0.2em] transition-colors flex-shrink-0"
+                                  style={{ fontFamily: 'var(--font-label)' }}
                                 >
-                                  ⭐
+                                  Add
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    console.log('Remove amenity:', amenity.id, 'from package:', selectedPackageForAmenities.id);
-                                    removeAmenityFromPackage(selectedPackageForAmenities.id, amenity.id);
-                                  }}
-                                  className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
-                                >
-                                  Remove
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      }
-
-      {/* Package Inclusions Modal */}
-      {
-        showInclusionsModal && selectedPackageForInclusions && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <div className="flex justify-between items-center p-6 border-b">
-                <h3 className="text-xl font-semibold text-hotel-navy">
-                  Manage Inclusions - {selectedPackageForInclusions.name}
-                </h3>
-                <button
-                  onClick={() => {
-                    setShowInclusionsModal(false);
-                    setSelectedPackageForInclusions(null);
-                    setPackageInclusions([]);
-                  }}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-
-              <div className="p-6 overflow-y-auto max-h-[70vh]">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                  {/* Available Inclusions */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-hotel-navy mb-4">Available Inclusions</h4>
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {inclusions.map((inclusion) => {
-                        const isAssigned = packageInclusions.some(pa => pa.inclusion_id === inclusion.id);
-                        return (
-                          <div
-                            key={inclusion.id}
-                            className={`p-3 border rounded-lg ${isAssigned ? 'bg-gray-100 border-gray-300' : 'bg-white border-gray-200 hover:border-hotel-sage'}`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-medium text-hotel-navy">{inclusion.name}</span>
-                                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">{inclusion.category}</span>
-                                </div>
-                                {inclusion.description && (
-                                  <p className="text-xs text-gray-600 mt-1">{inclusion.description}</p>
-                                )}
-                              </div>
-                              <button
-                                type="button"
-                                disabled={isAssigned}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  console.log('Add inclusion:', inclusion.id, 'to package:', selectedPackageForInclusions.id);
-                                  addInclusionToPackage(selectedPackageForInclusions.id, inclusion.id);
-                                }}
-                                className={`px-3 py-1 rounded text-xs font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 ${isAssigned
-                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                  : 'bg-hotel-sage text-white hover:bg-hotel-sage-dark focus:ring-hotel-sage'
-                                  }`}
-                              >
-                                {isAssigned ? 'Added' : 'Add'}
-                              </button>
+                              ) : (
+                                <span className="eyebrow text-[10px] text-samudra-teal flex-shrink-0">Added</span>
+                              )}
                             </div>
                           </div>
                         );
                       })}
                     </div>
-                  </div>
+                  )}
+                </div>
 
-                  {/* Assigned Inclusions */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-hotel-navy mb-4">
-                      Package Inclusions ({packageInclusions.length})
-                    </h4>
-                    {packageInclusions.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <Check className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                        <p>No inclusions assigned to this package yet.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {packageInclusions.map((inclusion) => (
-                          <div key={inclusion.inclusion_id} className="bg-hotel-sage/10 border border-hotel-sage/20 rounded-lg p-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-medium text-hotel-navy">{inclusion.name}</span>
-                                  <span className="text-xs bg-hotel-sage/20 text-hotel-sage px-2 py-1 rounded">{inclusion.category}</span>
-                                </div>
-                                {inclusion.description && (
-                                  <p className="text-xs text-gray-600 mt-1">{inclusion.description}</p>
+                {/* Assigned Amenities */}
+                <div>
+                  <p className="eyebrow text-samudra-ink-mute mb-4">Assigned ({packageAmenities.length})</p>
+
+                  {packageAmenities.length === 0 ? (
+                    <div className="py-10 text-center">
+                      <p className="font-script text-samudra-gold text-[18px] leading-none mb-1">none assigned yet</p>
+                      <p className="eyebrow text-samudra-ink-mute text-[10px]">Add from the left panel</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {packageAmenities.map((amenity) => (
+                        <div key={amenity.id} className="p-3 bg-samudra-paper-soft border border-samudra-paper-deep">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-display text-[14px] text-samudra-ink">{amenity.name}</span>
+                                <span className="eyebrow text-[9px] px-1.5 py-0.5 border border-samudra-gold text-samudra-gold">
+                                  {amenity.category}
+                                </span>
+                                {!!amenity.is_highlighted && (
+                                  <span className="eyebrow text-[9px] px-1.5 py-0.5 border border-samudra-teal text-samudra-teal">Highlighted</span>
                                 )}
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    console.log('Remove inclusion:', inclusion.inclusion_id, 'from package:', selectedPackageForInclusions.id);
-                                    removeInclusionFromPackage(selectedPackageForInclusions.id, inclusion.inclusion_id);
-                                  }}
-                                  className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
-                                >
-                                  Remove
-                                </button>
-                              </div>
+                              {amenity.description && (
+                                <p className="eyebrow text-samudra-ink-mute text-[10px] mt-1">{amenity.description}</p>
+                              )}
+                              {amenity.custom_note && (
+                                <p className="font-script text-samudra-gold text-[13px] mt-1">Note: {amenity.custom_note}</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <button type="button"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); addAmenityToPackage(selectedPackageForAmenities.id, amenity.id, !amenity.is_highlighted); }}
+                                className={`h-7 px-2 eyebrow text-[9px] tracking-[0.15em] transition-colors ${!!amenity.is_highlighted
+                                  ? 'bg-samudra-teal text-samudra-paper'
+                                  : 'border border-samudra-paper-deep text-samudra-ink-mute hover:border-samudra-teal hover:text-samudra-teal'
+                                }`}
+                                style={{ fontFamily: 'var(--font-label)' }}
+                                title="Toggle highlight"
+                              >
+                                {!!amenity.is_highlighted ? 'Highlighted' : 'Highlight'}
+                              </button>
+                              <button type="button"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeAmenityFromPackage(selectedPackageForAmenities.id, amenity.id); }}
+                                className="h-7 px-2 border border-[#7a3d31] text-[#7a3d31] hover:bg-[#7a3d31] hover:text-samudra-paper eyebrow text-[9px] transition-colors"
+                                style={{ fontFamily: 'var(--font-label)' }}
+                              >
+                                Remove
+                              </button>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
           </div>
-        )
-      }
+        </DialogContent>
+      </Dialog>
+
+      {/* Package Inclusions Modal — Radix Dialog */}
+      <Dialog open={showInclusionsModal && !!selectedPackageForInclusions} onOpenChange={(open) => {
+        if (!open) { setShowInclusionsModal(false); setSelectedPackageForInclusions(null); setPackageInclusions([]); }
+      }}>
+        <DialogContent className="max-w-4xl bg-samudra-paper border border-samudra-paper-deep p-8"
+          style={{ boxShadow: '0 32px 96px rgba(10,14,20,0.22), 0 4px 16px rgba(10,14,20,0.10)' }}>
+          <DialogHeader className="mb-6">
+            <DialogTitle className="font-display text-[28px] font-light text-samudra-ink">
+              Package Inclusions
+            </DialogTitle>
+            {selectedPackageForInclusions && (
+              <p className="eyebrow text-samudra-ink-mute mt-1">
+                {selectedPackageForInclusions.name}
+              </p>
+            )}
+          </DialogHeader>
+
+          <div className="max-h-[65vh] overflow-y-auto pr-1">
+            {selectedPackageForInclusions && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Available Inclusions */}
+                <div>
+                  <p className="eyebrow text-samudra-ink-mute mb-4">Available Inclusions</p>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {inclusions.length === 0 ? (
+                      <div className="py-8 text-center">
+                        <p className="font-script text-samudra-gold text-[18px] leading-none mb-1">no inclusions yet</p>
+                        <p className="eyebrow text-samudra-ink-mute text-[10px]">Create inclusions in the Amenities section.</p>
+                      </div>
+                    ) : inclusions.map((inclusion) => {
+                      const isAssigned = packageInclusions.some(pa => pa.inclusion_id === inclusion.id);
+                      return (
+                        <div key={inclusion.id}
+                          className={`p-3 border transition-colors ${isAssigned
+                            ? 'bg-samudra-paper-soft border-samudra-paper-deep'
+                            : 'bg-samudra-paper border-samudra-paper-deep hover:border-samudra-teal'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-display text-[14px] text-samudra-ink">{inclusion.name}</span>
+                                <span className="eyebrow text-[9px] px-1.5 py-0.5 border border-samudra-paper-deep text-samudra-ink-mute">
+                                  {inclusion.category}
+                                </span>
+                              </div>
+                              {inclusion.description && (
+                                <p className="eyebrow text-samudra-ink-mute text-[10px] mt-1">{inclusion.description}</p>
+                              )}
+                            </div>
+                            <button type="button"
+                              disabled={isAssigned}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                addInclusionToPackage(selectedPackageForInclusions.id, inclusion.id);
+                              }}
+                              className={`h-8 px-3 eyebrow text-[10px] tracking-[0.2em] transition-colors flex-shrink-0 ${isAssigned
+                                ? 'border border-samudra-paper-deep text-samudra-ink-mute cursor-not-allowed'
+                                : 'border border-samudra-teal text-samudra-teal hover:bg-samudra-teal hover:text-samudra-paper'
+                              }`}
+                              style={{ fontFamily: 'var(--font-label)' }}
+                            >
+                              {isAssigned ? 'Added' : 'Add'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Assigned Inclusions */}
+                <div>
+                  <p className="eyebrow text-samudra-ink-mute mb-4">Assigned ({packageInclusions.length})</p>
+                  {packageInclusions.length === 0 ? (
+                    <div className="py-10 text-center">
+                      <p className="font-script text-samudra-gold text-[18px] leading-none mb-1">none assigned yet</p>
+                      <p className="eyebrow text-samudra-ink-mute text-[10px]">Add from the left panel</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {packageInclusions.map((inclusion) => (
+                        <div key={inclusion.inclusion_id} className="p-3 bg-samudra-paper-soft border border-samudra-teal/30">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-display text-[14px] text-samudra-ink">{inclusion.name}</span>
+                                <span className="eyebrow text-[9px] px-1.5 py-0.5 border border-samudra-teal text-samudra-teal">
+                                  {inclusion.category}
+                                </span>
+                              </div>
+                              {inclusion.description && (
+                                <p className="eyebrow text-samudra-ink-mute text-[10px] mt-1">{inclusion.description}</p>
+                              )}
+                            </div>
+                            <button type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                removeInclusionFromPackage(selectedPackageForInclusions.id, inclusion.inclusion_id);
+                              }}
+                              className="h-8 px-3 border border-[#7a3d31] text-[#7a3d31] hover:bg-[#7a3d31] hover:text-samudra-paper eyebrow text-[9px] tracking-[0.15em] transition-colors flex-shrink-0"
+                              style={{ fontFamily: 'var(--font-label)' }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Delete Package Confirmation */}
+      <AlertDialog open={!!deletePackageTarget} onOpenChange={(open) => { if (!open) setDeletePackageTarget(null); }}>
+        <AlertDialogContent className="bg-samudra-paper border border-samudra-paper-deep">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-[22px] font-normal text-samudra-ink">Remove package?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[13px] text-samudra-ink-mute" style={{ fontFamily: 'var(--font-label)' }}>
+              "{deletePackageTarget?.name}" will be permanently deleted and removed from all bookings.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-3 justify-end mt-4">
+            <AlertDialogCancel className="h-11 border border-samudra-ink text-samudra-ink bg-samudra-paper text-[11px] tracking-[0.3em] uppercase px-6" style={{ fontFamily: 'var(--font-label)' }}>Keep</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletePackageTarget && deletePackage(deletePackageTarget.id)}
+              className="h-11 bg-[#7a3d31] text-samudra-paper text-[11px] tracking-[0.3em] uppercase px-6"
+              style={{ fontFamily: 'var(--font-label)' }}
+            >Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div >
   );
 };

@@ -1,22 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { useHomepageContent } from '@/hooks/useHomepageContent';
 import {
   Edit3,
   Save,
   X,
-  Home,
-  Phone,
-  Mail,
-  MapPin,
   Clock,
   Shield,
-  Users,
-  Bed,
-  Bath,
-  DollarSign
 } from 'lucide-react';
+
+// Samudra input constants (matches Settings/Bookings pattern)
+const samudraInput = "h-11 w-full bg-samudra-paper border border-samudra-paper-deep px-3 text-[14px] focus:border-samudra-teal focus:outline-none transition-colors";
+const samudraTextarea = "w-full bg-samudra-paper border border-samudra-paper-deep px-3 py-2.5 text-[14px] focus:border-samudra-teal focus:outline-none transition-colors resize-none";
+const samudraFieldDisplay = "text-[14px] text-samudra-ink bg-samudra-paper-soft border border-samudra-paper-deep px-3 py-2.5 min-h-[44px]";
+const samudraLabel = "eyebrow block mb-2";
 
 // Simple interface matching actual database fields
 interface VillaData {
@@ -50,7 +47,7 @@ const SimplifiedHomepageManager: React.FC = () => {
 
   useEffect(() => {
     if (homepageContent) {
-      console.log('📝 Updating formData from homepageContent:', homepageContent.name);
+      console.log('Updating formData from homepageContent:', homepageContent.name);
       setFormData({
         name: homepageContent.name || '',
         description: homepageContent.description || '',
@@ -107,20 +104,19 @@ const SimplifiedHomepageManager: React.FC = () => {
       });
 
       if (result.success) {
-        console.log('✅ Update API returned success, now refetching...');
+        console.log('Update API returned success, now refetching...');
         // Force refetch to ensure UI shows updated data
         await refetch();
-        console.log('✅ Refetch complete, homepageContent should be updated');
+        console.log('Refetch complete, homepageContent should be updated');
         setIsEditing(false);
-        // Show success feedback to user
-        alert('✅ Villa information saved successfully!');
+        toast.success('Property saved');
       } else {
-        console.error('❌ Update failed:', result.error);
-        alert(`❌ Update failed: ${result.error}`);
+        console.error('Update failed:', result.error);
+        toast.error('Save failed', { description: 'Verify network and retry.' });
       }
     } catch (err) {
-      console.error('❌ Update error:', err);
-      alert(`Update error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      console.error('Update error:', err);
+      toast.error('Save failed', { description: 'Verify network and retry.' });
     } finally {
       setSaving(false);
     }
@@ -156,10 +152,9 @@ const SimplifiedHomepageManager: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg text-gray-600">Loading villa data...</div>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-6 w-6 border-2 border-samudra-ink border-t-transparent mr-3" />
+        <span className="eyebrow text-samudra-ink-mute">Loading villa data...</span>
       </div>
     );
   }
@@ -172,317 +167,271 @@ const SimplifiedHomepageManager: React.FC = () => {
     };
 
     return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-lg font-medium text-red-800 mb-2">Error Loading Data</h3>
-          <p className="text-red-700 mb-4">{error}</p>
-          <button
-            onClick={handleRetry}
-            disabled={retrying}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-          >
-            {retrying ? 'Retrying...' : 'Retry'}
-          </button>
-        </div>
+      <div className="bg-samudra-paper-soft border border-samudra-paper-deep p-6 card-accent-teal">
+        <h3 className="font-display text-[18px] font-light text-samudra-ink mb-2">Error Loading Data</h3>
+        <p className="text-[13px] text-samudra-ink-mute mb-4">{error}</p>
+        <button
+          onClick={handleRetry}
+          disabled={retrying}
+          className="h-9 px-5 bg-samudra-ink text-samudra-paper eyebrow text-[10px] tracking-[0.3em] hover:bg-samudra-teal transition-colors disabled:opacity-50"
+          style={{ fontFamily: 'var(--font-label)' }}
+        >
+          {retrying ? 'Retrying...' : 'Retry'}
+        </button>
       </div>
     );
   }
 
   if (!formData) {
     return (
-      <div className="p-6">
-        <div className="text-center text-gray-600">No data available</div>
+      <div className="py-10 text-center">
+        <p className="font-script text-samudra-gold text-[22px]">no data available</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 pb-4">
+      {/* Samudra page header + action buttons */}
+      <div className="flex items-end justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Villa Information</h2>
-          <p className="text-gray-600">Manage your property details directly from the database</p>
+          <p className="font-script text-samudra-gold text-[28px] leading-none mb-2">your property, your story</p>
+          <h2 className="font-display text-[40px] font-light text-samudra-ink">Villa Information</h2>
+          <div className="h-px w-[60px] bg-samudra-ink mt-3" style={{ opacity: 0.4 }} />
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 mb-1">
           {isEditing ? (
             <>
-              <Button
-                variant="outline"
+              <button
+                type="button"
                 onClick={handleCancel}
                 disabled={saving}
-                className="flex items-center gap-2"
+                className="h-10 px-5 border border-samudra-ink text-samudra-ink hover:bg-samudra-paper-soft transition-colors eyebrow text-[10px] tracking-[0.3em] disabled:opacity-50 flex items-center gap-2"
+                style={{ fontFamily: 'var(--font-label)' }}
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
+                type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                className="h-10 px-5 bg-samudra-ink text-samudra-paper hover:bg-samudra-teal transition-colors eyebrow text-[10px] tracking-[0.3em] disabled:opacity-50 flex items-center gap-2"
+                style={{ fontFamily: 'var(--font-label)' }}
               >
-                <Save className="w-4 h-4" />
+                <Save className="w-3.5 h-3.5" />
                 {saving ? 'Saving...' : 'Save Changes'}
-              </Button>
+              </button>
             </>
           ) : (
-            <Button
+            <button
+              type="button"
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              className="h-10 px-5 border border-samudra-ink text-samudra-ink hover:bg-samudra-ink hover:text-samudra-paper transition-colors eyebrow text-[10px] tracking-[0.3em] flex items-center gap-2"
+              style={{ fontFamily: 'var(--font-label)' }}
             >
-              <Edit3 className="w-4 h-4" />
+              <Edit3 className="w-3.5 h-3.5" />
               Edit Villa Info
-            </Button>
+            </button>
           )}
         </div>
       </div>
 
-      {/* Basic Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Home className="w-5 h-5" />
-            Basic Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Section: Basic Information */}
+      <div className="bg-samudra-paper border border-samudra-paper-deep">
+        <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+          <p className="eyebrow text-samudra-ink-mute">About</p>
+          <h3 className="font-display text-[20px] font-light text-samudra-ink">Basic Information</h3>
+        </div>
+        <div className="p-6 space-y-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Property Name</label>
+              <label className={samudraLabel}>Property Name</label>
               {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.name}
+                <input type="text" value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  className={samudraInput} style={{ fontFamily: 'var(--font-label)' }} />
               ) : (
-                <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.name || 'Not set'}</div>
+                <div className={samudraFieldDisplay}>{formData.name || 'Not set'}</div>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+              <label className={samudraLabel}>Country</label>
               {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.country}
+                <input type="text" value={formData.country}
                   onChange={(e) => handleInputChange('country', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  className={samudraInput} style={{ fontFamily: 'var(--font-label)' }} />
               ) : (
-                <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.country || 'Not set'}</div>
+                <div className={samudraFieldDisplay}>{formData.country || 'Not set'}</div>
               )}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className={samudraLabel}>Description</label>
             {isEditing ? (
-              <textarea
-                value={formData.description}
+              <textarea value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+                rows={3} className={samudraTextarea} style={{ fontFamily: 'var(--font-label)' }} />
             ) : (
-              <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.description || 'No description'}</div>
+              <div className={`${samudraFieldDisplay} min-h-[80px]`}>{formData.description || 'No description'}</div>
             )}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Contact Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Phone className="w-5 h-5" />
-            Contact Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              ) : (
-                <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.phone || 'Not set'}</div>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              {isEditing ? (
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              ) : (
-                <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.email || 'Not set'}</div>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-              {isEditing ? (
-                <input
-                  type="url"
-                  value={formData.website}
-                  onChange={(e) => handleInputChange('website', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              ) : (
-                <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.website || 'Not set'}</div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Address */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="w-5 h-5" />
-            Address
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              ) : (
-                <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.address || 'Not set'}</div>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              ) : (
-                <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.city || 'Not set'}</div>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.state}
-                  onChange={(e) => handleInputChange('state', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              ) : (
-                <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.state || 'Not set'}</div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Timing Only - Property Specs removed (don't exist in production database) */}
-      <div className="grid grid-cols-1 gap-6">
-        {/* Property Specifications Card - REMOVED because maxGuests, bedrooms, bathrooms, basePrice don't exist in production villa_info table */}
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              Check-in/out Times
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Check-in Time</label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.checkInTime}
-                  onChange={(e) => handleInputChange('checkInTime', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., 3:00 PM"
-                />
-              ) : (
-                <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.checkInTime || 'Not set'}</div>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Check-out Time</label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.checkOutTime}
-                  onChange={(e) => handleInputChange('checkOutTime', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., 11:00 AM"
-                />
-              ) : (
-                <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{formData.checkOutTime || 'Not set'}</div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
-      {/* Policies */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            Property Policies
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Section: Contact Information */}
+      <div className="bg-samudra-paper border border-samudra-paper-deep">
+        <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+          <p className="eyebrow text-samudra-ink-mute">Reach us</p>
+          <h3 className="font-display text-[20px] font-light text-samudra-ink">Contact Information</h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div>
+              <label className={samudraLabel}>Phone</label>
+              {isEditing ? (
+                <input type="text" value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  className={samudraInput} style={{ fontFamily: 'var(--font-label)' }} />
+              ) : (
+                <div className={samudraFieldDisplay}>{formData.phone || 'Not set'}</div>
+              )}
+            </div>
+            <div>
+              <label className={samudraLabel}>Email</label>
+              {isEditing ? (
+                <input type="email" value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className={samudraInput} style={{ fontFamily: 'var(--font-label)' }} />
+              ) : (
+                <div className={samudraFieldDisplay}>{formData.email || 'Not set'}</div>
+              )}
+            </div>
+            <div>
+              <label className={samudraLabel}>Website</label>
+              {isEditing ? (
+                <input type="url" value={formData.website}
+                  onChange={(e) => handleInputChange('website', e.target.value)}
+                  className={samudraInput} style={{ fontFamily: 'var(--font-label)' }} />
+              ) : (
+                <div className={samudraFieldDisplay}>{formData.website || 'Not set'}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Section: Address */}
+      <div className="bg-samudra-paper border border-samudra-paper-deep">
+        <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+          <p className="eyebrow text-samudra-ink-mute">Where to find us</p>
+          <h3 className="font-display text-[20px] font-light text-samudra-ink">Address</h3>
+        </div>
+        <div className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cancellation Policy</label>
+            <label className={samudraLabel}>Street Address</label>
             {isEditing ? (
-              <textarea
-                value={formData.cancellationPolicy}
-                onChange={(e) => handleInputChange('cancellationPolicy', e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., Free cancellation up to 48 hours before check-in..."
-              />
+              <input type="text" value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                className={samudraInput} style={{ fontFamily: 'var(--font-label)' }} />
             ) : (
-              <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md min-h-[80px]">
+              <div className={samudraFieldDisplay}>{formData.address || 'Not set'}</div>
+            )}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div>
+              <label className={samudraLabel}>City</label>
+              {isEditing ? (
+                <input type="text" value={formData.city}
+                  onChange={(e) => handleInputChange('city', e.target.value)}
+                  className={samudraInput} style={{ fontFamily: 'var(--font-label)' }} />
+              ) : (
+                <div className={samudraFieldDisplay}>{formData.city || 'Not set'}</div>
+              )}
+            </div>
+            <div>
+              <label className={samudraLabel}>State / Province</label>
+              {isEditing ? (
+                <input type="text" value={formData.state}
+                  onChange={(e) => handleInputChange('state', e.target.value)}
+                  className={samudraInput} style={{ fontFamily: 'var(--font-label)' }} />
+              ) : (
+                <div className={samudraFieldDisplay}>{formData.state || 'Not set'}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Section: Check-in/out Times */}
+      <div className="bg-samudra-paper border border-samudra-paper-deep">
+        <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+          <p className="eyebrow text-samudra-ink-mute">Schedule</p>
+          <h3 className="font-display text-[20px] font-light text-samudra-ink">Check-in / Check-out</h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className={samudraLabel}>Check-in Time</label>
+              {isEditing ? (
+                <input type="text" value={formData.checkInTime}
+                  onChange={(e) => handleInputChange('checkInTime', e.target.value)}
+                  placeholder="e.g., 3:00 PM"
+                  className={samudraInput} style={{ fontFamily: 'var(--font-label)' }} />
+              ) : (
+                <div className={samudraFieldDisplay}>{formData.checkInTime || 'Not set'}</div>
+              )}
+            </div>
+            <div>
+              <label className={samudraLabel}>Check-out Time</label>
+              {isEditing ? (
+                <input type="text" value={formData.checkOutTime}
+                  onChange={(e) => handleInputChange('checkOutTime', e.target.value)}
+                  placeholder="e.g., 11:00 AM"
+                  className={samudraInput} style={{ fontFamily: 'var(--font-label)' }} />
+              ) : (
+                <div className={samudraFieldDisplay}>{formData.checkOutTime || 'Not set'}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Section: Policies */}
+      <div className="bg-samudra-paper border border-samudra-paper-deep">
+        <div className="px-6 pt-5 pb-3 border-b border-samudra-paper-deep">
+          <p className="eyebrow text-samudra-ink-mute">House Rules</p>
+          <h3 className="font-display text-[20px] font-light text-samudra-ink">Property Policies</h3>
+        </div>
+        <div className="p-6 space-y-5">
+          <div>
+            <label className={samudraLabel}>Cancellation Policy</label>
+            {isEditing ? (
+              <textarea value={formData.cancellationPolicy}
+                onChange={(e) => handleInputChange('cancellationPolicy', e.target.value)}
+                rows={3} placeholder="e.g., Free cancellation up to 48 hours before check-in..."
+                className={samudraTextarea} style={{ fontFamily: 'var(--font-label)' }} />
+            ) : (
+              <div className={`${samudraFieldDisplay} min-h-[80px]`}>
                 {formData.cancellationPolicy || 'No cancellation policy set'}
               </div>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">House Rules</label>
+            <label className={samudraLabel}>House Rules</label>
             {isEditing ? (
-              <textarea
-                value={formData.houseRules}
+              <textarea value={formData.houseRules}
                 onChange={(e) => handleInputChange('houseRules', e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., No smoking • No pets • Quiet hours 10 PM - 8 AM..."
-              />
+                rows={3} placeholder="e.g., No smoking · No pets · Quiet hours 10 PM - 8 AM..."
+                className={samudraTextarea} style={{ fontFamily: 'var(--font-label)' }} />
             ) : (
-              <div className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md min-h-[80px]">
+              <div className={`${samudraFieldDisplay} min-h-[80px]`}>
                 {formData.houseRules || 'No house rules set'}
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

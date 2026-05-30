@@ -50,7 +50,7 @@ export interface PlatformConfig {
  * Main iCal Service Class
  */
 class IcalService {
-  private baseUrl: string = 'https://booking-engine-api.danielsantosomarketing2017.workers.dev/api';
+  private baseUrl: string = '/api';
   private syncIntervals: Map<string, NodeJS.Timeout> = new Map();
 
   // Platform configurations
@@ -164,13 +164,18 @@ class IcalService {
     console.log(`🔄 Syncing ${config.name}...`);
 
     try {
-      const response = await fetch(`${this.baseUrl}/ical_import_airbnb.php?source=${encodeURIComponent(config.url)}`);
+      const response = await fetch(`${this.baseUrl}/calendar/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: config.url, source: platform }),
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const result: IcalSyncResult = await response.json();
+      const json = await response.json();
+      const result: IcalSyncResult = json.data || json;
       result.sync_timestamp = new Date().toISOString();
 
       console.log(`✅ ${config.name} sync completed:`, {
@@ -199,21 +204,21 @@ class IcalService {
    */
   async getExternalBlocks(startDate?: string, endDate?: string): Promise<ExternalBlock[]> {
     try {
-      let url = `${this.baseUrl}/external_blocks.php`;
-
-      if (startDate && endDate) {
-        url += `?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
-      }
+      let url = `${this.baseUrl}/calendar/external-blocks`;
+      const params = new URLSearchParams();
+      if (startDate) params.append('from', startDate);
+      if (endDate) params.append('to', endDate);
+      if (params.toString()) url += `?${params.toString()}`;
 
       const response = await fetch(url);
 
       if (!response.ok) {
-        // If external_blocks endpoint doesn't exist, return empty array
         console.warn('External blocks endpoint not available, returning empty array');
         return [];
       }
 
-      const data = await response.json();
+      const json = await response.json();
+      const data = json.data?.data ?? json.data ?? json;
       return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error('Failed to fetch external blocks:', error);
@@ -368,7 +373,7 @@ class IcalService {
    * Generate iCal export URL for external platforms
    */
   getExportUrl(): string {
-    return `${this.baseUrl}/ical.php`;
+    return `${this.baseUrl}/calendar/ical`;
   }
 
   /**
@@ -376,13 +381,16 @@ class IcalService {
    */
   async testIcalUrl(url: string): Promise<{ valid: boolean; eventCount?: number; error?: string }> {
     try {
-      const response = await fetch(`${this.baseUrl}/ical_proxy.php?source=${encodeURIComponent(url)}`);
+      const response = await fetch(
+        `${this.baseUrl}/calendar/proxy?source=${encodeURIComponent(url)}`
+      );
 
       if (!response.ok) {
         return { valid: false, error: `HTTP ${response.status}` };
       }
 
-      const data = await response.json();
+      const json = await response.json();
+      const data = json.data ?? json;
 
       if (data.success) {
         return { valid: true, eventCount: data.event_count };

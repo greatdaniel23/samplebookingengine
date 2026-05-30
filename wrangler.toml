@@ -1,4 +1,4 @@
-name = "booking-engine-api"
+name = "booking-engine-api-samudra"
 main = "src/workers/index.ts"
 compatibility_date = "2024-12-16"
 tsconfig = "tsconfig.workers.json"
@@ -6,8 +6,8 @@ tsconfig = "tsconfig.workers.json"
 # D1 Database binding
 [[d1_databases]]
 binding = "DB"
-database_name = "booking-engine"
-database_id = "71df7f17-943b-46dd-8870-2e7769a3c202"
+database_name = "samudra-booking-db"
+database_id = "4dafe930-3488-46a8-a35a-5de611656dbd"
 
 # R2 bucket binding (for images)
 [[r2_buckets]]
@@ -17,32 +17,37 @@ bucket_name = "imageroom"
 # KV namespace for sessions/cache
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "91b758e307d8444091e468f6caa9ead3"
+id = "3b66af0c5be2454bbcf4f8424e3482fd"
 
 [[kv_namespaces]]
 binding = "CACHE"
-id = "ec304060e11b4215888430acdee7aafa"
+id = "7c9356dc3a87482cb713bf7680c87fee"
 
 # Production environment
+# D-FORGE-001: DOKU is currently sandbox-only (Daniel confirmed 2026-05-15).
+# To switch to production DOKU, Daniel must:
+#   1. Provide production DOKU_CLIENT_ID and DOKU_SECRET_KEY from DOKU Merchant Portal
+#   2. Run: wrangler secret put DOKU_CLIENT_ID --env production
+#   3. Run: wrangler secret put DOKU_SECRET_KEY --env production
+#   4. Change DOKU_ENVIRONMENT below from "sandbox" to "production"
+#   5. Deploy: wrangler deploy --env production
+# DO NOT deploy until Daniel provides production DOKU credentials.
 [env.production]
-vars = { ENVIRONMENT = "production", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali", DOKU_ENVIRONMENT = "sandbox" }
-# Secrets to be added via wrangler secret put:
+vars = { ENVIRONMENT = "production", ADMIN_EMAIL = "booking@alphadigitalagency.id", VILLA_NAME = "Samudra", FROM_EMAIL = "booking@alphadigitalagency.id", FROM_NAME = "Samudra", DOKU_ENVIRONMENT = "sandbox" }
+# DOKU_ENVIRONMENT above = "sandbox" — change to "production" when Daniel provides prod credentials
+# Secrets to be set via: wrangler secret put <NAME> --env production
 # RESEND_API_KEY
-# DOKU_CLIENT_ID
-# DOKU_SECRET_KEY
+# DOKU_CLIENT_ID      ← BLOCKED: need production value from Daniel
+# DOKU_SECRET_KEY     ← BLOCKED: need production value from Daniel
 # JWT_SECRET
 
 workers_dev = true
 
-# DOKU Payment secrets (add via: wrangler secret put DOKU_CLIENT_ID --env production)
-# DOKU_CLIENT_ID = "your-client-id"
-# DOKU_SECRET_KEY = "your-secret-key"
-
 # Bind D1 database to production
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "booking-engine"
-database_id = "71df7f17-943b-46dd-8870-2e7769a3c202"
+database_name = "samudra-booking-db"
+database_id = "4dafe930-3488-46a8-a35a-5de611656dbd"
 
 # Bind R2 bucket to production
 [[env.production.r2_buckets]]
@@ -52,20 +57,18 @@ bucket_name = "imageroom"
 # Bind KV namespaces to production
 [[env.production.kv_namespaces]]
 binding = "SESSIONS"
-id = "91b758e307d8444091e468f6caa9ead3"
+id = "3b66af0c5be2454bbcf4f8424e3482fd"
 
 [[env.production.kv_namespaces]]
 binding = "CACHE"
-id = "ec304060e11b4215888430acdee7aafa"
+id = "7c9356dc3a87482cb713bf7680c87fee"
 
 # Development environment
 [env.development]
-vars = { ENVIRONMENT = "development", ADMIN_EMAIL = "danielsantosomarketing2017@gmail.com", VILLA_NAME = "Best Villa Bali", FROM_EMAIL = "danielsantosomarketing2017@gmail.com", FROM_NAME = "Best Villa Bali" }
-
-# SMTP_PASSWORD should be a secret
+vars = { ENVIRONMENT = "development", ADMIN_EMAIL = "booking@alphadigitalagency.id", VILLA_NAME = "Samudra", FROM_EMAIL = "booking@alphadigitalagency.id", FROM_NAME = "Samudra" }
 
 # Rate Limiting configuration
-# Note: Enabling this requires a paid plan or specific setup in Cloudflare dashboard
+# Note: Enabling this requires a Cloudflare paid plan
 # [unsafe]
 # [[unsafe.bindings]]
 # name = "RATE_LIMITER"

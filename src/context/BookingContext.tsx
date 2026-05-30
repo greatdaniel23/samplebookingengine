@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useCallback, useState } from "react";
 import { Booking, BookingContextValue } from "@/types";
 import { paths } from "@/config/paths";
+import { getAuthToken } from "@/config/cloudflare";
 
 const STORAGE_KEY = "bookings";
 
@@ -21,11 +22,16 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [bookings, setBookings] = useState<Booking[]>(() => loadInitial());
   const [dbBookings, setDbBookings] = useState<Booking[]>([]);
 
-  // Load bookings from database on mount
+  // Load bookings from database on mount (only if authenticated)
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const response = await fetch(paths.buildApiUrl('bookings'));
+        const token = getAuthToken();
+        if (!token) return; // Only fetch DB bookings for authenticated users
+
+        const response = await fetch(paths.buildApiUrl('bookings'), {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
         if (!response.ok) throw new Error('Failed to fetch bookings');
         const result = await response.json();
         const data = result.success ? result.data : result;

@@ -36,6 +36,15 @@ export function trackEvent(eventName: string, eventParams: Record<string, any> =
  * Use this when user clicks the "Pay Now" button
  * Uses proper GA4 ecommerce data layer structure
  */
+// PII stripped per WARDEN P0-1 — UU PDP + GA4 ToS compliance
+// SHA-256 hash email for hashed_customer_id (one-way, GA4 acceptable)
+async function hashEmail(email: string): Promise<string> {
+    if (typeof window === 'undefined' || !window.crypto?.subtle) return '';
+    const encoded = new TextEncoder().encode(email.toLowerCase().trim());
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', encoded);
+    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export function trackBeginCheckout(params: {
     value: number;
     currency?: string;
@@ -43,7 +52,7 @@ export function trackBeginCheckout(params: {
     item_name?: string;
     item_id?: string;
     item_category?: string;
-    customer_email?: string;
+    customer_email?: string; // accepted but NOT pushed raw — hashed only
 }) {
     const dataLayer = getDataLayer();
     // Clear previous ecommerce data
@@ -51,23 +60,35 @@ export function trackBeginCheckout(params: {
     // Use raw integer value only - no formatting, no decimals
     // This prevents any locale-based interpretation issues in GA4
     const rawValue = Math.round(Number(params.value) || 0);
-    dataLayer.push({
-        event: 'begin_checkout',
-        booking_reference: params.booking_reference,
-        customer_email: params.customer_email,
-        ecommerce: {
-            currency: params.currency || 'IDR',
-            value: rawValue,
-            items: [{
-                item_id: params.item_id || params.booking_reference || 'unknown',
-                item_name: params.item_name || 'Booking',
-                item_category: params.item_category || 'Package',
-                price: rawValue,
-                quantity: 1,
-            }],
-        },
-    });
-    console.log('📊 GA4 Event: begin_checkout', { ...params, raw_value: rawValue });
+
+    // Hash email async if provided, then push event
+    // PII stripped per WARDEN P0-1 — UU PDP + GA4 ToS compliance
+    const pushEvent = (hashed_customer_id?: string) => {
+        dataLayer.push({
+            event: 'begin_checkout',
+            booking_reference: params.booking_reference,
+            // customer_email REMOVED — PII stripped per WARDEN P0-1
+            ...(hashed_customer_id ? { hashed_customer_id } : {}),
+            ecommerce: {
+                currency: params.currency || 'IDR',
+                value: rawValue,
+                items: [{
+                    item_id: params.item_id || params.booking_reference || 'unknown',
+                    item_name: params.item_name || 'Booking',
+                    item_category: params.item_category || 'Package',
+                    price: rawValue,
+                    quantity: 1,
+                }],
+            },
+        });
+    };
+
+    if (params.customer_email) {
+        hashEmail(params.customer_email).then(pushEvent).catch(() => pushEvent());
+    } else {
+        pushEvent();
+    }
+    console.log('📊 GA4 Event: begin_checkout', { ...params, customer_email: '[REDACTED]', raw_value: rawValue });
 }
 
 /**
@@ -461,6 +482,7 @@ export function trackBookPage(params: {
 /**
  * Track Confirmation page (after successful booking)
  */
+// PII stripped per WARDEN P0-1 — UU PDP + GA4 ToS compliance
 export function trackConfirmationPage(params: {
     booking_reference: string;
     transaction_id?: string;
@@ -468,31 +490,43 @@ export function trackConfirmationPage(params: {
     room_name?: string;
     total_amount: number;
     currency?: string;
-    guest_email?: string;
+    guest_email?: string; // accepted but NOT pushed raw — hashed only
     check_in?: string;
     check_out?: string;
     payment_status?: string;
 }) {
     const dataLayer = getDataLayer();
-    dataLayer.push({
-        event: 'page_view',
-        page_type: 'confirmation',
-        page_title: 'Booking Confirmation',
-        page_path: `/confirmation/${params.booking_reference}`,
-        page_data: {
-            booking_reference: params.booking_reference,
-            transaction_id: params.transaction_id || params.booking_reference,
-            package_name: params.package_name || null,
-            room_name: params.room_name || null,
-            total_amount: Math.round(Number(params.total_amount) || 0),
-            currency: params.currency || 'IDR',
-            guest_email: params.guest_email || null,
-            check_in: params.check_in || null,
-            check_out: params.check_out || null,
-            payment_status: params.payment_status || 'pending',
-        },
-    });
-    console.log('📊 GA4 Page: Confirmation', params);
+
+    // Hash email async if provided, then push event
+    // PII stripped per WARDEN P0-1 — UU PDP + GA4 ToS compliance
+    const pushEvent = (hashed_customer_id?: string) => {
+        dataLayer.push({
+            event: 'page_view',
+            page_type: 'confirmation',
+            page_title: 'Booking Confirmation',
+            page_path: `/confirmation/${params.booking_reference}`,
+            page_data: {
+                booking_reference: params.booking_reference,
+                transaction_id: params.transaction_id || params.booking_reference,
+                package_name: params.package_name || null,
+                room_name: params.room_name || null,
+                total_amount: Math.round(Number(params.total_amount) || 0),
+                currency: params.currency || 'IDR',
+                // guest_email REMOVED — PII stripped per WARDEN P0-1
+                ...(hashed_customer_id ? { hashed_customer_id } : {}),
+                check_in: params.check_in || null,
+                check_out: params.check_out || null,
+                payment_status: params.payment_status || 'pending',
+            },
+        });
+    };
+
+    if (params.guest_email) {
+        hashEmail(params.guest_email).then(pushEvent).catch(() => pushEvent());
+    } else {
+        pushEvent();
+    }
+    console.log('📊 GA4 Page: Confirmation', { ...params, guest_email: '[REDACTED]' });
 }
 
 /**

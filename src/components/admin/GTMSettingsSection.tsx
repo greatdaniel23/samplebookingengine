@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Plus, Trash2, Pencil, Tag, Check, X } from 'lucide-react';
 import { paths } from '@/config/paths';
+import { apiClient } from '@/utils/apiClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface GTMCode {
     id: string;
@@ -22,6 +34,7 @@ export default function GTMSettingsSection() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
     // Form state
     const [newContainerId, setNewContainerId] = useState('');
@@ -58,16 +71,11 @@ export default function GTMSettingsSection() {
 
         setSaving(true);
         try {
-            const response = await fetch(paths.buildApiUrl('/gtm'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    container_id: newContainerId.trim(),
-                    name: newName.trim() || newContainerId.trim(),
-                    enabled: true,
-                }),
+            const data = await apiClient.post<any>('/api/gtm', {
+                container_id: newContainerId.trim(),
+                name: newName.trim() || newContainerId.trim(),
+                enabled: true,
             });
-            const data = await response.json();
             if (data.success) {
                 setNewContainerId('');
                 setNewName('');
@@ -76,7 +84,7 @@ export default function GTMSettingsSection() {
                 setError(data.error || 'Failed to add GTM code');
             }
         } catch (err) {
-            setError('Failed to add GTM code');
+            setError(err instanceof Error ? err.message : 'Failed to add GTM code');
         } finally {
             setSaving(false);
         }
@@ -84,31 +92,22 @@ export default function GTMSettingsSection() {
 
     const handleToggleEnabled = async (code: GTMCode) => {
         try {
-            const response = await fetch(paths.buildApiUrl(`/gtm/${code.id}`), {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ enabled: !code.enabled }),
-            });
-            if (response.ok) {
-                fetchGTMCodes();
-            }
+            await apiClient.put(`/api/gtm/${code.id}`, { enabled: !code.enabled });
+            fetchGTMCodes();
         } catch (err) {
-            setError('Failed to update GTM code');
+            setError(err instanceof Error ? err.message : 'Failed to update GTM code');
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this GTM code?')) return;
-
         try {
-            const response = await fetch(paths.buildApiUrl(`/gtm/${id}`), {
-                method: 'DELETE',
-            });
-            if (response.ok) {
-                fetchGTMCodes();
-            }
+            await apiClient.delete(`/api/gtm/${id}`);
+            toast.success('GTM container removed');
+            fetchGTMCodes();
         } catch (err) {
-            setError('Failed to delete GTM code');
+            toast.error(err instanceof Error ? err.message : 'Could not remove GTM container');
+        } finally {
+            setDeleteTargetId(null);
         }
     };
 
@@ -128,20 +127,14 @@ export default function GTMSettingsSection() {
         if (!editingId) return;
 
         try {
-            const response = await fetch(paths.buildApiUrl(`/gtm/${editingId}`), {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    container_id: editContainerId.trim(),
-                    name: editName.trim(),
-                }),
+            await apiClient.put(`/api/gtm/${editingId}`, {
+                container_id: editContainerId.trim(),
+                name: editName.trim(),
             });
-            if (response.ok) {
-                cancelEdit();
-                fetchGTMCodes();
-            }
+            cancelEdit();
+            fetchGTMCodes();
         } catch (err) {
-            setError('Failed to update GTM code');
+            setError(err instanceof Error ? err.message : 'Failed to update GTM code');
         }
     };
 
@@ -277,8 +270,9 @@ export default function GTMSettingsSection() {
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="text-destructive"
-                                                    onClick={() => handleDelete(code.id)}
+                                                    className="text-[#7a3d31] h-9 w-9 p-0"
+                                                    aria-label="Remove GTM container"
+                                                    onClick={() => setDeleteTargetId(code.id)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
@@ -291,6 +285,32 @@ export default function GTMSettingsSection() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Delete Confirmation */}
+            <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}>
+                <AlertDialogContent className="bg-samudra-paper border border-samudra-paper-deep">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-display text-[22px] font-normal text-samudra-ink">
+                            Remove GTM container?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-[13px] text-samudra-ink-mute" style={{ fontFamily: 'var(--font-label)' }}>
+                            This will remove the container from all pages immediately. Tracking data will stop flowing.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex gap-3 justify-end mt-4">
+                        <AlertDialogCancel className="h-11 border border-samudra-ink text-samudra-ink bg-samudra-paper hover:bg-samudra-ink hover:text-samudra-paper text-[11px] tracking-[0.3em] uppercase px-6"
+                            style={{ fontFamily: 'var(--font-label)' }}>
+                            Keep
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => deleteTargetId && handleDelete(deleteTargetId)}
+                            className="h-11 bg-[#7a3d31] text-samudra-paper hover:brightness-90 text-[11px] tracking-[0.3em] uppercase px-6"
+                            style={{ fontFamily: 'var(--font-label)' }}>
+                            Remove
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

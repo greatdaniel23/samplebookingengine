@@ -31,8 +31,8 @@ const env: AppPaths['env'] = import.meta.env.PROD ? 'production' : 'development'
 const PUBLIC_BASE = import.meta.env.VITE_PUBLIC_BASE || '/';
 
 // PRODUCTION-ONLY CONFIGURATION
-// All API calls are routed to Cloudflare Worker
-const PRODUCTION_API = 'https://booking-engine-api-production.danielsantosomarketing2017.workers.dev/api';
+// Use relative /api path — browser calls resolve via Pages Function proxies (same-origin, no workers.dev exposure)
+const PRODUCTION_API = '/api';
 
 // Always use production API URL - no local development
 let API_BASE = import.meta.env.VITE_API_BASE || PRODUCTION_API;
@@ -49,7 +49,7 @@ let API_BASE = import.meta.env.VITE_API_BASE || PRODUCTION_API;
 //   }
 // }
 
-// Force full API URL to ensure proper subdomain usage
+// Use relative path — any override via VITE_API_BASE, otherwise same-origin /api
 API_BASE = import.meta.env.VITE_API_BASE || PRODUCTION_API;
 
 // Optional admin panel route root (could be protected by auth in future)

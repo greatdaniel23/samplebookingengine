@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { showSuccess, showError } from "@/utils/toast";
-import { CheckCircle2, Users, BedDouble } from "lucide-react";
+import { CheckCircle2, Users, BedDouble, ChevronDown, ChevronUp } from "lucide-react";
 import { Package } from "@/types";
 import { packageService } from "@/services/packageService";
 import { paths } from '@/config/paths';
@@ -43,6 +43,8 @@ const BookingPage = () => {
   const finalPricePerNight = parseFloat(searchParams.get('finalPrice') || '0');
   const roomAdjustment = parseFloat(searchParams.get('roomAdjustment') || '0');
   const adjustmentType = searchParams.get('adjustmentType') || 'fixed';
+  const taxPercentage = parseFloat(searchParams.get('taxPercentage') || '11');
+  const serviceFeePercentage = parseFloat(searchParams.get('serviceFeePercentage') || '10');
 
   // State
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
@@ -50,6 +52,7 @@ const BookingPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [booking, setBooking] = useState(false);
+  const [showSummaryDetails, setShowSummaryDetails] = useState(false);
 
   const [guestForm, setGuestForm] = useState({
     firstName: '',
@@ -105,22 +108,43 @@ const BookingPage = () => {
         console.log("Package rooms:", (pkg as any).rooms);
         console.log("Package room_options:", pkg.room_options);
 
-        // Find the selected room or use first available room
+        // Find the selected room — first check package's embedded rooms,
+        // then fetch from /api/packages/{id}/rooms if not found
         let room = null;
 
-        // Check multiple possible room fields
-        const roomsArray = (pkg as any).rooms || pkg.room_options || [];
-
-        if (roomParam && roomsArray.length > 0) {
-          room = roomsArray.find((r: any) => r.id === roomParam || r.room_id === roomParam);
+        // Check embedded rooms in package object
+        const embeddedRooms = (pkg as any).rooms || pkg.room_options || [];
+        if (roomParam && embeddedRooms.length > 0) {
+          room = embeddedRooms.find((r: any) =>
+            r.id?.toString() === roomParam || r.room_id?.toString() === roomParam
+          );
+        }
+        if (!room && embeddedRooms.length > 0) {
+          room = embeddedRooms[0];
         }
 
-        // If no room specified or room not found, use first available room
-        if (!room && roomsArray.length > 0) {
-          room = roomsArray[0];
+        // If still not found, fetch rooms from the dedicated endpoint
+        if (!room && packageId) {
+          try {
+            const roomsRes = await fetch(paths.buildApiUrl(`packages/${packageId}/rooms`));
+            if (roomsRes.ok) {
+              const roomsData = await roomsRes.json();
+              const roomsArray = Array.isArray(roomsData) ? roomsData : (roomsData.data || roomsData.rooms || []);
+              if (roomParam) {
+                room = roomsArray.find((r: any) =>
+                  r.id?.toString() === roomParam || r.room_id?.toString() === roomParam
+                );
+              }
+              if (!room && roomsArray.length > 0) {
+                room = roomsArray[0];
+              }
+            }
+          } catch (e) {
+            console.warn("Could not fetch rooms from API:", e);
+          }
         }
 
-        // If still no room, create a default room from package's base_room_id or URL param
+        // Last resort fallback
         if (!room) {
           const baseRoomId = roomParam || pkg.base_room_id || pkg.room_id || null;
           if (!baseRoomId) {
@@ -129,13 +153,12 @@ const BookingPage = () => {
           room = {
             id: baseRoomId,
             room_id: baseRoomId,
-            name: pkg.name || 'Standard Room',
+            name: 'Standard Room',
             price: pkg.price || pkg.base_price || 0,
             max_guests: pkg.max_guests || 2,
             size: '25',
             beds: 'Queen Bed'
           };
-          console.log("Using fallback room with ID from URL or package:", room);
         }
 
         console.log("Final selectedRoom:", room);
@@ -256,9 +279,23 @@ const BookingPage = () => {
 
       if (result.success) {
         showSuccess("Booking confirmed successfully!");
-        // Navigate using booking_reference (API returns this, not id)
         const bookingRef = result.data?.booking_reference || bookingReference;
-        navigate(`/confirmation/${bookingRef}`);
+
+        // Pass all display data as URL params so confirmation page has a reliable fallback
+        const confirmParams = new URLSearchParams();
+        confirmParams.set('package_id', selectedPackage.id.toString());
+        confirmParams.set('room_id', roomId?.toString() || '');
+        confirmParams.set('package_name', selectedPackage.name || '');
+        confirmParams.set('room_name', selectedRoom?.name || selectedRoom?.room_name || '');
+        confirmParams.set('check_in', checkIn || '');
+        confirmParams.set('check_out', checkOut || '');
+        confirmParams.set('guests', guests.toString());
+        confirmParams.set('nights', nights.toString());
+        confirmParams.set('total_price', totalPrice.toString());
+        confirmParams.set('tax_pct', taxPercentage.toString());
+        confirmParams.set('svc_pct', serviceFeePercentage.toString());
+        confirmParams.set('price_per_night', pricePerNight.toString());
+        navigate(`/confirmation/${bookingRef}?${confirmParams.toString()}`);
       } else {
         throw new Error(result.message || result.error || "Booking failed");
       }
@@ -278,8 +315,8 @@ const BookingPage = () => {
         <div className="container mx-auto px-4">
           <Card className="max-w-2xl mx-auto">
             <CardContent className="p-8 text-center">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: bookingTheme.colors.secondary }}>Booking Error</h2>
-              <p className="mb-6" style={{ color: bookingTheme.colors.text }}>{error}</p>
+              <h2 className="font-display text-2xl font-medium text-gray-900 mb-4">Booking Error</h2>
+              <p className="text-base text-gray-600 mb-6">{error}</p>
               <Link to="/">
                 <Button style={{ backgroundColor: bookingTheme.colors.primary, color: 'white' }}>Return to Home</Button>
               </Link>
@@ -296,8 +333,8 @@ const BookingPage = () => {
         <div className="container mx-auto px-4">
           <Card className="max-w-2xl mx-auto">
             <CardContent className="p-8 text-center">
-              <h2 className="text-2xl font-bold mb-4" style={{ color: bookingTheme.colors.secondary }}>Booking Not Found</h2>
-              <p className="mb-6" style={{ color: bookingTheme.colors.text }}>The requested booking information could not be found.</p>
+              <h2 className="font-display text-2xl font-medium text-gray-900 mb-4">Booking Not Found</h2>
+              <p className="text-base text-gray-600 mb-6">The requested booking information could not be found.</p>
               <Link to="/">
                 <Button style={{ backgroundColor: bookingTheme.colors.primary, color: 'white' }}>Return to Home</Button>
               </Link>
@@ -313,7 +350,10 @@ const BookingPage = () => {
 
   // Calculate total using final price per night (package base + room adjustment) * nights
   const pricePerNight = finalPricePerNight > 0 ? finalPricePerNight : (selectedPackage?.base_price || 0);
-  const totalPrice = pricePerNight * (nights || 1);
+  const subtotal = pricePerNight * (nights || 1);
+  const serviceFeeAmount = Math.round(subtotal * (serviceFeePercentage / 100));
+  const taxAmount = Math.round((subtotal + serviceFeeAmount) * (taxPercentage / 100));
+  const totalPrice = subtotal + serviceFeeAmount + taxAmount;
 
 
   return (
@@ -330,103 +370,149 @@ const BookingPage = () => {
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Booking Summary */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2" style={{ color: bookingTheme.colors.secondary }}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
                   <CheckCircle2 className="h-5 w-5" style={{ color: bookingTheme.colors.accent }} />
                   Booking Summary
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Package Info */}
-                <div>
-                  <h3 className="font-semibold text-lg mb-2" style={{ color: bookingTheme.colors.secondary }}>{selectedPackage.name}</h3>
-                  <p className="text-sm mb-3" style={{ color: bookingTheme.colors.text }}>{selectedPackage.description}</p>
+              <CardContent className="space-y-3">
 
-                  {/* Inclusions */}
-                  {parseInclusions(selectedPackage.inclusions).length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="font-medium text-sm mb-2" style={{ color: bookingTheme.colors.secondary }}>Includes:</h4>
-                      <ul className="text-sm space-y-1" style={{ color: bookingTheme.colors.text }}>
-                        {parseInclusions(selectedPackage.inclusions).map((inclusion, index) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <CheckCircle2 className="h-3 w-3 mt-0.5 flex-shrink-0" style={{ color: bookingTheme.colors.accent }} />
-                            {inclusion}
-                          </li>
-                        ))}
-                      </ul>
+                {/* Always visible: compact snapshot */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{selectedPackage.name}</p>
+                      <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                        <BedDouble className="h-3 w-3" style={{ color: bookingTheme.colors.accent }} />
+                        {selectedRoom.name || selectedRoom.room_name}
+                      </p>
                     </div>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">{checkIn} → {checkOut}</span>
+                    <span className="text-gray-500">{nights} night{nights !== 1 ? 's' : ''} · {guests} guest{Number(guests) !== 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1 border-t">
+                    <span className="text-sm font-medium text-gray-700">Total</span>
+                    <span className="text-lg font-bold" style={{ color: bookingTheme.colors.primary }}>
+                      Rp {totalPrice.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Toggle button */}
+                <button
+                  onClick={() => setShowSummaryDetails(!showSummaryDetails)}
+                  className="w-full flex items-center justify-center gap-1 text-xs font-medium py-1.5 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
+                >
+                  {showSummaryDetails ? (
+                    <><ChevronUp className="h-3.5 w-3.5" /> Hide details</>
+                  ) : (
+                    <><ChevronDown className="h-3.5 w-3.5" /> Show details</>
                   )}
-                </div>
+                </button>
 
-                {/* Room Info */}
-                <div className="border-t pt-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <BedDouble className="h-4 w-4" style={{ color: bookingTheme.colors.accent }} />
-                    <span className="font-medium" style={{ color: bookingTheme.colors.secondary }}>{selectedRoom.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm mb-2" style={{ color: bookingTheme.colors.text }}>
-                    <Users className="h-4 w-4" />
-                    <span>Max {selectedRoom.max_guests} guests</span>
-                  </div>
-                  <div className="text-sm" style={{ color: bookingTheme.colors.text }}>
-                    Size: {selectedRoom.size}m² • {selectedRoom.beds}
-                  </div>
-                </div>
+                {/* Collapsible details */}
+                {showSummaryDetails && (
+                  <div className="space-y-4 pt-1 border-t">
 
-                {/* Dates & Pricing */}
-                <div className="border-t pt-4 space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Check-in:</span>
-                    <span className="font-medium">{checkIn}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Check-out:</span>
-                    <span className="font-medium">{checkOut}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Nights:</span>
-                    <span className="font-medium">{nights}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Guests:</span>
-                    <span className="font-medium">{guests}</span>
-                  </div>
-
-                  {/* Price Breakdown */}
-                  <div className="border-t pt-2 mt-2">
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>Package Base Price:</span>
-                      <span>Rp {basePrice.toLocaleString('id-ID')}/night</span>
+                    {/* Package description & inclusions */}
+                    <div>
+                      <p className="text-sm text-gray-500 mb-3">{selectedPackage.description}</p>
+                      {parseInclusions(selectedPackage.inclusions).length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Includes:</h4>
+                          <ul className="text-sm space-y-1 text-gray-500">
+                            {parseInclusions(selectedPackage.inclusions).map((inclusion, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <CheckCircle2 className="h-3 w-3 mt-0.5 flex-shrink-0" style={{ color: bookingTheme.colors.accent }} />
+                                {inclusion}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
-                    {roomAdjustment !== 0 && (
-                      <div className="flex justify-between text-sm text-gray-600">
-                        <span>Room Adjustment:</span>
-                        <span>
-                          {adjustmentType === 'percentage'
-                            ? `${roomAdjustment > 0 ? '+' : ''}${roomAdjustment}%`
-                            : `${roomAdjustment > 0 ? '+' : ''}Rp ${Math.abs(roomAdjustment).toLocaleString('id-ID')}`
-                          }
-                        </span>
+
+                    {/* Room details */}
+                    <div className="border-t pt-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <BedDouble className="h-4 w-4" style={{ color: bookingTheme.colors.accent }} />
+                        <span className="text-sm font-semibold text-gray-900">{selectedRoom.name || selectedRoom.room_name}</span>
                       </div>
-                    )}
-                    <div className="flex justify-between text-sm font-medium text-gray-700 mt-1">
-                      <span>Price per Night:</span>
-                      <span>Rp {pricePerNight.toLocaleString('id-ID')}</span>
+                      <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+                        <Users className="h-3.5 w-3.5" />
+                        <span>Max {selectedRoom.max_guests} guests</span>
+                      </div>
+                      <div className="text-sm text-gray-500">Size: {selectedRoom.size}m² · {selectedRoom.beds}</div>
                     </div>
-                  </div>
 
-                  <div className="border-t pt-2 flex justify-between text-lg font-bold">
-                    <span>Total:</span>
-                    <span style={{ color: bookingTheme.colors.primary }}>Rp {totalPrice.toLocaleString('id-ID')}</span>
+                    {/* Dates */}
+                    <div className="border-t pt-3 space-y-1.5">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Check-in:</span>
+                        <span className="font-medium">{checkIn}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Check-out:</span>
+                        <span className="font-medium">{checkOut}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Nights:</span>
+                        <span className="font-medium">{nights}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Guests:</span>
+                        <span className="font-medium">{guests}</span>
+                      </div>
+                    </div>
+
+                    {/* Price breakdown */}
+                    <div className="border-t pt-3 space-y-1">
+                      <div className="flex justify-between text-sm text-gray-600">
+                        <span>Price/night:</span>
+                        <span>Rp {pricePerNight.toLocaleString('id-ID')}</span>
+                      </div>
+                      {roomAdjustment !== 0 && (
+                        <div className="flex justify-between text-sm text-gray-600">
+                          <span>Room Adjustment:</span>
+                          <span>
+                            {adjustmentType === 'percentage'
+                              ? `${roomAdjustment > 0 ? '+' : ''}${roomAdjustment}%`
+                              : `${roomAdjustment > 0 ? '+' : ''}Rp ${Math.abs(roomAdjustment).toLocaleString('id-ID')}`
+                            }
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm font-medium text-gray-700">
+                        <span>Subtotal ({nights} night{nights !== 1 ? 's' : ''}):</span>
+                        <span>Rp {subtotal.toLocaleString('id-ID')}</span>
+                      </div>
+                      {serviceFeePercentage > 0 && (
+                        <div className="flex justify-between text-sm text-gray-600">
+                          <span>Service Fee ({serviceFeePercentage}%):</span>
+                          <span>Rp {serviceFeeAmount.toLocaleString('id-ID')}</span>
+                        </div>
+                      )}
+                      {taxPercentage > 0 && (
+                        <div className="flex justify-between text-sm text-gray-600">
+                          <span>Tax ({taxPercentage}%):</span>
+                          <span>Rp {taxAmount.toLocaleString('id-ID')}</span>
+                        </div>
+                      )}
+                    </div>
+
                   </div>
-                </div>
+                )}
+
               </CardContent>
             </Card>
 
             {/* Guest Information Form */}
             <Card>
               <CardHeader>
-                <CardTitle style={{ color: bookingTheme.colors.secondary }}>Guest Information</CardTitle>
+                <CardTitle className="text-lg font-semibold text-gray-900">Guest Information</CardTitle>
                 <CardDescription style={{ color: bookingTheme.colors.text }}>
                   Please provide your details to complete the booking
                 </CardDescription>

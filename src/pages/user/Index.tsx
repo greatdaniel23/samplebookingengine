@@ -109,7 +109,7 @@ const Index = () => {
   if (error) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-2xl font-bold text-hotel-navy mb-4">Failed to load page content</h2>
+        <h2 className="font-display text-2xl font-medium text-gray-900 mb-4">Failed to load page content</h2>
         <p className="text-hotel-bronze mb-6">{error}</p>
         <div className="space-x-4">
           <button
@@ -138,7 +138,7 @@ const Index = () => {
   if (!currentVillaData) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-2xl font-bold text-hotel-navy mb-4">Villa Information Not Available</h2>
+        <h2 className="font-display text-2xl font-medium text-gray-900 mb-4">Villa Information Not Available</h2>
         <p className="text-hotel-bronze mb-6">Unable to load villa data from API. Please check your connection.</p>
         <div className="space-x-4">
           <button
@@ -196,7 +196,7 @@ const Index = () => {
               ) : (
                 <div className="col-span-full text-center py-12">
                   <div className="bg-white rounded-lg shadow-sm p-8">
-                    <h3 className="text-xl font-semibold text-hotel-navy mb-2">
+                    <h3 className="font-display text-xl font-medium text-gray-900 mb-2">
                       No Available Packages
                     </h3>
                     <p className="text-hotel-bronze mb-4">

@@ -4,8 +4,8 @@
  */
 
 export const API_CONFIG = {
-  // Main Worker API
-  WORKER_API_BASE: 'https://booking-engine-api-production.danielsantosomarketing2017.workers.dev/api',
+  // Main Worker API — use relative /api so SPA stays same-origin (Pages Function proxies forward to Worker)
+  WORKER_API_BASE: '/api',
 
   // R2 Image Storage
   IMAGE_BUCKET_URL: 'https://image.alphadigitalagency.id',
